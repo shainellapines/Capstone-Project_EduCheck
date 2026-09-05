@@ -31,7 +31,7 @@ function UserManagement() {
         username: "",
         password: "",
         email: "",
-        role: "teacher",
+        role: "subject",
         status: "Active",
     });
 
@@ -77,7 +77,7 @@ function UserManagement() {
             username: "",
             password: "",
             email: "",
-            role: "teacher",
+            role: "subject",
             status: "Active",
         });
 
@@ -92,7 +92,7 @@ function UserManagement() {
             username: user.username || "",
             password: "",
             email: user.email || "",
-            role: user.role || "teacher",
+            role: user.role || "subject",
             status: user.status || "Active",
         });
 
@@ -591,15 +591,15 @@ function UserManagement() {
                                         onChange={handleChange}
                                     >
                                         <option value="teacher">
-                                            Teacher
+                                            Subject Teacher
                                         </option>
 
                                         <option value="adviser">
-                                            Adviser
+                                            Class Adviser
                                         </option>
 
                                         <option value="admin">
-                                            Administrator
+                                            School Administrator
                                         </option>
                                     </select>
                                 </div>

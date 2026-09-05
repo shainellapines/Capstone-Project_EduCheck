@@ -1,0 +1,734 @@
+/* ================================
+   TEACHER MANAGEMENT PAGE
+   ================================ */
+
+.teacher-management-page {
+    min-height: 100vh;
+    background: #f5f7fb;
+    padding: 32px;
+    color: #172033;
+    box-sizing: border-box;
+}
+
+
+/* ================================
+   HEADER
+   ================================ */
+
+.teacher-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 28px;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.teacher-management-header h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 700;
+    color: #172033;
+}
+
+.teacher-management-header p {
+    margin: 6px 0 0;
+    color: #667085;
+    font-size: 15px;
+}
+
+
+/* ================================
+   BACK BUTTON
+   ================================ */
+
+.back-button {
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    border: none;
+    background: transparent;
+    color: #475467;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    cursor: pointer;
+    padding: 6px 0;
+}
+
+.back-button:hover {
+    color: #2448b8;
+}
+
+
+/* ================================
+   ADD TEACHER BUTTON
+   ================================ */
+
+.add-user-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #2949bd;
+    color: white;
+
+    padding: 12px 18px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: background 0.2s ease,
+                transform 0.2s ease;
+}
+
+.add-user-button:hover {
+    background: #203da3;
+    transform: translateY(-1px);
+}
+
+
+/* ================================
+   SUMMARY CARDS
+   ================================ */
+
+.user-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+
+    margin-bottom: 28px;
+}
+
+.summary-card {
+    background: #ffffff;
+
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+
+    padding: 20px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    box-shadow: 0 2px 5px rgba(16, 24, 40, 0.03);
+}
+
+.summary-card span {
+    display: block;
+
+    color: #667085;
+
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.summary-card strong {
+    display: block;
+
+    color: #172033;
+
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.summary-icon {
+    width: 46px;
+    height: 46px;
+
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.summary-icon.blue {
+    background: #edf3ff;
+    color: #1769ff;
+}
+
+.summary-icon.green {
+    background: #ecfdf3;
+    color: #00a65a;
+}
+
+.summary-icon.purple {
+    background: #f4ecff;
+    color: #7a3df0;
+}
+
+
+/* ================================
+   MAIN CARD
+   ================================ */
+
+.user-management-card {
+    background: #ffffff;
+
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    box-shadow: 0 2px 5px rgba(16, 24, 40, 0.03);
+}
+
+.user-management-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 22px 24px;
+
+    border-bottom: 1px solid #eaecf0;
+}
+
+.user-management-card-header h2 {
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 650;
+
+    color: #172033;
+}
+
+.user-management-card-header p {
+    margin: 5px 0 0;
+
+    color: #667085;
+
+    font-size: 13px;
+}
+
+
+/* ================================
+   SEARCH
+   ================================ */
+
+.search-container {
+    width: 280px;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+
+    padding: 9px 12px;
+
+    background: #ffffff;
+
+    color: #667085;
+}
+
+.search-container:focus-within {
+    border-color: #2949bd;
+    box-shadow: 0 0 0 3px rgba(41, 73, 189, 0.08);
+}
+
+.search-container input {
+    width: 100%;
+
+    border: none;
+    outline: none;
+
+    font-size: 14px;
+
+    color: #172033;
+
+    background: transparent;
+}
+
+.search-container input::placeholder {
+    color: #98a2b3;
+}
+
+
+/* ================================
+   TABLE
+   ================================ */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 850px;
+}
+
+.users-table thead {
+    background: #f8f9fc;
+}
+
+.users-table th {
+    padding: 13px 22px;
+
+    text-align: left;
+
+    color: #667085;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+
+    border-bottom: 1px solid #eaecf0;
+}
+
+.users-table td {
+    padding: 16px 22px;
+
+    border-bottom: 1px solid #eaecf0;
+
+    color: #475467;
+
+    font-size: 14px;
+}
+
+.users-table tbody tr:hover {
+    background: #fafbff;
+}
+
+.users-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* ================================
+   EMPTY STATE
+   ================================ */
+
+.empty-state {
+    height: 180px;
+
+    text-align: center;
+
+    color: #667085;
+
+    vertical-align: middle;
+}
+
+.empty-state svg {
+    display: block;
+
+    margin: 0 auto 10px;
+
+    color: #98a2b3;
+}
+
+.empty-state strong {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #344054;
+
+    font-size: 14px;
+}
+
+.empty-state span {
+    display: block;
+
+    color: #98a2b3;
+
+    font-size: 13px;
+}
+
+
+/* ================================
+   RESPONSIVE
+   ================================ */
+
+@media (max-width: 900px) {
+
+    .teacher-management-page {
+        padding: 22px;
+    }
+
+    .user-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .teacher-management-header {
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .add-user-button {
+        width: fit-content;
+    }
+
+    .user-management-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .search-container {
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+@media (max-width: 600px) {
+
+    .teacher-management-page {
+        padding: 16px;
+    }
+
+    .teacher-management-header h1 {
+        font-size: 24px;
+    }
+
+    .summary-card {
+        padding: 16px;
+    }
+
+    .user-management-card-header {
+        padding: 18px;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 13px 16px;
+    }
+
+}
+
+/* ================================
+   SUCCESS MESSAGE
+   ================================ */
+
+.teacher-success-message {
+    background: #ecfdf3;
+    color: #027a48;
+    border: 1px solid #abefc6;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+
+/* ================================
+   ADD TEACHER MODAL
+   ================================ */
+
+.teacher-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(15, 23, 42, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 1000;
+}
+
+.teacher-modal {
+    width: 100%;
+    max-width: 560px;
+
+    max-height: 90vh;
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 14px;
+
+    box-shadow: 0 20px 50px rgba(16, 24, 40, 0.2);
+
+    padding: 26px;
+
+    box-sizing: border-box;
+}
+
+.teacher-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    margin-bottom: 22px;
+}
+
+.teacher-modal-header h2 {
+    margin: 0;
+
+    font-size: 21px;
+    font-weight: 700;
+
+    color: #172033;
+}
+
+.teacher-modal-header p {
+    margin: 6px 0 0;
+
+    color: #667085;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.teacher-modal-close {
+    width: 36px;
+    height: 36px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #f2f4f7;
+    color: #667085;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+}
+
+.teacher-modal-close:hover {
+    background: #eaecf0;
+}
+
+
+/* ================================
+   FORM
+   ================================ */
+
+.teacher-form-group {
+    margin-bottom: 17px;
+}
+
+.teacher-form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #344054;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.teacher-form-group label span {
+    color: #98a2b3;
+    font-weight: 400;
+}
+
+.teacher-form-group input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+
+    padding: 11px 12px;
+
+    outline: none;
+
+    color: #172033;
+    background: #ffffff;
+
+    font-size: 14px;
+}
+
+.teacher-form-group input:focus {
+    border-color: #2949bd;
+
+    box-shadow:
+        0 0 0 3px rgba(41, 73, 189, 0.08);
+}
+
+.teacher-form-group small {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #98a2b3;
+
+    font-size: 12px;
+}
+
+
+/* ================================
+   FORM ERROR
+   ================================ */
+
+.teacher-form-error {
+    background: #fef3f2;
+
+    border: 1px solid #fecdca;
+
+    color: #b42318;
+
+    border-radius: 8px;
+
+    padding: 11px 13px;
+
+    margin-bottom: 18px;
+
+    font-size: 13px;
+}
+
+
+/* ================================
+   MODAL BUTTONS
+   ================================ */
+
+.teacher-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 24px;
+}
+
+.cancel-button,
+.save-teacher-button {
+    border-radius: 8px;
+
+    padding: 11px 17px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.cancel-button {
+    border: 1px solid #d0d5dd;
+
+    background: #ffffff;
+
+    color: #344054;
+}
+
+.cancel-button:hover {
+    background: #f9fafb;
+}
+
+.save-teacher-button {
+    border: none;
+
+    background: #2949bd;
+
+    color: #ffffff;
+}
+
+.save-teacher-button:hover {
+    background: #203da3;
+}
+
+.cancel-button:disabled,
+.save-teacher-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+}
+
+/* ================================
+   TEACHER EDIT BUTTON
+   ================================ */
+
+.teacher-edit-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    border: 1px solid #b8c8ff;
+    border-radius: 7px;
+
+    background: #f5f8ff;
+    color: #2454c6;
+
+    padding: 7px 11px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.teacher-edit-button:hover {
+    background: #eaf0ff;
+    border-color: #8da8ff;
+}
+
+/* ================================
+   TEACHER ACTION BUTTONS
+   ================================ */
+
+.teacher-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ================================
+   DELETE BUTTON
+   ================================ */
+
+.teacher-delete-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    border: 1px solid #fecdca;
+    border-radius: 7px;
+
+    background: #fff5f4;
+    color: #b42318;
+
+    padding: 7px 11px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.teacher-delete-button:hover {
+    background: #feeceb;
+    border-color: #fda29b;
+}
+
+.teacher-delete-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

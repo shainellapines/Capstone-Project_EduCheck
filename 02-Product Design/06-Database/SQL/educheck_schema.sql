@@ -103,6 +103,16 @@ CREATE TABLE class_records (
     file_name VARCHAR(255) NOT NULL,
     status VARCHAR(30) DEFAULT 'Uploaded',
 
+    -- Stored filename on disk (multer-generated), distinct from the
+    -- learner-facing original file_name above.
+    stored_file_name VARCHAR(255),
+
+    -- Populated by the rule-based validation layer (classRecordValidator.js)
+    -- at upload time.
+    validation_error_count INTEGER NOT NULL DEFAULT 0,
+    validation_warning_count INTEGER NOT NULL DEFAULT 0,
+    ready_for_submission BOOLEAN NOT NULL DEFAULT false,
+
     CONSTRAINT fk_class_record_teacher
         FOREIGN KEY (teacher_id)
         REFERENCES teachers(teacher_id),
@@ -114,6 +124,30 @@ CREATE TABLE class_records (
     CONSTRAINT fk_class_record_school_year
         FOREIGN KEY (school_year_id)
         REFERENCES school_years(school_year_id)
+);
+
+
+-- ============================================
+-- 7B. CLASS RECORD VALIDATION ISSUE
+-- ============================================
+-- One row per issue raised by the rule-based validation layer
+-- (classRecordValidator.js) for a given class record upload.
+
+CREATE TABLE class_record_validation_issues (
+    validation_issue_id SERIAL PRIMARY KEY,
+    class_record_id INTEGER NOT NULL,
+    learner_number INTEGER,
+    learner_name VARCHAR(255),
+    term VARCHAR(20),
+    field_name VARCHAR(100),
+    code VARCHAR(100) NOT NULL,
+    severity VARCHAR(20) NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT class_record_validation_issues_class_record_id_fkey
+        FOREIGN KEY (class_record_id)
+        REFERENCES class_records(class_record_id)
 );
 
 
