@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
+import 'consolidated_records_screen.dart';
 
 class ReviewQueueScreen extends StatelessWidget {
   const ReviewQueueScreen({super.key});
+
+  static const Color primaryBlue = Color(0xFF1E5AA8);
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +14,7 @@ class ReviewQueueScreen extends StatelessWidget {
         Container(
           height: 56,
           width: double.infinity,
-          color: AppTheme.primaryBlue,
+          color: primaryBlue,
           alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: const Text(
@@ -42,6 +44,7 @@ class ReviewQueueScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildRecordCard(
+                  context: context,
                   gradeLevel: 'Grade 6 - Sampaguita',
                   quarter: '3rd Quarter',
                   schoolYear: 'SY 2025-2026',
@@ -51,6 +54,7 @@ class ReviewQueueScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildRecordCard(
+                  context: context,
                   gradeLevel: 'Grade 6 - Sampaguita',
                   quarter: '2nd Quarter',
                   schoolYear: 'SY 2025-2026',
@@ -60,6 +64,7 @@ class ReviewQueueScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _buildRecordCard(
+                  context: context,
                   gradeLevel: 'Grade 6 - Sampaguita',
                   quarter: '1st Quarter',
                   schoolYear: 'SY 2025-2026',
@@ -135,6 +140,7 @@ class ReviewQueueScreen extends StatelessWidget {
   }
 
   Widget _buildRecordCard({
+    required BuildContext context,
     required String gradeLevel,
     required String quarter,
     required String schoolYear,
@@ -234,7 +240,15 @@ class ReviewQueueScreen extends StatelessWidget {
               const Spacer(),
               if (showReviewButton)
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const ConsolidatedRecordsScreen(),
+                      ),
+                    );
+                  },
                   child: const Text(
                     'Review',
                     style: TextStyle(
