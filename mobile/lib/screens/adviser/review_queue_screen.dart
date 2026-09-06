@@ -5,7 +5,7 @@ import 'consolidated_records_screen.dart';
 class ReviewQueueScreen extends StatelessWidget {
   const ReviewQueueScreen({super.key});
 
-  static const Color primaryBlue = Color(0xFF1E5AA8);
+  static const Color primaryBlue = Color(0xFF1554D1);
 
   @override
   Widget build(BuildContext context) {
