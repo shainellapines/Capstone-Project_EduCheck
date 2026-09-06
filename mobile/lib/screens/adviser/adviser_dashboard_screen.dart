@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'review_queue_screen.dart';
+
 class AdviserDashboardScreen extends StatefulWidget {
   const AdviserDashboardScreen({super.key});
 
@@ -26,6 +28,12 @@ class _AdviserDashboardScreenState
     });
   }
 
+  void openReviewQueue() {
+    setState(() {
+      selectedIndex = 1;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,9 +41,11 @@ class _AdviserDashboardScreenState
       body: SafeArea(
         child: selectedIndex == 0
             ? buildDashboard()
-            : buildPlaceholderPage(
-                navigationLabels[selectedIndex],
-              ),
+            : selectedIndex == 1
+                ? const ReviewQueueScreen()
+                : buildPlaceholderPage(
+                    navigationLabels[selectedIndex],
+                  ),
       ),
       bottomNavigationBar: buildBottomNavigationBar(),
     );
@@ -272,12 +282,15 @@ class _AdviserDashboardScreenState
       mainAxisSpacing: 10,
       childAspectRatio: 1.25,
       children: [
-        buildOverviewCard(
-          'Pending Validation',
-          '1',
-          Icons.description_outlined,
-          const Color(0xFF1554D1),
-          const Color(0xFFEAF2FF),
+        GestureDetector(
+          onTap: openReviewQueue,
+          child: buildOverviewCard(
+            'Pending Validation',
+            '1',
+            Icons.description_outlined,
+            const Color(0xFF1554D1),
+            const Color(0xFFEAF2FF),
+          ),
         ),
         buildOverviewCard(
           'Ready to Submit',
@@ -359,100 +372,136 @@ class _AdviserDashboardScreenState
   }
 
   Widget buildPerformanceSummary() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 1.65,
-      children: [
-        buildPerformanceCard(
-          'Total Students',
-          '3',
-          Icons.people_outline_rounded,
-          const Color(0xFF1554D1),
-          const Color(0xFFEAF2FF),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
         ),
-        buildPerformanceCard(
-          'On Track',
-          '1',
-          Icons.check_circle_outline,
-          const Color(0xFF16A34A),
-          const Color(0xFFEAF8EF),
-        ),
-        buildPerformanceCard(
-          'At Risk',
-          '1',
-          Icons.warning_amber_outlined,
-          const Color(0xFFD18A00),
-          const Color(0xFFFFF6DD),
-        ),
-        buildPerformanceCard(
-          'Needs Intervention',
-          '1',
-          Icons.cancel_outlined,
-          const Color(0xFFDC2626),
-          const Color(0xFFFEECEC),
-        ),
-      ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Student Performance Summary',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: buildPerformanceCard(
+                  title: 'Total Students',
+                  value: '3',
+                  icon: Icons.people_outline_rounded,
+                  color: const Color(0xFF1554D1),
+                  background: const Color(0xFFEAF2FF),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: buildPerformanceCard(
+                  title: 'On Track',
+                  value: '1',
+                  icon: Icons.check_circle_outline,
+                  color: const Color(0xFF16A34A),
+                  background: const Color(0xFFEAF8EF),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: buildPerformanceCard(
+                  title: 'At Risk',
+                  value: '1',
+                  icon: Icons.warning_amber_rounded,
+                  color: const Color(0xFFD89B00),
+                  background: const Color(0xFFFFF3CD),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: buildPerformanceCard(
+                  title: 'Needs Intervention',
+                  value: '1',
+                  icon: Icons.error_outline_rounded,
+                  color: const Color(0xFFDC2626),
+                  background: const Color(0xFFFEECEC),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget buildPerformanceCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-    Color background,
-  ) {
+  Widget buildPerformanceCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required Color background,
+  }) {
     return Container(
+      height: 105,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: background.withOpacity(0.45),
-        borderRadius: BorderRadius.circular(16),
+        color: background,
+        borderRadius: BorderRadius.circular(13),
         border: Border.all(
           color: color.withOpacity(0.25),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 26,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                value,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+          const Spacer(),
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -461,100 +510,137 @@ class _AdviserDashboardScreenState
 
   Widget buildInterventionCard() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F2),
+        color: const Color(0xFFFFFBEB),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFFFFC7A3),
+          color: const Color(0xFFFDE68A),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
-                Icons.warning_amber_rounded,
-                color: Color(0xFFC2410C),
-                size: 24,
+              Container(
+                width: 45,
+                height: 45,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3CD),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFD89B00),
+                  size: 27,
+                ),
               ),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Students Needing Intervention',
-                  style: TextStyle(
-                    color: Color(0xFF9A3412),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Students Needing Intervention',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '2 students across 1 class require attention',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 5),
-          const Text(
-            '2 students across 1 class require attention',
-            style: TextStyle(
-              color: Color(0xFFC2410C),
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(13),
-              border: Border.all(
-                color: const Color(0xFFFFD5BC),
-              ),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Grade 6 - Sampaguita',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      SizedBox(height: 7),
-                      Text(
-                        '1 At Risk   •   1 Need Intervention',
-                        style: TextStyle(
-                          color: Color(0xFFC2410C),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                const Icon(
+                  Icons.class_outlined,
+                  color: Color(0xFF1554D1),
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Grade 6 - Sampaguita',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Color(0xFF475569),
-                  size: 27,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEECEC),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    '1 At Risk',
+                    style: TextStyle(
+                      color: Color(0xFFDC2626),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3CD),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    '1 Need Intervention',
+                    style: TextStyle(
+                      color: Color(0xFFD89B00),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: 13),
           SizedBox(
             width: double.infinity,
-            height: 45,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF04400),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            child: OutlinedButton(
+              onPressed: openReviewQueue,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF92400E),
+                side: const BorderSide(
+                  color: Color(0xFFF59E0B),
                 ),
-                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               child: const Text(
                 'View Details',
@@ -571,248 +657,222 @@ class _AdviserDashboardScreenState
 
   Widget buildRecentRecords() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Recent Records',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  selectNavigation(1);
-                },
-                child: const Text(
-                  'View All',
-                  style: TextStyle(
-                    color: Color(0xFF1554D1),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          buildRecordItem(
-            'Grade 6 - Sampaguita',
-            '3rd Quarter  •  2025-2026  •  0 students',
-            'Draft',
-            const Color(0xFFD18A00),
-            const Color(0xFFFFF6DD),
-          ),
-          const SizedBox(height: 8),
-          buildRecordItem(
-            'Grade 6 - Sampaguita',
-            '2nd Quarter  •  2025-2026  •  3 students',
-            'Submitted',
-            const Color(0xFF7C3AED),
-            const Color(0xFFF3E8FF),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildRecordItem(
-    String title,
-    String subtitle,
-    String status,
-    Color statusColor,
-    Color statusBackground,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(13),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Recent Records',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 7,
-            ),
-            decoration: BoxDecoration(
-              color: statusBackground,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
               ),
+              TextButton(
+                onPressed: openReviewQueue,
+                child: const Text(
+                  'View All',
+                  style: TextStyle(
+                    color: Color(0xFF1554D1),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: openReviewQueue,
+            child: buildRecentRecordItem(
+              icon: Icons.description_outlined,
+              iconBackground: const Color(0xFFEAF2FF),
+              iconColor: const Color(0xFF1554D1),
+              title: '3rd Quarter Draft',
+              subtitle: 'Grade 6 - Sampaguita',
+              status: 'Pending Review',
+              statusColor: const Color(0xFFD97706),
             ),
           ),
-          const Icon(
-            Icons.chevron_right,
-            color: Color(0xFF64748B),
+          const Divider(height: 22),
+          buildRecentRecordItem(
+            icon: Icons.check_circle_outline,
+            iconBackground: const Color(0xFFEAF8EF),
+            iconColor: const Color(0xFF16A34A),
+            title: '2nd Quarter Submitted',
+            subtitle: 'Grade 6 - Sampaguita',
+            status: 'Submitted',
+            statusColor: const Color(0xFF16A34A),
           ),
         ],
       ),
+    );
+  }
+
+  Widget buildRecentRecordItem({
+    required IconData icon,
+    required Color iconBackground,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String status,
+    required Color statusColor,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 45,
+          height: 45,
+          decoration: BoxDecoration(
+            color: iconBackground,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor,
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 9,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            status,
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        buildSectionTitle('Quick Actions'),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1.5,
+          children: [
+            buildQuickActionCard(
+              'Encode Grades',
+              Icons.edit_note_rounded,
+              const Color(0xFF1554D1),
+              const Color(0xFFEAF2FF),
+            ),
+            buildQuickActionCard(
+              'Upload Files',
+              Icons.upload_file_outlined,
+              const Color(0xFF7C3AED),
+              const Color(0xFFF3E8FF),
+            ),
+            buildQuickActionCard(
+              'Consolidated Records',
+              Icons.folder_copy_outlined,
+              const Color(0xFF0891B2),
+              const Color(0xFFE6F8FC),
+            ),
+            buildQuickActionCard(
+              'Performance Analytics',
+              Icons.analytics_outlined,
+              const Color(0xFF16A34A),
+              const Color(0xFFEAF8EF),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget buildQuickActionCard(
+    String title,
+    IconData icon,
+    Color color,
+    Color background,
+  ) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'Quick Actions',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 25,
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              buildQuickAction(
-                Icons.note_alt_outlined,
-                'Encode Grades',
-                'Input student grades by section',
-                const Color(0xFF1554D1),
-                const Color(0xFFEAF2FF),
-              ),
-              const SizedBox(width: 8),
-              buildQuickAction(
-                Icons.upload_outlined,
-                'Upload Files',
-                'Import multiple subject files',
-                const Color(0xFF7C3AED),
-                const Color(0xFFF3E8FF),
-              ),
-              const SizedBox(width: 8),
-              buildQuickAction(
-                Icons.table_chart_outlined,
-                'Consolidated Records',
-                'View merged student data',
-                const Color(0xFF16A34A),
-                const Color(0xFFEAF8EF),
-              ),
-              const SizedBox(width: 8),
-              buildQuickAction(
-                Icons.bar_chart_outlined,
-                'Performance Analytics',
-                'View student analytics',
-                const Color(0xFFC2410C),
-                const Color(0xFFFFF1E8),
-              ),
-            ],
+          const SizedBox(height: 9),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget buildQuickAction(
-    IconData icon,
-    String title,
-    String subtitle,
-    Color color,
-    Color background,
-  ) {
-    return Expanded(
-      child: Container(
-        height: 170,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: background.withOpacity(0.45),
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(
-            color: color.withOpacity(0.18),
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 25,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: color,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: color,
-                fontSize: 9,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -824,46 +884,24 @@ class _AdviserDashboardScreenState
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
-            blurRadius: 15,
-            offset: const Offset(0, -4),
+            blurRadius: 12,
+            offset: const Offset(0, -3),
           ),
         ],
       ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 5,
-            vertical: 8,
-          ),
+        top: false,
+        child: SizedBox(
+          height: 68,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              buildNavigationItem(
-                0,
-                Icons.home_rounded,
-                'Home',
+            children: List.generate(
+              navigationLabels.length,
+              (index) => buildNavigationItem(
+                index,
+                navigationLabels[index],
               ),
-              buildNavigationItem(
-                1,
-                Icons.description_outlined,
-                'Records',
-              ),
-              buildNavigationItem(
-                2,
-                Icons.people_outline_rounded,
-                'Students',
-              ),
-              buildNavigationItem(
-                3,
-                Icons.notifications_none_rounded,
-                'Notifications',
-              ),
-              buildNavigationItem(
-                4,
-                Icons.person_outline_rounded,
-                'Profile',
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -872,45 +910,56 @@ class _AdviserDashboardScreenState
 
   Widget buildNavigationItem(
     int index,
-    IconData icon,
     String label,
   ) {
-    final selected = selectedIndex == index;
+    final bool selected = selectedIndex == index;
+
+    final List<IconData> icons = [
+      Icons.home_rounded,
+      Icons.description_outlined,
+      Icons.people_outline_rounded,
+      Icons.notifications_none_rounded,
+      Icons.person_outline_rounded,
+    ];
 
     return GestureDetector(
       onTap: () => selectNavigation(index),
-      child: Container(
-        width: 67,
-        padding: const EdgeInsets.symmetric(
-          vertical: 7,
-          horizontal: 3,
-        ),
-        decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFFEAF2FF)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 64,
+        height: 60,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(
-                  icon,
-                  size: 27,
-                  color: selected
-                      ? const Color(0xFF1554D1)
-                      : const Color(0xFF64748B),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? const Color(0xFFEAF2FF)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icons[index],
+                    color: selected
+                        ? const Color(0xFF1554D1)
+                        : const Color(0xFF64748B),
+                    size: 24,
+                  ),
                 ),
                 if (index == 3)
                   Positioned(
-                    right: -7,
-                    top: -7,
+                    right: -2,
+                    top: -3,
                     child: Container(
-                      width: 19,
-                      height: 19,
+                      width: 16,
+                      height: 16,
                       alignment: Alignment.center,
                       decoration: const BoxDecoration(
                         color: Color(0xFFDC2626),
@@ -920,7 +969,7 @@ class _AdviserDashboardScreenState
                         '2',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: 8,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -968,55 +1017,62 @@ class _AdviserDashboardScreenState
         icon = Icons.home_rounded;
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1554D1),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          color: const Color(0xFF1554D1),
+          alignment: Alignment.centerLeft,
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Icon(
-                icon,
-                size: 48,
-                color: const Color(0xFF1554D1),
-              ),
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF2FF),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 48,
+                    color: const Color(0xFF1554D1),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Screen UI coming next',
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Screen UI coming next',
-              style: TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/adviser/adviser_dashboard_screen.dart';
+import 'screens/adviser/review_queue_screen.dart';
 
 class EduCheckApp extends StatelessWidget {
   const EduCheckApp({super.key});
@@ -18,8 +19,9 @@ class EduCheckApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/adviser-dashboard': (context) =>
             const AdviserDashboardScreen(),
+        '/adviser-review-queue': (context) =>
+            const ReviewQueueScreen(),
       },
     );
   }
 }
-
