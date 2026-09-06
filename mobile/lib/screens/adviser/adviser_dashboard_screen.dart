@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'review_queue_screen.dart';
+import 'performance_analytics_screen.dart';
 
 class AdviserDashboardScreen extends StatefulWidget {
   const AdviserDashboardScreen({super.key});
@@ -631,7 +632,15 @@ class _AdviserDashboardScreenState
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: openReviewQueue,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const PerformanceAnalyticsScreen(),
+                  ),
+                );
+              },
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF92400E),
                 side: const BorderSide(
