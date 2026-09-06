@@ -11,6 +11,8 @@ class AppTheme {
   static const Color warning = Color(0xFFD18A00);
   static const Color purple = Color(0xFF7C3AED);
 
+  static var backgroundColor;
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
