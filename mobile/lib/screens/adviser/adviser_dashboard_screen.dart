@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'review_queue_screen.dart';
 import 'performance_analytics_screen.dart';
+import 'upload_files_screen.dart';
 
 class AdviserDashboardScreen extends StatefulWidget {
   const AdviserDashboardScreen({super.key});
@@ -18,7 +19,7 @@ class _AdviserDashboardScreenState
   final List<String> navigationLabels = [
     'Home',
     'Records',
-    'Students',
+    'Upload Files',
     'Notifications',
     'Profile',
   ];
@@ -44,9 +45,11 @@ class _AdviserDashboardScreenState
             ? buildDashboard()
             : selectedIndex == 1
                 ? const ReviewQueueScreen()
-                : buildPlaceholderPage(
-                    navigationLabels[selectedIndex],
-                  ),
+                : selectedIndex == 2
+                    ? const UploadFilesScreen()
+                    : buildPlaceholderPage(
+                        navigationLabels[selectedIndex],
+                      ),
       ),
       bottomNavigationBar: buildBottomNavigationBar(),
     );
@@ -926,7 +929,7 @@ class _AdviserDashboardScreenState
     final List<IconData> icons = [
       Icons.home_rounded,
       Icons.description_outlined,
-      Icons.people_outline_rounded,
+      Icons.cloud_upload_rounded,
       Icons.notifications_none_rounded,
       Icons.person_outline_rounded,
     ];
