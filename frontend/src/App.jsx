@@ -15,6 +15,9 @@ import UserManagement from "./pages/UserManagement";
 import TeacherManagement from "./pages/TeacherManagement";
 import ClassRecordUpload from "./pages/ClassRecordUpload";
 import ValidationResults from "./pages/ValidationResults";
+import ConsolidatedRecords from "./pages/ConsolidatedRecords";
+import RecordsRepository from "./pages/RecordsRepository";
+import Notifications from "./pages/Notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 
@@ -90,6 +93,33 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["subject"]}>
                             <ValidationResults />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/consolidated-records"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin"]}>
+                            <ConsolidatedRecords />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/records-repository"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin"]}>
+                            <RecordsRepository />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/notifications"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "subject"]}>
+                            <Notifications />
                         </ProtectedRoute>
                     }
                 />

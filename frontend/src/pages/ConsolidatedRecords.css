@@ -1,0 +1,259 @@
+/* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
+   dashboard-header, dashboard-content, content-card, error-banner,
+   loading-state, school-year-select, etc.) for everything generic — this
+   file only covers what's specific to the consolidated-records list. */
+
+.cr-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.cr-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.cr-btn:disabled {
+    background: #94a3b8 !important;
+    cursor: not-allowed;
+}
+
+.cr-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.cr-btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.cr-btn-approve {
+    background: #16a34a;
+    color: #ffffff;
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.cr-btn-approve:hover:not(:disabled) {
+    background: #15803d;
+}
+
+.cr-btn-reject {
+    background: #dc2626;
+    color: #ffffff;
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.cr-btn-reject:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.cr-btn-cancel {
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    padding: 8px 14px;
+    font-size: 13px;
+}
+
+.cr-btn-cancel:hover {
+    background: #f8fafc;
+}
+
+.cr-list-count {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+}
+
+.cr-student-row {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+}
+
+.cr-student-row:last-child {
+    border-bottom: none;
+}
+
+.cr-student-row.highlighted {
+    background: #eff6ff;
+}
+
+.cr-row-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    flex-wrap: wrap;
+}
+
+.cr-row-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    flex: 1 1 260px;
+    font-family: inherit;
+}
+
+.cr-row-toggle .name {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.cr-row-toggle .meta {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.cr-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cr-subject-count {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.pill-badge.complete {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.pill-badge.incomplete {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.submission-badge {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.submission-badge.not-submitted {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.submission-badge.pending-approval {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.submission-badge.approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.submission-badge.rejected {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.cr-reject-panel {
+    padding: 0 20px 16px 50px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.cr-reject-textarea {
+    flex: 1 1 300px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.cr-reject-textarea:focus {
+    outline: none;
+    border-color: #2568ed;
+    box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
+}
+
+.cr-rejection-reason {
+    margin: 0 20px 16px 50px;
+    padding: 10px 12px;
+    background: #fef2f2;
+    color: #991b1b;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.cr-subjects-panel {
+    padding: 0 20px 20px 50px;
+    overflow-x: auto;
+}
+
+.cr-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cr-table th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 13px;
+    color: #475569;
+}
+
+.cr-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+}
+
+.cr-table td.final-grade {
+    font-weight: 700;
+}
+
+.cr-table .subject-icon {
+    vertical-align: middle;
+    margin-right: 6px;
+    color: #64748b;
+}
+
+@media (max-width: 700px) {
+    .cr-row-summary {
+        align-items: flex-start;
+    }
+}

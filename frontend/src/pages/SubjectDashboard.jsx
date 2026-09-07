@@ -1,23 +1,27 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
-    LayoutDashboard,
     Upload,
     CheckCircle,
-    Send,
     Bell,
-    Settings,
-    LogOut,
-    FileText,
     AlertTriangle,
     Clock,
 } from "lucide-react";
 
 import "./Dashboard.css";
+import Sidebar from "../components/Sidebar";
+
+const API_URL = "http://localhost:5000/api";
+
+// Statuses class_records can carry that mean the record can't move
+// forward yet — mirrors the FILTER clause getMyClassRecordSummary uses
+// server-side for its own "needs_attention" count, so the flagged list
+// built here always agrees with that number.
+const NEEDS_ATTENTION_STATUSES = ["needs attention", "rejected", "invalid"];
 
 function SubjectDashboard() {
-
-    const API_URL = "http://localhost:5000/api";
+    const navigate = useNavigate();
 
     const [records, setRecords] = useState([]);
     const [recordsLoading, setRecordsLoading] = useState(true);
@@ -29,13 +33,6 @@ function SubjectDashboard() {
         validated: 0,
         needs_attention: 0,
     });
-
-    const [summaryLoading, setSummaryLoading] =
-        useState(true);
-
-    const [summaryError, setSummaryError] =
-        useState("");
-
 
     const storedUser = localStorage.getItem("educheck_user");
 
@@ -51,54 +48,26 @@ function SubjectDashboard() {
             setRecordsLoading(true);
             setRecordsError("");
 
-            const token =
-                localStorage.getItem("educheck_token");
+            const token = localStorage.getItem("educheck_token");
 
             if (!token) {
-                throw new Error(
-                    "Authentication token not found."
-                );
+                throw new Error("Authentication token not found.");
             }
 
-            const response = await fetch(
-                `${API_URL}/uploads/my-records`,
-                {
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await fetch(`${API_URL}/uploads/my-records`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
 
-            const data =
-                await response.json();
+            const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(
-                    data.message ||
-                    "Failed to retrieve class records."
-                );
+                throw new Error(data.message || "Failed to retrieve class records.");
             }
 
-            setRecords(
-                data.records || []
-            );
-
-            console.log(
-                "My class records:",
-                data.records
-            );
-
-        } catch (error) {
-            console.error(
-                "Fetch class records error:",
-                error
-            );
-
-            setRecordsError(
-                error.message
-            );
-
+            setRecords(data.records || []);
+        } catch (fetchError) {
+            console.error("Fetch class records error:", fetchError);
+            setRecordsError(fetchError.message);
         } finally {
             setRecordsLoading(false);
         }
@@ -106,56 +75,25 @@ function SubjectDashboard() {
 
     const fetchMyRecordSummary = async () => {
         try {
-            setSummaryLoading(true);
-            setSummaryError("");
-
-            const token =
-                localStorage.getItem("educheck_token");
+            const token = localStorage.getItem("educheck_token");
 
             if (!token) {
-                throw new Error(
-                    "Authentication token not found."
-                );
+                throw new Error("Authentication token not found.");
             }
 
-            const response = await fetch(
-                `${API_URL}/uploads/my-records/summary`,
-                {
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`,
-                    },
-                }
-            );
+            const response = await fetch(`${API_URL}/uploads/my-records/summary`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
 
             const data = await response.json();
 
-            console.log(
-                "Dashboard summary:",
-                data
-            );
-
             if (!response.ok) {
-                throw new Error(
-                    data.message ||
-                    "Failed to retrieve record summary."
-                );
+                throw new Error(data.message || "Failed to retrieve record summary.");
             }
 
             setSummary(data);
-
-        } catch (error) {
-            console.error(
-                "Fetch record summary error:",
-                error
-            );
-
-            setSummaryError(
-                error.message
-            );
-
-        } finally {
-            setSummaryLoading(false);
+        } catch (fetchError) {
+            console.error("Fetch record summary error:", fetchError);
         }
     };
 
@@ -164,89 +102,20 @@ function SubjectDashboard() {
         fetchMyRecordSummary();
     }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem("educheck_token");
-        localStorage.removeItem("educheck_user");
+    // records comes back sorted by upload_date DESC (see getMyClassRecords),
+    // so [0] is genuinely the most recent upload — used both for the
+    // header's "most recent school year" and the Validation Results quick
+    // action's destination.
+    const latestRecord = records[0] || null;
 
-        window.location.href = "/";
-    };
+    const flaggedRecords = records.filter((record) =>
+        NEEDS_ATTENTION_STATUSES.includes(record.status?.toLowerCase())
+    );
 
     return (
         <div className="dashboard-layout">
 
-            {/* SIDEBAR */}
-            <aside className="sidebar">
-
-                <div className="sidebar-brand">
-                    <div className="brand-logo">
-                        🎓
-                    </div>
-
-                    <div>
-                        <h2>EduCheck</h2>
-                        <span>Academic Records</span>
-                    </div>
-                </div>
-
-                <div className="role-badge">
-                    <Upload size={16} />
-                    Subject Teacher
-                </div>
-
-                <nav className="sidebar-nav">
-
-                    <a className="nav-item active">
-                        <LayoutDashboard size={19} />
-                        Dashboard
-                    </a>
-
-                    <a
-                        className="nav-item"
-                        onClick={() =>
-                        (window.location.href =
-                            "/class-record-upload")
-                        }
-                    >
-                        <Upload size={19} />
-                        Upload e-Class Record
-                    </a>
-
-                    <a className="nav-item">
-                        <CheckCircle size={19} />
-                        Validation Results
-                    </a>
-
-                    <a className="nav-item">
-                        <Send size={19} />
-                        Submission Status
-                    </a>
-
-                    <a className="nav-item">
-                        <Bell size={19} />
-                        Notifications
-                        <span className="notification-badge">2</span>
-                    </a>
-
-                </nav>
-
-                <div className="sidebar-bottom">
-
-                    <a className="nav-item">
-                        <Settings size={19} />
-                        Settings
-                    </a>
-
-                    <button
-                        className="nav-item logout-button"
-                        onClick={handleLogout}
-                    >
-                        <LogOut size={19} />
-                        Logout
-                    </button>
-
-                </div>
-
-            </aside>
+            <Sidebar activeKey="dashboard" />
 
             {/* MAIN CONTENT */}
             <main className="dashboard-main">
@@ -256,7 +125,7 @@ function SubjectDashboard() {
 
                     <div>
                         <h1>
-                            Welcome, Subject Teacher
+                            Welcome, {user.username}
                         </h1>
 
                         <p>
@@ -265,8 +134,8 @@ function SubjectDashboard() {
                     </div>
 
                     <div className="school-year">
-                        School Year:
-                        <strong>2025-2026</strong>
+                        Most Recent School Year:{" "}
+                        <strong>{latestRecord ? latestRecord.school_year : "No records yet"}</strong>
                     </div>
 
                 </header>
@@ -340,106 +209,48 @@ function SubjectDashboard() {
 
                     </div>
 
-                    {/* RECORD SUMMARY */}
-                    <div className="content-card">
-
-                        <div className="card-header">
-                            <div>
-                                <h3>
-                                    Record Submission Summary
-                                </h3>
-                            </div>
-                        </div>
-
-                        <div className="student-summary-grid">
-
-                            <div className="summary-item blue-summary">
-                                <FileText size={20} />
-
-                                <div>
-                                    <span>
-                                        Uploaded
-                                    </span>
-
-                                    <strong>2</strong>
-                                </div>
-                            </div>
-
-                            <div className="summary-item green-summary">
-                                <CheckCircle size={20} />
-
-                                <div>
-                                    <span>
-                                        Valid
-                                    </span>
-
-                                    <strong>1</strong>
-                                </div>
-                            </div>
-
-                            <div className="summary-item yellow-summary">
-                                <Clock size={20} />
-
-                                <div>
-                                    <span>
-                                        Pending
-                                    </span>
-
-                                    <strong>1</strong>
-                                </div>
-                            </div>
-
-                            <div className="summary-item red-summary">
-                                <AlertTriangle size={20} />
-
-                                <div>
-                                    <span>
-                                        With Issues
-                                    </span>
-
-                                    <strong>0</strong>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-
                     {/* ATTENTION */}
-                    <div className="attention-card">
+                    {!recordsLoading && !recordsError && flaggedRecords.length > 0 && (
+                        <div className="attention-card">
 
-                        <div className="attention-content">
+                            <div className="attention-content">
 
-                            <AlertTriangle size={24} />
+                                <AlertTriangle size={24} />
 
-                            <div>
-                                <h3>
-                                    Validation Status
-                                </h3>
+                                <div>
+                                    <h3>
+                                        Validation Status
+                                    </h3>
 
-                                <p>
-                                    Review the validation results of
-                                    your uploaded academic records.
-                                </p>
+                                    <p>
+                                        {flaggedRecords.length} record{flaggedRecords.length === 1 ? "" : "s"}{" "}
+                                        need{flaggedRecords.length === 1 ? "s" : ""} your attention before they
+                                        can be submitted.
+                                    </p>
 
-                                <div className="class-alert">
-                                    <strong>
-                                        Grade 6 - Mathematics
-                                    </strong>
+                                    <div className="class-alert">
+                                        <strong>
+                                            Grade {flaggedRecords[0].grade_level} - {flaggedRecords[0].subject_name}
+                                        </strong>
 
-                                    <span>
-                                        Pending Validation
-                                    </span>
+                                        <span>
+                                            {flaggedRecords[0].status}
+                                        </span>
+                                    </div>
                                 </div>
+
                             </div>
 
+                            <button
+                                onClick={() =>
+                                    navigate(`/validation-results/${flaggedRecords[0].class_record_id}`)
+                                }
+                            >
+                                View Results
+                            </button>
+
                         </div>
-
-                        <button>
-                            View Results
-                        </button>
-
-                    </div>
+                    )}
 
                     {/* RECENT UPLOADS */}
 
@@ -450,10 +261,6 @@ function SubjectDashboard() {
                             <h3>
                                 Recent Uploads
                             </h3>
-
-                            <button className="text-button">
-                                View All
-                            </button>
 
                         </div>
 
@@ -552,8 +359,7 @@ function SubjectDashboard() {
                                             type="button"
                                             className="view-results-button"
                                             onClick={() =>
-                                            (window.location.href =
-                                                `/validation-results/${record.class_record_id}`)
+                                                navigate(`/validation-results/${record.class_record_id}`)
                                             }
                                         >
                                             View Results
@@ -575,10 +381,7 @@ function SubjectDashboard() {
 
                             <button
                                 className="quick-action blue-action"
-                                onClick={() =>
-                                (window.location.href =
-                                    "/class-record-upload")
-                                }
+                                onClick={() => navigate("/class-record-upload")}
                             >
                                 <Upload size={24} />
 
@@ -592,7 +395,14 @@ function SubjectDashboard() {
                                 </span>
                             </button>
 
-                            <button className="quick-action purple-action">
+                            <button
+                                type="button"
+                                className="quick-action purple-action"
+                                onClick={() =>
+                                    latestRecord && navigate(`/validation-results/${latestRecord.class_record_id}`)
+                                }
+                                disabled={!latestRecord}
+                            >
                                 <CheckCircle size={24} />
 
                                 <strong>
@@ -600,34 +410,26 @@ function SubjectDashboard() {
                                 </strong>
 
                                 <span>
-                                    Review automated validation
-                                    results
+                                    {latestRecord
+                                        ? "Review your most recent upload"
+                                        : "Upload a record first"}
                                 </span>
                             </button>
 
-                            <button className="quick-action green-action">
-                                <Send size={24} />
+                            <button
+                                type="button"
+                                className="quick-action green-action"
+                                onClick={() => navigate("/notifications")}
+                            >
+                                <Bell size={24} />
 
                                 <strong>
-                                    Submission Status
+                                    Notifications
                                 </strong>
 
                                 <span>
-                                    Monitor submitted academic
-                                    records
-                                </span>
-                            </button>
-
-                            <button className="quick-action orange-action">
-                                <FileText size={24} />
-
-                                <strong>
-                                    Recent Records
-                                </strong>
-
-                                <span>
-                                    View your recent academic
-                                    record uploads
+                                    See submission approval and
+                                    rejection updates
                                 </span>
                             </button>
 
@@ -643,4 +445,4 @@ function SubjectDashboard() {
     );
 }
 
-export default SubjectDashboard; 
+export default SubjectDashboard;

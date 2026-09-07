@@ -35,6 +35,7 @@
     align-items: center;
     justify-content: center;
     font-size: 26px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
 .sidebar-brand h2 {
@@ -79,12 +80,29 @@
     font-size: 15px;
     opacity: 0.92;
     cursor: pointer;
+    position: relative;
+    transition: background 0.15s ease, opacity 0.15s ease;
 }
 
 .nav-item:hover,
 .nav-item.active {
     background: rgba(0, 0, 0, 0.16);
     opacity: 1;
+}
+
+.nav-item.active {
+    font-weight: 600;
+}
+
+.nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: -12px;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: #ffffff;
 }
 
 .notification-badge {
@@ -152,6 +170,90 @@
     color: #172033;
 }
 
+.school-year-select {
+    margin-left: 5px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #172033;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.school-year-select:hover:not(:disabled) {
+    border-color: #94a3b8;
+}
+
+.school-year-select:focus {
+    outline: none;
+    border-color: #2468ed;
+    box-shadow: 0 0 0 3px rgba(36, 104, 237, 0.12);
+}
+
+/* STATES */
+
+.error-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: #fef2f2;
+    color: #b91c1c;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.success-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: #f0fdf4;
+    color: #166534;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.loading-state {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 24px;
+    color: #64748b;
+}
+
+.spin-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.card-subtext {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.empty-state-text {
+    padding: 0 28px 24px;
+    margin: 0;
+    color: #64748b;
+}
+
+.empty-state-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 20px;
+    color: #64748b;
+}
+
 /* CONTENT */
 
 .dashboard-content {
@@ -178,7 +280,7 @@
 
 .overview-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 22px;
     margin-bottom: 28px;
 }
@@ -186,11 +288,18 @@
 .overview-card {
     background: white;
     border: 1px solid #e1e7f0;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 25px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.overview-card:hover {
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    transform: translateY(-2px);
 }
 
 .overview-card span {
@@ -216,6 +325,10 @@
 
 .red-text {
     color: #ed1c24 !important;
+}
+
+.orange-text {
+    color: #d55400 !important;
 }
 
 .card-icon {
@@ -247,14 +360,20 @@
     background: #fff0f0;
 }
 
+.card-icon.orange {
+    color: #d55400;
+    background: #fff4e8;
+}
+
 /* CARDS */
 
 .content-card {
     background: white;
     border: 1px solid #e1e7f0;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-bottom: 28px;
     overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .card-header {
@@ -276,7 +395,7 @@
 .student-summary-grid {
     padding: 0 28px 28px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 18px;
 }
 
@@ -323,7 +442,7 @@
 .attention-card {
     border: 1px solid #ffd8b5;
     background: #fff9f2;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 25px 28px;
     margin-bottom: 28px;
     display: flex;
@@ -367,6 +486,13 @@
     padding: 12px 20px;
     border-radius: 7px;
     cursor: pointer;
+    font-weight: 600;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+
+.attention-card button:hover {
+    background: #d94409;
 }
 
 /* RECORDS */
@@ -374,10 +500,26 @@
 .record-row {
     padding: 20px 28px;
     border-top: 1px solid #edf0f5;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 150px 130px;
-    gap: 24px;
+    display: flex;
     align-items: center;
+    gap: 16px;
+    transition: background 0.15s ease;
+}
+
+.record-row:hover {
+    background: #fafbfd;
+}
+
+/* The row's first child (the name/details block) is the only one that
+   should grow — every trailing child (a bare status badge in some pages,
+   a status + an action button in others) just clusters flush against the
+   right edge after it, whatever the count. A fixed grid column-count here
+   previously assumed every page renders the same number of trailing
+   children, which left a phantom empty column — and a misaligned badge —
+   on pages that render fewer. */
+.record-row > *:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .record-details {
@@ -398,8 +540,9 @@
     white-space: nowrap;
 }
 
-.record-status {
-    justify-self: start;
+.record-status,
+.record-actions {
+    flex-shrink: 0;
 }
 
 .status-badge {
@@ -426,10 +569,6 @@
     background: #fee2e2;
 }
 
-.record-actions {
-    justify-self: end;
-}
-
 .view-results-button {
     border: none;
     border-radius: 6px;
@@ -446,13 +585,13 @@
 
 @media (max-width: 700px) {
     .record-row {
-        grid-template-columns: 1fr;
+        flex-wrap: wrap;
         gap: 12px;
-        align-items: start;
+        align-items: flex-start;
     }
 
-    .record-actions {
-        justify-self: start;
+    .record-row > *:first-child {
+        flex-basis: 100%;
     }
 }
 
@@ -461,6 +600,15 @@
     background: none;
     color: #1769ed;
     cursor: pointer;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    transition: color 0.15s ease;
+}
+
+.text-button:hover {
+    color: #0f4bb8;
+    text-decoration: underline;
 }
 
 /* QUICK ACTIONS */
@@ -468,20 +616,38 @@
 .quick-actions {
     padding: 0 28px 28px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 18px;
 }
 
 .quick-action {
     min-height: 150px;
     border: 1px solid;
-    border-radius: 9px;
+    border-radius: 10px;
     padding: 22px;
     text-align: left;
     display: flex;
     flex-direction: column;
     gap: 9px;
     cursor: pointer;
+    font-family: inherit;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.quick-action:hover {
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+    transform: translateY(-2px);
+}
+
+.quick-action:active {
+    transform: translateY(0);
+}
+
+.quick-action:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
 }
 
 .quick-action strong {
