@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'review_queue_screen.dart';
 import 'performance_analytics_screen.dart';
 import 'upload_files_screen.dart';
+import 'encode_grades_screen.dart';
+import 'validation_results_screen.dart';
 
 class AdviserDashboardScreen extends StatefulWidget {
   const AdviserDashboardScreen({super.key});
@@ -19,9 +21,9 @@ class _AdviserDashboardScreenState
   final List<String> navigationLabels = [
     'Home',
     'Records',
+    'Encode Grades',
     'Upload Files',
-    'Notifications',
-    'Profile',
+    'Validation Results',
   ];
 
   void selectNavigation(int index) {
@@ -36,6 +38,217 @@ class _AdviserDashboardScreenState
     });
   }
 
+  void openNotifications() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          constraints: const BoxConstraints(
+            maxHeight: 600,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Notifications',
+                        style: TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF101828),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Color(0xFF667085),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(
+                height: 1,
+                color: Color(0xFFE4E7EC),
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: Column(
+                    children: [
+                      buildNotificationItem(
+                        icon: Icons.check_circle_outline,
+                        iconColor: const Color(0xFF16A34A),
+                        iconBackground: const Color(0xFFEAF8EF),
+                        title: 'Validation Complete',
+                        message:
+                            'Grade 6 - Sampaguita (2nd Quarter) has been validated successfully.',
+                        date: '4/9/2026',
+                        unread: true,
+                      ),
+                      const SizedBox(height: 10),
+                      buildNotificationItem(
+                        icon: Icons.access_time_rounded,
+                        iconColor: const Color(0xFFD97706),
+                        iconBackground: const Color(0xFFFFF7E6),
+                        title: 'Submission Deadline Reminder',
+                        message:
+                            '3rd Quarter records are due on April 15, 2026.',
+                        date: '4/10/2026',
+                        unread: true,
+                      ),
+                      const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'You are viewing all available notifications.',
+                                ),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF1554D1),
+                            side: const BorderSide(
+                              color: Color(0xFF1554D1),
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'View All Notifications',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget buildNotificationItem({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBackground,
+    required String title,
+    required String message,
+    required String date,
+    required bool unread,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: unread
+            ? const Color(0xFFF8FAFC)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFE4E7EC),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: iconBackground,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF101828),
+                        ),
+                      ),
+                    ),
+                    if (unread)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(
+                          top: 5,
+                          left: 6,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF1554D1),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.4,
+                    color: Color(0xFF667085),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  date,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF98A2B3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,11 +259,11 @@ class _AdviserDashboardScreenState
             : selectedIndex == 1
                 ? const ReviewQueueScreen()
                 : selectedIndex == 2
-                    ? const UploadFilesScreen()
-                    : buildPlaceholderPage(
-                        navigationLabels[selectedIndex],
-                      ),
-      ),
+                    ? const EncodeGradesScreen()
+                    : selectedIndex == 3
+                      ? const UploadFilesScreen()
+                      : const ValidationResultsScreen(),
+                        ),
       bottomNavigationBar: buildBottomNavigationBar(),
     );
   }
@@ -80,8 +293,6 @@ class _AdviserDashboardScreenState
                 buildInterventionCard(),
                 const SizedBox(height: 18),
                 buildRecentRecords(),
-                const SizedBox(height: 18),
-                buildQuickActions(),
               ],
             ),
           ),
@@ -92,13 +303,13 @@ class _AdviserDashboardScreenState
 
   Widget buildHeader() {
     return Container(
-      height: 145,
+      height: 100,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       decoration: const BoxDecoration(
         color: Color(0xFF1554D1),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
       ),
       child: Row(
@@ -137,36 +348,43 @@ class _AdviserDashboardScreenState
               ],
             ),
           ),
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              const Icon(
-                Icons.notifications_none_rounded,
-                color: Colors.white,
-                size: 32,
-              ),
-              Positioned(
-                right: -4,
-                top: -8,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFDC2626),
-                    shape: BoxShape.circle,
+          GestureDetector(
+            onTap: openNotifications,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                    size: 32,
                   ),
-                  child: const Text(
-                    '2',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                  Positioned(
+                    right: -4,
+                    top: -8,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFDC2626),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Text(
+                        '2',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -214,9 +432,29 @@ class _AdviserDashboardScreenState
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Color(0xFF16A34A),
+                      size: 16,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Adviser',
+                      style: TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 5),
                 Text(
-                  'Adviser (Homeroom Teacher)',
+                  'Homeroom Teacher',
                   style: TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 14,
@@ -228,35 +466,6 @@ class _AdviserDashboardScreenState
                   style: TextStyle(
                     color: Color(0xFF64748B),
                     fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 9,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF8EF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.verified_user_outlined,
-                  color: Color(0xFF16A34A),
-                  size: 18,
-                ),
-                SizedBox(width: 5),
-                Text(
-                  'Adviser',
-                  style: TextStyle(
-                    color: Color(0xFF16A34A),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -801,94 +1010,6 @@ class _AdviserDashboardScreenState
     );
   }
 
-  Widget buildQuickActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        buildSectionTitle('Quick Actions'),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1.5,
-          children: [
-            buildQuickActionCard(
-              'Encode Grades',
-              Icons.edit_note_rounded,
-              const Color(0xFF1554D1),
-              const Color(0xFFEAF2FF),
-            ),
-            buildQuickActionCard(
-              'Upload Files',
-              Icons.upload_file_outlined,
-              const Color(0xFF7C3AED),
-              const Color(0xFFF3E8FF),
-            ),
-            buildQuickActionCard(
-              'Consolidated Records',
-              Icons.folder_copy_outlined,
-              const Color(0xFF0891B2),
-              const Color(0xFFE6F8FC),
-            ),
-            buildQuickActionCard(
-              'Performance Analytics',
-              Icons.analytics_outlined,
-              const Color(0xFF16A34A),
-              const Color(0xFFEAF8EF),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget buildQuickActionCard(
-    String title,
-    IconData icon,
-    Color color,
-    Color background,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 25,
-            ),
-          ),
-          const SizedBox(height: 9),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(
@@ -929,9 +1050,9 @@ class _AdviserDashboardScreenState
     final List<IconData> icons = [
       Icons.home_rounded,
       Icons.description_outlined,
+      Icons.edit_note_rounded,
       Icons.cloud_upload_rounded,
-      Icons.notifications_none_rounded,
-      Icons.person_outline_rounded,
+      Icons.verified_rounded,
     ];
 
     return GestureDetector(
@@ -943,55 +1064,29 @@ class _AdviserDashboardScreenState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? const Color(0xFFEAF2FF)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icons[index],
-                    color: selected
-                        ? const Color(0xFF1554D1)
-                        : const Color(0xFF64748B),
-                    size: 24,
-                  ),
-                ),
-                if (index == 3)
-                  Positioned(
-                    right: -2,
-                    top: -3,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFDC2626),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        '2',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
+                color: selected
+                    ? const Color(0xFFEAF2FF)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icons[index],
+                color: selected
+                    ? const Color(0xFF1554D1)
+                    : const Color(0xFF64748B),
+                size: 24,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: selected
                     ? const Color(0xFF1554D1)
@@ -1016,14 +1111,11 @@ class _AdviserDashboardScreenState
       case 'Records':
         icon = Icons.description_outlined;
         break;
-      case 'Students':
-        icon = Icons.people_outline_rounded;
+      case 'Encode Grades':
+        icon = Icons.edit_note_rounded;
         break;
-      case 'Notifications':
-        icon = Icons.notifications_none_rounded;
-        break;
-      case 'Profile':
-        icon = Icons.person_outline_rounded;
+      case 'Validation Results':
+        icon = Icons.verified_rounded;
         break;
       default:
         icon = Icons.home_rounded;

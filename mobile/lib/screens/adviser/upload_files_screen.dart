@@ -221,7 +221,8 @@ class _UploadFilesScreenState extends State<UploadFilesScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: subjects.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
@@ -248,61 +249,17 @@ class _UploadFilesScreenState extends State<UploadFilesScreen> {
   Widget buildPageHeader() {
     return Container(
       height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       color: const Color(0xFF1554D1),
-      child: const Row(
-        children: [
-          Icon(
-            Icons.cloud_upload_outlined,
-            color: Colors.white,
-            size: 24,
-          ),
-          SizedBox(width: 10),
-          Text(
-            'Upload Files',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildWelcomeSection() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      color: Colors.white,
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Welcome, Maria Santos',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF101828),
-            ),
-          ),
-          SizedBox(height: 6),
-          Text(
-            'Adviser (Homeroom Teacher) • Class: Grade 6 - Sampaguita',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF667085),
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            'School Year: 2025-2026',
-            style: TextStyle(
-              fontSize: 13,
-              color: Color(0xFF667085),
-            ),
-          ),
-        ],
+      alignment: Alignment.centerLeft,
+      child: const Text(
+        'Upload Files',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -575,7 +532,9 @@ class _UploadFilesScreenState extends State<UploadFilesScreen> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton.icon(
-              onPressed: selectedFiles.values.any((file) => file != null)
+              onPressed: selectedFiles.values.any(
+                (file) => file != null,
+              )
                   ? () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -586,7 +545,9 @@ class _UploadFilesScreenState extends State<UploadFilesScreen> {
                       );
                     }
                   : null,
-              icon: const Icon(Icons.cloud_upload_outlined),
+              icon: const Icon(
+                Icons.cloud_upload_outlined,
+              ),
               label: const Text(
                 'Upload and Consolidate Files',
                 style: TextStyle(
@@ -596,8 +557,10 @@ class _UploadFilesScreenState extends State<UploadFilesScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1554D1),
                 foregroundColor: Colors.white,
-                disabledBackgroundColor: const Color(0xFFE4E7EC),
-                disabledForegroundColor: const Color(0xFF98A2B3),
+                disabledBackgroundColor:
+                    const Color(0xFFE4E7EC),
+                disabledForegroundColor:
+                    const Color(0xFF98A2B3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -618,7 +581,6 @@ class _UploadFilesScreenState extends State<UploadFilesScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                buildWelcomeSection(),
                 buildUploadCard(),
               ],
             ),

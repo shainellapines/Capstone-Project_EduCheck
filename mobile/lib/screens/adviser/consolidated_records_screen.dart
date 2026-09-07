@@ -10,7 +10,7 @@ class ConsolidatedRecordsScreen extends StatefulWidget {
 
 class _ConsolidatedRecordsScreenState
     extends State<ConsolidatedRecordsScreen> {
-  static const Color primaryBlue = Color(0xFF1E5AA8);
+  static const Color primaryBlue = Color(0xFF1554D1);
   static const Color backgroundColor = Color(0xFFF5F7FB);
   static const Color textColor = Color(0xFF1F2937);
   static const Color secondaryTextColor = Color(0xFF64748B);
@@ -125,10 +125,13 @@ class _ConsolidatedRecordsScreenState
         backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
         elevation: 0,
+        toolbarHeight: 56,
+        titleSpacing: 16,
         title: const Text(
           'Consolidated Student Records',
           style: TextStyle(
-            fontSize: 19,
+            color: Colors.white,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -219,7 +222,7 @@ class _ConsolidatedRecordsScreenState
           ),
         ),
         const SizedBox(height: 7),
-        DropdownButtonFormField<String?>(
+        DropdownButtonFormField<String>(
           value: selectedRecord,
           isExpanded: true,
           decoration: InputDecoration(
@@ -256,19 +259,9 @@ class _ConsolidatedRecordsScreenState
               color: secondaryTextColor,
             ),
           ),
-          items: [
-            const DropdownMenuItem<String?>(
-              value: null,
-              child: Text(
-                'Choose a record...',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: secondaryTextColor,
-                ),
-              ),
-            ),
-            ...records.map(
-              (record) => DropdownMenuItem<String?>(
+          items: records.map(
+            (record) {
+              return DropdownMenuItem<String>(
                 value: record,
                 child: Text(
                   record,
@@ -278,9 +271,9 @@ class _ConsolidatedRecordsScreenState
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ),
-          ],
+              );
+            },
+          ).toList(),
           onChanged: (value) {
             setState(() {
               selectedRecord = value;
@@ -725,27 +718,21 @@ class _ConsolidatedRecordsScreenState
   }
 
   Widget _buildStudentTable(List<StudentRecord> students) {
-    const double numberWidth = 45;
-    const double studentWidth = 170;
-    const double subjectWidth = 75;
-    const double averageWidth = 80;
-    const double statusWidth = 160;
-
     return Table(
       defaultVerticalAlignment: TableCellVerticalAlignment.middle,
       columnWidths: const {
-        0: FixedColumnWidth(numberWidth),
-        1: FixedColumnWidth(studentWidth),
-        2: FixedColumnWidth(subjectWidth),
-        3: FixedColumnWidth(subjectWidth),
-        4: FixedColumnWidth(subjectWidth),
-        5: FixedColumnWidth(subjectWidth),
-        6: FixedColumnWidth(subjectWidth),
-        7: FixedColumnWidth(subjectWidth),
-        8: FixedColumnWidth(subjectWidth),
-        9: FixedColumnWidth(subjectWidth),
-        10: FixedColumnWidth(averageWidth),
-        11: FixedColumnWidth(statusWidth),
+        0: FixedColumnWidth(45),
+        1: FixedColumnWidth(170),
+        2: FixedColumnWidth(75),
+        3: FixedColumnWidth(75),
+        4: FixedColumnWidth(75),
+        5: FixedColumnWidth(75),
+        6: FixedColumnWidth(75),
+        7: FixedColumnWidth(75),
+        8: FixedColumnWidth(75),
+        9: FixedColumnWidth(75),
+        10: FixedColumnWidth(80),
+        11: FixedColumnWidth(160),
       },
       border: const TableBorder(
         horizontalInside: BorderSide(
@@ -867,13 +854,11 @@ class _ConsolidatedRecordsScreenState
         backgroundColorValue = const Color(0xFFDCFCE7);
         icon = Icons.check_circle_outline;
         break;
-
       case 'At Risk':
         textColorValue = const Color(0xFFD97706);
         backgroundColorValue = const Color(0xFFFEF3C7);
         icon = Icons.warning_amber_rounded;
         break;
-
       default:
         textColorValue = const Color(0xFFDC2626);
         backgroundColorValue = const Color(0xFFFEE2E2);
@@ -912,10 +897,10 @@ class _ConsolidatedRecordsScreenState
   }
 
   Widget _buildNoStudentsFound() {
-    return Padding(
-      padding: const EdgeInsets.all(35),
+    return const Padding(
+      padding: EdgeInsets.all(35),
       child: Column(
-        children: const [
+        children: [
           Icon(
             Icons.people_outline,
             size: 40,
