@@ -63,6 +63,12 @@ coverage/
 **/local.properties
 
 # ------------------------------------------
+# Runtime upload artifacts (test/live uploads, not source)
+# ------------------------------------------
+backend/src/uploads/*
+!backend/src/uploads/.gitkeep
+
+# ------------------------------------------
 # IDE
 # ------------------------------------------
 .vscode/
