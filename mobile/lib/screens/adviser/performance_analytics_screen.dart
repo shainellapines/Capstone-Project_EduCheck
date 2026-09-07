@@ -113,33 +113,62 @@ class _PerformanceAnalyticsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1554D1),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Performance Analytics',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildPageHeader(),
-              const SizedBox(height: 18),
-              buildRecordSelector(),
-              const SizedBox(height: 16),
-              if (selectedRecord == null)
-                buildEmptyState()
-              else
-                classView ? buildClassView() : buildStudentView(),
-            ],
-          ),
+        child: Column(
+          children: [
+            Container(
+              height: 56,
+              width: double.infinity,
+              color: const Color(0xFF1554D1),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Performance Analytics',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    buildPageHeader(),
+                    const SizedBox(height: 18),
+                    buildRecordSelector(),
+                    const SizedBox(height: 16),
+                    if (selectedRecord == null)
+                      buildEmptyState()
+                    else
+                      classView ? buildClassView() : buildStudentView(),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -191,7 +220,6 @@ class _PerformanceAnalyticsScreenState
             ),
           ),
           const SizedBox(height: 8),
-
           DropdownButtonFormField<String>(
             value: selectedRecord,
             decoration: InputDecoration(
@@ -217,9 +245,6 @@ class _PerformanceAnalyticsScreenState
                 vertical: 12,
               ),
             ),
-
-            // "Choose a record..." is now an actual dropdown option.
-            // Selecting it resets the page back to the default state.
             items: [
               const DropdownMenuItem<String>(
                 value: null,
@@ -231,7 +256,6 @@ class _PerformanceAnalyticsScreenState
                   ),
                 ),
               ),
-
               ...records.map((record) {
                 return DropdownMenuItem<String>(
                   value: record,
@@ -245,22 +269,17 @@ class _PerformanceAnalyticsScreenState
                 );
               }),
             ],
-
             onChanged: (value) {
               setState(() {
                 selectedRecord = value;
 
-                // When returning to "Choose a record...",
-                // reset to Class View as the default view.
                 if (value == null) {
                   classView = true;
                 }
               });
             },
           ),
-
           const SizedBox(height: 16),
-
           const Text(
             'View Mode',
             style: TextStyle(
@@ -269,9 +288,7 @@ class _PerformanceAnalyticsScreenState
               color: Color(0xFF374151),
             ),
           ),
-
           const SizedBox(height: 8),
-
           Row(
             children: [
               Expanded(
@@ -599,8 +616,7 @@ class _PerformanceAnalyticsScreenState
                     value: average / 100,
                     minHeight: 7,
                     backgroundColor: const Color(0xFFE5E7EB),
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(
+                    valueColor: AlwaysStoppedAnimation<Color>(
                       average >= 80
                           ? const Color(0xFFD89B00)
                           : const Color(0xFFDC2626),
