@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { parseClassRecord } = require("./classRecordParser");
 const { validateClassRecord } = require("./classRecordValidator");
+const { persistLearnerGradeRecords } = require("./gradeRecordPersistence");
 const pool = require("../db");
 
 const removeUploadedFile = (filePath) => {
@@ -349,6 +350,19 @@ const getMyClassRecordValidation = async (req, res) => {
             [classRecordId]
         );
 
+        // Distinct learners actually persisted for this class record — real
+        // coverage data (from grade_records, not re-derived from the issue
+        // list) so the frontend can show "N learners reviewed" without
+        // guessing at a total the validator itself doesn't report.
+        const learnerCountResult = await pool.query(
+            `
+            SELECT COUNT(DISTINCT lrn) AS learner_count
+            FROM grade_records
+            WHERE class_record_id = $1
+            `,
+            [classRecordId]
+        );
+
         return res.json({
             class_record: {
                 class_record_id: record.class_record_id,
@@ -364,6 +378,7 @@ const getMyClassRecordValidation = async (req, res) => {
                 ready_for_submission: record.ready_for_submission,
                 error_count: record.validation_error_count,
                 warning_count: record.validation_warning_count,
+                learner_count: Number(learnerCountResult.rows[0].learner_count),
                 issues: issuesResult.rows,
             },
         });
@@ -502,6 +517,7 @@ const uploadClassRecord = async (req, res) => {
             : "Needs Attention";
 
         let classRecord;
+        let gradeRecordSummary;
         const dbClient = await pool.connect();
 
         try {
@@ -585,6 +601,13 @@ const uploadClassRecord = async (req, res) => {
                 );
             }
 
+            gradeRecordSummary = await persistLearnerGradeRecords(dbClient, {
+                classRecordId: classRecord.class_record_id,
+                parsedRecord,
+                subject,
+                schoolYear,
+            });
+
             await dbClient.query("COMMIT");
         } catch (error) {
             await dbClient.query("ROLLBACK");
@@ -626,6 +649,12 @@ const uploadClassRecord = async (req, res) => {
                 sheet_count: parsedRecord.workbook.sheet_count,
                 sheet_names: parsedRecord.workbook.sheet_names,
                 learner_count: parsedRecord.validation.learner_count,
+                has_lrn_sheet: parsedRecord.workbook.has_lrn_sheet,
+            },
+
+            grade_records: {
+                persisted_count: gradeRecordSummary.persisted_count,
+                skipped_no_lrn_count: gradeRecordSummary.skipped_no_lrn_count,
             },
 
             validation: {

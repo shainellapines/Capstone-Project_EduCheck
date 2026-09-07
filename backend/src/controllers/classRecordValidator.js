@@ -164,6 +164,48 @@ const validateSummary = (learner, terms, summaryRecord) => {
     return issues;
 };
 
+// learner_number restarts at 1 for each gender section in the E-Class
+// Record template (Male 1..N, then Female 1..M — see LEARNER_SECTIONS in
+// classRecordParser.js), so a duplicate is only meaningful WITHIN one
+// gender group: a Male #1 and a Female #1 existing together is normal,
+// not a collision. A genuine duplicate (two rows in the same section
+// accidentally given the same list number) is a real data-entry mistake
+// in the source workbook — worth flagging even though it doesn't
+// currently break anything downstream (term/summary matching keys off
+// number + name together, so it wouldn't silently corrupt those lookups),
+// because it signals the uploader mis-typed a list number and should fix
+// it before this class list is trusted for anything position-based.
+const validateLearnerNumberUniqueness = (learners) => {
+    const issues = [];
+    const namesByGenderAndNumber = new Map();
+
+    learners.forEach((learner) => {
+        const groupKey = `${learner.gender}|${learner.learner_number}`;
+
+        if (!namesByGenderAndNumber.has(groupKey)) {
+            namesByGenderAndNumber.set(groupKey, []);
+        }
+
+        namesByGenderAndNumber.get(groupKey).push(learner.learner_name);
+    });
+
+    namesByGenderAndNumber.forEach((names, groupKey) => {
+        if (names.length <= 1) return;
+
+        const [gender, learnerNumber] = groupKey.split("|");
+
+        issues.push(
+            createIssue({
+                code: "DUPLICATE_LEARNER_NUMBER",
+                severity: "error",
+                message: `List number ${learnerNumber} (${gender}) is assigned to more than one learner in the INPUT sheet: ${names.join(", ")}. Each learner must have a unique list number within their section.`,
+            })
+        );
+    });
+
+    return issues;
+};
+
 const validateClassRecord = (parsedRecord) => {
 
     const learners = Array.isArray(parsedRecord.learners)
@@ -210,6 +252,9 @@ const validateClassRecord = (parsedRecord) => {
             })
         );
     }
+
+    workbookIssues.push(...validateLearnerNumberUniqueness(learners));
+
     const termMaps = {
         term1: new Map(parsedRecord.terms.term1.map((record) => [getRecordKey(record), record])),
         term2: new Map(parsedRecord.terms.term2.map((record) => [getRecordKey(record), record])),
@@ -248,8 +293,9 @@ const validateClassRecord = (parsedRecord) => {
     const parserIssues = (parsedRecord.validation.warnings || []).map((warning) =>
         createIssue({
             code: warning.type || "PARSER_WARNING",
-            learner: { learner_number: null, learner_name: warning.learner || "Unknown" },
-            message: `Parser warning from ${warning.source || "workbook"}.`,
+            severity: warning.severity || "warning",
+            learner: { learner_number: warning.learner_number ?? null, learner_name: warning.learner || "Unknown" },
+            message: warning.message || `Parser warning from ${warning.source || "workbook"}.`,
         })
     );
 
