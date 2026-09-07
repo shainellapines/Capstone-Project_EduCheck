@@ -29,3 +29,5 @@ mentioned. Going forward, every schema change should land here first.
 | # | File | Applied to live DB |
 |---|------|---------------------|
 | 001 | [001_add_class_record_validation.sql](001_add_class_record_validation.sql) | Yes — applied by hand before this history existed; captured here for the record. Also folded into `educheck_schema.sql`. |
+| 002 | [002_grade_records_terms.sql](002_grade_records_terms.sql) | Yes — `grade_records` was empty at the time, so applied directly. Also folded into `educheck_schema.sql`. |
+| 003 | [003_record_submissions.sql](003_record_submissions.sql) | Yes — new table, no conflict. Also folded into `educheck_schema.sql`. |
