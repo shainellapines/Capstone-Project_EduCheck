@@ -2,15 +2,60 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     AlertTriangle,
-    ArrowLeft,
     CheckCircle,
+    XCircle,
+    Copy,
+    GitCompareArrows,
+    Users,
     FileText,
     Loader2,
+    Upload,
 } from "lucide-react";
 
-function ValidationResults() {
-    const API_URL = "http://localhost:5000/api";
+import "./Dashboard.css";
+import "./ValidationResults.css";
+import Sidebar from "../components/Sidebar";
 
+const API_URL = "http://localhost:5000/api";
+
+// Groups the validator's real issue codes (classRecordValidator.js) into
+// the categories shown on this page. Every code the validator can
+// currently produce is accounted for below — anything not listed here
+// falls back to "missing" rather than being silently dropped from every
+// category count.
+const CATEGORY_BY_CODE = {
+    MISSING_TERM_RECORD: "missing",
+    INCOMPLETE_TERM: "missing",
+    MISSING_TERM_GRADE: "missing",
+    MISSING_SUMMARY_RECORD: "missing",
+    NO_LEARNERS_DETECTED: "missing",
+    NO_TERM_RECORDS_DETECTED: "missing",
+    NO_SUMMARY_RECORDS_DETECTED: "missing",
+    INVALID_SCORE_RANGE: "invalid",
+    DUPLICATE_LEARNER_NUMBER: "duplicate",
+    SUMMARY_TERM_MISMATCH: "mismatch",
+    FINAL_GRADE_MISMATCH: "mismatch",
+};
+
+const CATEGORY_META = {
+    missing: { label: "Missing Data", tone: "amber", icon: AlertTriangle },
+    invalid: { label: "Invalid Scores", tone: "red", icon: XCircle },
+    duplicate: { label: "Duplicate Entries", tone: "orange", icon: Copy },
+    mismatch: { label: "Term/Summary Mismatch", tone: "purple", icon: GitCompareArrows },
+};
+
+function categorize(issues) {
+    const counts = { missing: 0, invalid: 0, duplicate: 0, mismatch: 0 };
+
+    issues.forEach((issue) => {
+        const category = CATEGORY_BY_CODE[issue.code] || "missing";
+        counts[category] += 1;
+    });
+
+    return counts;
+}
+
+function ValidationResults() {
     const { classRecordId } = useParams();
     const navigate = useNavigate();
 
@@ -49,8 +94,8 @@ function ValidationResults() {
                 }
 
                 setData(responseData);
-            } catch (error) {
-                setError(error.message);
+            } catch (fetchError) {
+                setError(fetchError.message);
             } finally {
                 setLoading(false);
             }
@@ -60,99 +105,44 @@ function ValidationResults() {
     }, [classRecordId]);
 
     const isReady = data?.validation?.ready_for_submission;
+    const categoryCounts = data ? categorize(data.validation.issues) : null;
 
     return (
-        <div
-            style={{
-                minHeight: "100vh",
-                background: "#f8fafc",
-                padding: "40px 20px",
-                fontFamily: "Arial, sans-serif",
-            }}
-        >
-            <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-                <button
-                    onClick={() => navigate("/dashboard")}
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        border: "none",
-                        background: "transparent",
-                        color: "#2563eb",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        marginBottom: "24px",
-                    }}
-                >
-                    <ArrowLeft size={18} />
-                    Back to Dashboard
-                </button>
+        <div className="dashboard-layout">
 
-                {loading && (
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            padding: "30px",
-                            background: "#ffffff",
-                            borderRadius: "12px",
-                        }}
-                    >
-                        <Loader2 size={22} />
-                        Loading validation results...
+            <Sidebar activeKey="validation-results" />
+
+            <main className="dashboard-main">
+
+                <header className="dashboard-header">
+                    <div>
+                        <h1>Validation Results</h1>
+                        <p>Review your e-Class Record before submission.</p>
                     </div>
-                )}
+                </header>
 
-                {!loading && error && (
-                    <div
-                        style={{
-                            padding: "18px",
-                            background: "#fef2f2",
-                            color: "#b91c1c",
-                            borderRadius: "10px",
-                        }}
-                    >
-                        {error}
-                    </div>
-                )}
+                <section className="dashboard-content">
 
-                {!loading && !error && data && (
-                    <>
-                        <header style={{ marginBottom: "24px" }}>
-                            <h1 style={{ marginBottom: "8px", color: "#0f172a" }}>
-                                Validation Results
-                            </h1>
+                    {error && (
+                        <div className="error-banner">
+                            <AlertTriangle size={20} />
+                            <span>{error}</span>
+                        </div>
+                    )}
 
-                            <p style={{ margin: 0, color: "#64748b" }}>
-                                Review your E-Class Record before submission.
-                            </p>
-                        </header>
+                    {loading && (
+                        <div className="loading-state">
+                            <Loader2 size={20} className="spin-icon" />
+                            Loading validation results...
+                        </div>
+                    )}
 
-                        <section
-                            style={{
-                                background: "#ffffff",
-                                borderRadius: "12px",
-                                padding: "24px",
-                                marginBottom: "20px",
-                                border: "1px solid #e2e8f0",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    gap: "20px",
-                                    flexWrap: "wrap",
-                                }}
-                            >
+                    {!loading && !error && data && (
+                        <>
+                            <div className="content-card vr-summary-card">
                                 <div>
-                                    <h2 style={{ marginTop: 0, color: "#0f172a" }}>
-                                        <FileText
-                                            size={20}
-                                            style={{ verticalAlign: "middle", marginRight: "8px" }}
-                                        />
+                                    <h2>
+                                        <FileText size={20} />
                                         {data.class_record.subject_name}
                                     </h2>
 
@@ -161,123 +151,108 @@ function ValidationResults() {
                                     <p>File: {data.class_record.file_name}</p>
                                 </div>
 
-                                <div
-                                    style={{
-                                        alignSelf: "flex-start",
-                                        padding: "12px 16px",
-                                        borderRadius: "8px",
-                                        fontWeight: "700",
-                                        background: isReady ? "#dcfce7" : "#fee2e2",
-                                        color: isReady ? "#166534" : "#b91c1c",
-                                    }}
-                                >
-                                    {isReady
-                                        ? "Ready for Submission"
-                                        : "Needs Attention"}
+                                <div className={isReady ? "vr-readiness-pill ready" : "vr-readiness-pill not-ready"}>
+                                    {isReady ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
+                                    {isReady ? "Ready for Submission" : "Needs Attention"}
                                 </div>
                             </div>
-                        </section>
 
-                        <section
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                                gap: "16px",
-                                marginBottom: "20px",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    background: "#ffffff",
-                                    borderRadius: "12px",
-                                    padding: "20px",
-                                    border: "1px solid #e2e8f0",
-                                }}
-                            >
-                                <span style={{ color: "#64748b" }}>Errors</span>
-                                <h2 style={{ color: "#dc2626", marginBottom: 0 }}>
-                                    {data.validation.error_count}
-                                </h2>
-                            </div>
+                            <div className="vr-category-grid">
 
-                            <div
-                                style={{
-                                    background: "#ffffff",
-                                    borderRadius: "12px",
-                                    padding: "20px",
-                                    border: "1px solid #e2e8f0",
-                                }}
-                            >
-                                <span style={{ color: "#64748b" }}>Warnings</span>
-                                <h2 style={{ color: "#d97706", marginBottom: 0 }}>
-                                    {data.validation.warning_count}
-                                </h2>
-                            </div>
-                        </section>
-
-                        <section
-                            style={{
-                                background: "#ffffff",
-                                borderRadius: "12px",
-                                padding: "24px",
-                                border: "1px solid #e2e8f0",
-                            }}
-                        >
-                            <h2 style={{ marginTop: 0, color: "#0f172a" }}>
-                                Validation Issues
-                            </h2>
-
-                            {data.validation.issues.length === 0 ? (
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "10px",
-                                        padding: "18px",
-                                        background: "#f0fdf4",
-                                        color: "#166534",
-                                        borderRadius: "8px",
-                                    }}
-                                >
-                                    <CheckCircle size={22} />
-                                    No validation issues found. This record is ready.
-                                </div>
-                            ) : (
-                                data.validation.issues.map((issue) => (
-                                    <div
-                                        key={issue.validation_issue_id}
-                                        style={{
-                                            display: "flex",
-                                            gap: "12px",
-                                            padding: "16px",
-                                            marginBottom: "12px",
-                                            background: "#fef2f2",
-                                            borderLeft: "4px solid #dc2626",
-                                            borderRadius: "8px",
-                                        }}
-                                    >
-                                        <AlertTriangle
-                                            size={22}
-                                            color="#dc2626"
-                                        />
-
-                                        <div>
-                                            <strong style={{ color: "#991b1b" }}>
-                                                {issue.learner_name || "Workbook"}
-                                                {issue.term ? ` — ${issue.term}` : ""}
-                                            </strong>
-
-                                            <p style={{ margin: "6px 0 0", color: "#7f1d1d" }}>
-                                                {issue.message}
-                                            </p>
-                                        </div>
+                                <div className="vr-category-card tone-green">
+                                    <div className="label">
+                                        <Users size={16} />
+                                        Learners Reviewed
                                     </div>
-                                ))
+                                    <p className="count">{data.validation.learner_count}</p>
+                                </div>
+
+                                {Object.entries(CATEGORY_META).map(([key, meta]) => {
+                                    const Icon = meta.icon;
+
+                                    return (
+                                        <div key={key} className={`vr-category-card tone-${meta.tone}`}>
+                                            <div className="label">
+                                                <Icon size={16} />
+                                                {meta.label}
+                                            </div>
+                                            <p className="count">{categoryCounts[key]}</p>
+                                        </div>
+                                    );
+                                })}
+
+                            </div>
+
+                            {!isReady && (
+                                <div className="vr-revise-bar">
+                                    <span>
+                                        Fix the issues below and re-upload this class record
+                                        to update your submission.
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        className="vr-revise-button"
+                                        onClick={() => navigate("/class-record-upload")}
+                                    >
+                                        <Upload size={16} />
+                                        Revise Record
+                                    </button>
+                                </div>
                             )}
-                        </section>
-                    </>
-                )}
-            </div>
+
+                            <div className="content-card">
+                                <div className="card-header">
+                                    <h3>Validation Issues</h3>
+                                </div>
+
+                                {data.validation.issues.length === 0 ? (
+                                    <div className="success-banner vr-clean-banner">
+                                        <CheckCircle size={20} />
+                                        No validation issues found. This record is ready.
+                                    </div>
+                                ) : (
+                                    data.validation.issues.map((issue) => {
+                                        const category = CATEGORY_BY_CODE[issue.code] || "missing";
+                                        const categoryLabel = CATEGORY_META[category].label;
+
+                                        return (
+                                            <div
+                                                key={issue.validation_issue_id}
+                                                className={
+                                                    issue.severity === "warning"
+                                                        ? "vr-issue-row severity-warning"
+                                                        : "vr-issue-row"
+                                                }
+                                            >
+                                                {issue.severity === "warning" ? (
+                                                    <AlertTriangle size={20} color="#d97706" />
+                                                ) : (
+                                                    <AlertTriangle size={20} color="#dc2626" />
+                                                )}
+
+                                                <div>
+                                                    <div className="issue-header">
+                                                        {issue.learner_name || "Workbook"}
+                                                        {issue.term ? ` — ${issue.term}` : ""}
+                                                    </div>
+
+                                                    <p>{issue.message}</p>
+
+                                                    <span className="category-tag">{categoryLabel}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                </section>
+
+            </main>
+
         </div>
     );
 }

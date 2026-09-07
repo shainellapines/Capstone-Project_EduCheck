@@ -1,123 +1,160 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    LayoutDashboard,
     Users,
     UserCog,
     ClipboardCheck,
-    Database,
     BarChart3,
-    Bell,
-    Settings,
-    LogOut,
     AlertTriangle,
     CheckCircle,
+    XCircle,
     Clock,
+    Loader2,
 } from "lucide-react";
 
 import "./Dashboard.css";
+import Sidebar from "../components/Sidebar";
+
+const API_URL = "http://localhost:5000/api";
 
 function AdminDashboard() {
+    const navigate = useNavigate();
     const storedUser = localStorage.getItem("educheck_user");
 
     const user = storedUser
         ? JSON.parse(storedUser)
-        : {
-              username: "admin.educheck",
-              role: "admin",
-          };
+        : { username: "admin", role: "admin" };
 
-    const handleLogout = () => {
-        localStorage.removeItem("educheck_token");
-        localStorage.removeItem("educheck_user");
+    const [totalUsers, setTotalUsers] = useState(null);
 
-        window.location.href = "/";
+    const [schoolYears, setSchoolYears] = useState([]);
+    const [selectedSchoolYearId, setSelectedSchoolYearId] = useState("");
+    const [loadingSchoolYears, setLoadingSchoolYears] = useState(true);
+
+    const [consolidatedData, setConsolidatedData] = useState(null);
+    const [loadingData, setLoadingData] = useState(false);
+    const [error, setError] = useState("");
+
+    const authHeaders = () => {
+        const token = localStorage.getItem("educheck_token");
+
+        if (!token) {
+            throw new Error("Authentication token not found. Please log in again.");
+        }
+
+        return { Authorization: `Bearer ${token}` };
     };
+
+    useEffect(() => {
+        const fetchUserCount = async () => {
+            try {
+                const response = await fetch(`${API_URL}/users`, {
+                    headers: authHeaders(),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && Array.isArray(data)) {
+                    setTotalUsers(data.length);
+                }
+            } catch {
+                // Non-critical for this dashboard; leave totalUsers as null.
+            }
+        };
+
+        fetchUserCount();
+    }, []);
+
+    useEffect(() => {
+        const fetchSchoolYears = async () => {
+            try {
+                setLoadingSchoolYears(true);
+                setError("");
+
+                const response = await fetch(`${API_URL}/consolidation/school-years`, {
+                    headers: authHeaders(),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Failed to load school years.");
+                }
+
+                setSchoolYears(data.school_years || []);
+
+                if (data.school_years?.length > 0) {
+                    setSelectedSchoolYearId(String(data.school_years[0].school_year_id));
+                }
+            } catch (fetchError) {
+                setError(fetchError.message || "Failed to load school years.");
+            } finally {
+                setLoadingSchoolYears(false);
+            }
+        };
+
+        fetchSchoolYears();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedSchoolYearId) return;
+
+        const fetchConsolidatedData = async () => {
+            try {
+                setLoadingData(true);
+                setError("");
+
+                const response = await fetch(
+                    `${API_URL}/consolidation/school-years/${selectedSchoolYearId}`,
+                    { headers: authHeaders() }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Failed to load dashboard data.");
+                }
+
+                setConsolidatedData(data);
+            } catch (fetchError) {
+                setError(fetchError.message || "Failed to load dashboard data.");
+                setConsolidatedData(null);
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        fetchConsolidatedData();
+    }, [selectedSchoolYearId]);
+
+    const students = consolidatedData?.students || [];
+    const uploadSummary = consolidatedData?.upload_summary;
+
+    const pendingCount = students.filter((s) => s.submission.status === "Pending Approval").length;
+    const approvedCount = students.filter((s) => s.submission.status === "Approved").length;
+    const rejectedCount = students.filter((s) => s.submission.status === "Rejected").length;
+
+    const recentSubmissions = students
+        .filter((s) => s.submission.status !== "Not Submitted")
+        .sort((a, b) => {
+            const aTime = new Date(a.submission.approved_at || a.submission.reviewed_at).getTime();
+            const bTime = new Date(b.submission.approved_at || b.submission.reviewed_at).getTime();
+            return bTime - aTime;
+        })
+        .slice(0, 5);
+
+    const getStatusBadgeClass = (status) => {
+        if (status === "Approved") return "status-badge submitted";
+        if (status === "Rejected") return "status-badge needs-attention";
+        return "status-badge draft";
+    };
+
+    const isLoading = loadingSchoolYears || loadingData;
 
     return (
         <div className="dashboard-layout">
 
-            {/* SIDEBAR */}
-            <aside className="sidebar">
-
-                <div className="sidebar-brand">
-                    <div className="brand-logo">
-                        🎓
-                    </div>
-
-                    <div>
-                        <h2>EduCheck</h2>
-                        <span>Academic Records</span>
-                    </div>
-                </div>
-
-                <div className="role-badge">
-                    <Users size={16} />
-                    School Administrator
-                </div>
-
-                <nav className="sidebar-nav">
-
-                    <a className="nav-item active">
-                        <LayoutDashboard size={19} />
-                        Dashboard
-                    </a>
-
-                    <a
-                        className="nav-item"
-                        href="/users"
-                    >
-                        <Users size={19} />
-                        User Management
-                    </a>
-
-                    <a
-                        className="nav-item"
-                        href="/teachers"
-                    >
-                        <UserCog size={19} />
-                        Teacher Management
-                    </a>
-
-                    <a className="nav-item">
-                        <ClipboardCheck size={19} />
-                        Submission Review
-                    </a>
-
-                    <a className="nav-item">
-                        <Database size={19} />
-                        Digital Repository
-                    </a>
-
-                    <a className="nav-item">
-                        <BarChart3 size={19} />
-                        Academic Analytics
-                    </a>
-
-                    <a className="nav-item">
-                        <Bell size={19} />
-                        Notifications
-                        <span className="notification-badge">2</span>
-                    </a>
-
-                </nav>
-
-                <div className="sidebar-bottom">
-
-                    <a className="nav-item">
-                        <Settings size={19} />
-                        Settings
-                    </a>
-
-                    <button
-                        className="nav-item logout-button"
-                        onClick={handleLogout}
-                    >
-                        <LogOut size={19} />
-                        Logout
-                    </button>
-
-                </div>
-
-            </aside>
+            <Sidebar activeKey="dashboard" />
 
             {/* MAIN CONTENT */}
             <main className="dashboard-main">
@@ -127,7 +164,7 @@ function AdminDashboard() {
 
                     <div>
                         <h1>
-                            Welcome, School Administrator
+                            Welcome, {user.username}
                         </h1>
 
                         <p>
@@ -136,8 +173,26 @@ function AdminDashboard() {
                     </div>
 
                     <div className="school-year">
-                        School Year:
-                        <strong>2025-2026</strong>
+                        School Year:{" "}
+                        {schoolYears.length > 0 ? (
+                            <select
+                                className="school-year-select"
+                                value={selectedSchoolYearId}
+                                onChange={(e) => setSelectedSchoolYearId(e.target.value)}
+                                disabled={loadingSchoolYears}
+                            >
+                                {schoolYears.map((schoolYear) => (
+                                    <option
+                                        key={schoolYear.school_year_id}
+                                        value={schoolYear.school_year_id}
+                                    >
+                                        {schoolYear.school_year}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <strong>None set up yet</strong>
+                        )}
                     </div>
 
                 </header>
@@ -153,210 +208,157 @@ function AdminDashboard() {
                         </p>
                     </div>
 
-                    {/* OVERVIEW CARDS */}
-                    <div className="overview-grid">
-
-                        <div className="overview-card">
-                            <div>
-                                <span>Total Users</span>
-                                <strong>2</strong>
-                            </div>
-
-                            <div className="card-icon blue">
-                                <Users size={23} />
-                            </div>
+                    {error && (
+                        <div className="error-banner">
+                            <AlertTriangle size={20} />
+                            <span>{error}</span>
                         </div>
+                    )}
 
-                        <div className="overview-card">
-                            <div>
-                                <span>Pending Submissions</span>
-                                <strong>1</strong>
-                            </div>
-
-                            <div className="card-icon green">
-                                <Clock size={23} />
-                            </div>
+                    {isLoading && (
+                        <div className="loading-state">
+                            <Loader2 size={20} className="spin-icon" />
+                            Loading dashboard data...
                         </div>
+                    )}
 
-                        <div className="overview-card">
-                            <div>
-                                <span>Approved Records</span>
-                                <strong className="purple-text">
-                                    1
-                                </strong>
-                            </div>
+                    {!isLoading && consolidatedData && (
+                        <>
+                            {/* OVERVIEW CARDS */}
+                            <div className="overview-grid">
 
-                            <div className="card-icon purple">
-                                <CheckCircle size={23} />
-                            </div>
-                        </div>
+                                <div className="overview-card">
+                                    <div>
+                                        <span>Total Users</span>
+                                        <strong>{totalUsers ?? "—"}</strong>
+                                    </div>
 
-                        <div className="overview-card">
-                            <div>
-                                <span>Needs Attention</span>
-                                <strong className="red-text">
-                                    0
-                                </strong>
-                            </div>
-
-                            <div className="card-icon red">
-                                <AlertTriangle size={23} />
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {/* SUBMISSION SUMMARY */}
-                    <div className="content-card">
-
-                        <div className="card-header">
-                            <div>
-                                <h3>
-                                    Submission Overview
-                                </h3>
-                            </div>
-                        </div>
-
-                        <div className="student-summary-grid">
-
-                            <div className="summary-item blue-summary">
-                                <Clock size={20} />
-
-                                <div>
-                                    <span>
-                                        Pending Review
-                                    </span>
-
-                                    <strong>1</strong>
+                                    <div className="card-icon blue">
+                                        <Users size={23} />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="summary-item green-summary">
-                                <CheckCircle size={20} />
+                                <div className="overview-card">
+                                    <div>
+                                        <span>Pending Submissions</span>
+                                        <strong>{pendingCount}</strong>
+                                    </div>
 
-                                <div>
-                                    <span>
-                                        Approved
-                                    </span>
-
-                                    <strong>1</strong>
+                                    <div className="card-icon green">
+                                        <Clock size={23} />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="summary-item yellow-summary">
-                                <ClipboardCheck size={20} />
+                                <div className="overview-card">
+                                    <div>
+                                        <span>Approved Records</span>
+                                        <strong className="purple-text">{approvedCount}</strong>
+                                    </div>
 
-                                <div>
-                                    <span>
-                                        For Revision
-                                    </span>
-
-                                    <strong>0</strong>
+                                    <div className="card-icon purple">
+                                        <CheckCircle size={23} />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="summary-item red-summary">
-                                <AlertTriangle size={20} />
+                                <div className="overview-card">
+                                    <div>
+                                        <span>Rejected Records</span>
+                                        <strong className="orange-text">{rejectedCount}</strong>
+                                    </div>
 
-                                <div>
-                                    <span>
-                                        Validation Issues
-                                    </span>
-
-                                    <strong>0</strong>
+                                    <div className="card-icon orange">
+                                        <XCircle size={23} />
+                                    </div>
                                 </div>
-                            </div>
 
-                        </div>
+                                <div className="overview-card">
+                                    <div>
+                                        <span>Uploads Needing Attention</span>
+                                        <strong className="red-text">
+                                            {uploadSummary?.needs_attention ?? 0}
+                                        </strong>
+                                    </div>
 
-                    </div>
-
-                    {/* ATTENTION */}
-                    <div className="attention-card">
-
-                        <div className="attention-content">
-
-                            <AlertTriangle size={24} />
-
-                            <div>
-                                <h3>
-                                    Records Requiring Attention
-                                </h3>
-
-                                <p>
-                                    Review pending submissions and
-                                    validation issues.
-                                </p>
-
-                                <div className="class-alert">
-                                    <strong>
-                                        Grade 6 - Sampaguita
-                                    </strong>
-
-                                    <span>
-                                        1 Pending Review
-                                    </span>
+                                    <div className="card-icon red">
+                                        <AlertTriangle size={23} />
+                                    </div>
                                 </div>
+
                             </div>
 
-                        </div>
+                            {/* ATTENTION */}
+                            {pendingCount > 0 && (
+                                <div className="attention-card">
 
-                        <button>
-                            Review Submissions
-                        </button>
+                                    <div className="attention-content">
 
-                    </div>
+                                        <AlertTriangle size={24} />
 
-                    {/* RECENT SUBMISSIONS */}
-                    <div className="content-card">
+                                        <div>
+                                            <h3>
+                                                Records Awaiting Approval
+                                            </h3>
 
-                        <div className="card-header">
-                            <h3>
-                                Recent Submissions
-                            </h3>
+                                            <p>
+                                                {pendingCount} submission{pendingCount === 1 ? "" : "s"} pending
+                                                your review
+                                            </p>
+                                        </div>
 
-                            <button className="text-button">
-                                View All
-                            </button>
-                        </div>
+                                    </div>
 
-                        <div className="record-row">
+                                    <button onClick={() => navigate("/consolidated-records")}>
+                                        Review Submissions
+                                    </button>
 
-                            <div>
-                                <strong>
-                                    Grade 6 - Sampaguita
-                                </strong>
+                                </div>
+                            )}
 
-                                <span>
-                                    2nd Quarter • 2025-2026
-                                </span>
+                            {/* RECENT SUBMISSIONS */}
+                            <div className="content-card">
+
+                                <div className="card-header">
+                                    <h3>
+                                        Recent Submissions
+                                    </h3>
+
+                                    <button
+                                        className="text-button"
+                                        onClick={() => navigate("/consolidated-records")}
+                                    >
+                                        View All
+                                    </button>
+                                </div>
+
+                                {recentSubmissions.length === 0 && (
+                                    <p className="empty-state-text">
+                                        No student records have been submitted for this school year yet.
+                                    </p>
+                                )}
+
+                                {recentSubmissions.map((student) => (
+                                    <div className="record-row" key={student.lrn}>
+
+                                        <div>
+                                            <strong>
+                                                {student.last_name}, {student.first_name}
+                                            </strong>
+
+                                            <span>
+                                                LRN: {student.lrn} • Grade {student.grade_level}
+                                            </span>
+                                        </div>
+
+                                        <span className={getStatusBadgeClass(student.submission.status)}>
+                                            {student.submission.status}
+                                        </span>
+
+                                    </div>
+                                ))}
+
                             </div>
-
-                            <span className="status-badge submitted">
-                                Approved
-                            </span>
-
-                        </div>
-
-                        <div className="record-row">
-
-                            <div>
-                                <strong>
-                                    Grade 6 - Sampaguita
-                                </strong>
-
-                                <span>
-                                    3rd Quarter • 2025-2026
-                                </span>
-                            </div>
-
-                            <span className="status-badge draft">
-                                Pending Review
-                            </span>
-
-                        </div>
-
-                    </div>
+                        </>
+                    )}
 
                     {/* QUICK ACTIONS */}
                     <div className="content-card">
@@ -369,9 +371,7 @@ function AdminDashboard() {
 
                             <button
                                 className="quick-action blue-action"
-                                onClick={() =>
-                                    (window.location.href = "/users")
-                                }
+                                onClick={() => navigate("/users")}
                             >
                                 <Users size={24} />
 
@@ -384,7 +384,10 @@ function AdminDashboard() {
                                 </span>
                             </button>
 
-                            <button className="quick-action purple-action">
+                            <button
+                                className="quick-action purple-action"
+                                onClick={() => navigate("/teachers")}
+                            >
                                 <UserCog size={24} />
 
                                 <strong>
@@ -396,7 +399,10 @@ function AdminDashboard() {
                                 </span>
                             </button>
 
-                            <button className="quick-action green-action">
+                            <button
+                                className="quick-action green-action"
+                                onClick={() => navigate("/consolidated-records")}
+                            >
                                 <ClipboardCheck size={24} />
 
                                 <strong>
@@ -408,7 +414,10 @@ function AdminDashboard() {
                                 </span>
                             </button>
 
-                            <button className="quick-action orange-action">
+                            <button
+                                className="quick-action orange-action"
+                                style={{ cursor: "default" }}
+                            >
                                 <BarChart3 size={24} />
 
                                 <strong>

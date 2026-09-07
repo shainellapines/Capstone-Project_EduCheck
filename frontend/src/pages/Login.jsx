@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GraduationCap, User, BookOpen, ShieldCheck } from "lucide-react";
 
 function Login() {
     const [role, setRole] = useState("adviser");
@@ -67,7 +68,7 @@ function Login() {
             <div className="login-card">
 
                 <div className="brand-icon">
-                    🎓
+                    <GraduationCap size={36} color="#ffffff" strokeWidth={2} />
                 </div>
 
                 <h1>EduCheck</h1>
@@ -91,7 +92,7 @@ function Login() {
                             className={role === "adviser" ? "role active" : "role"}
                             onClick={() => setRole("adviser")}
                         >
-                            👤
+                            <User size={20} />
                             <span>Adviser</span>
                         </button>
 
@@ -100,7 +101,7 @@ function Login() {
                             className={role === "subject" ? "role active" : "role"}
                             onClick={() => setRole("subject")}
                         >
-                            📖
+                            <BookOpen size={20} />
                             <span>Subject</span>
                         </button>
 
@@ -109,7 +110,7 @@ function Login() {
                             className={role === "admin" ? "role active" : "role"}
                             onClick={() => setRole("admin")}
                         >
-                            🛡️
+                            <ShieldCheck size={20} />
                             <span>Admin</span>
                         </button>
 

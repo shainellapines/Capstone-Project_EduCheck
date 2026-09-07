@@ -1,10 +1,24 @@
+:root {
+    --ec-radius-sm: 8px;
+    --ec-radius-md: 12px;
+    --ec-radius-lg: 18px;
+    --ec-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --ec-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --ec-shadow-lg: 0 20px 50px rgba(15, 23, 42, 0.16);
+    --ec-blue: #2768ed;
+    --ec-blue-dark: #1f58cc;
+    --ec-text: #172033;
+    --ec-text-muted: #65748b;
+    --ec-border: #d7deea;
+}
+
 * {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: "Segoe UI", Arial, Helvetica, sans-serif;
     background: #f5f7fb;
 }
 
@@ -26,9 +40,9 @@ body {
     width: 100%;
     max-width: 520px;
     background: white;
-    border-radius: 18px;
+    border-radius: var(--ec-radius-lg);
     padding: 42px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--ec-shadow-lg);
 }
 
 .brand-icon {
@@ -36,11 +50,11 @@ body {
     height: 76px;
     margin: 0 auto 18px;
     border-radius: 50%;
-    background: #2768ed;
+    background: linear-gradient(135deg, #2f6ff2, var(--ec-blue));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 34px;
+    box-shadow: 0 8px 18px rgba(39, 104, 237, 0.35);
 }
 
 .login-card h1 {
@@ -88,10 +102,10 @@ body {
 
 .role {
     min-height: 75px;
-    border: 1px solid #d7deea;
-    border-radius: 9px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius-sm);
     background: white;
-    color: #172033;
+    color: var(--ec-text);
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -99,10 +113,16 @@ body {
     justify-content: center;
     gap: 6px;
     font-size: 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 .role:hover {
-    border-color: #2768ed;
+    border-color: var(--ec-blue);
+    box-shadow: var(--ec-shadow-sm);
+}
+
+.role:active {
+    transform: translateY(1px);
 }
 
 .role.active {
@@ -114,14 +134,15 @@ body {
 .login-card input {
     width: 100%;
     padding: 15px;
-    border: 1px solid #d7deea;
-    border-radius: 8px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius-sm);
     font-size: 16px;
     outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .login-card input:focus {
-    border-color: #2768ed;
+    border-color: var(--ec-blue);
     box-shadow: 0 0 0 3px rgba(39, 104, 237, 0.1);
 }
 
@@ -129,15 +150,18 @@ body {
     margin-top: 28px;
     padding: 15px;
     border: none;
-    border-radius: 8px;
-    background: #2768ed;
+    border-radius: var(--ec-radius-sm);
+    background: var(--ec-blue);
     color: white;
     font-size: 17px;
+    font-weight: 600;
     cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .login-button:hover {
-    background: #1f58cc;
+    background: var(--ec-blue-dark);
+    box-shadow: 0 8px 20px rgba(39, 104, 237, 0.28);
 }
 
 .login-button:disabled {
