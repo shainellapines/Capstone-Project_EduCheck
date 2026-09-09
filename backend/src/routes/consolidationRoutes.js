@@ -4,6 +4,7 @@ const {
     getSchoolYears,
     getConsolidatedRecordsForSchoolYear,
     getConsolidatedRecordForStudent,
+    getSectionProgressForSchoolYear,
     requestRevision,
 } = require("../controllers/consolidationController");
 
@@ -51,6 +52,17 @@ router.get(
 router.get(
     "/school-years/:schoolYearId/students/:lrn",
     getConsolidatedRecordForStudent
+);
+
+// ==========================================
+// GET SECTION PROGRESS FOR A SCHOOL YEAR
+// ==========================================
+// Section-level consolidation view (SPMP v1.0) — per-section learning-area
+// submission progress, not one student's grades.
+
+router.get(
+    "/school-years/:schoolYearId/sections",
+    getSectionProgressForSchoolYear
 );
 
 // ==========================================

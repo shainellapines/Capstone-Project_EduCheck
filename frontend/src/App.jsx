@@ -17,6 +17,7 @@ import SectionAssignments from "./pages/SectionAssignments";
 import ClassRecordUpload from "./pages/ClassRecordUpload";
 import ValidationResults from "./pages/ValidationResults";
 import ConsolidatedRecords from "./pages/ConsolidatedRecords";
+import SectionProgress from "./pages/SectionProgress";
 import RecordsRepository from "./pages/RecordsRepository";
 import Notifications from "./pages/Notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -115,6 +116,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["adviser", "admin"]}>
                             <ConsolidatedRecords />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/section-progress"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin"]}>
+                            <SectionProgress />
                         </ProtectedRoute>
                     }
                 />

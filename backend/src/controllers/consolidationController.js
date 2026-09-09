@@ -40,6 +40,7 @@ const buildRankedGradesQuery = (extraWhere) => `
         s.first_name,
         s.last_name,
         s.grade_level,
+        s.section_id,
         subj.subject_id,
         subj.subject_name,
         rg.term_1,
@@ -75,6 +76,7 @@ const groupRowsByStudent = (rows) => {
                 first_name: row.first_name,
                 last_name: row.last_name,
                 grade_level: row.grade_level,
+                section_id: row.section_id,
                 subjects: [],
             });
         }
@@ -260,7 +262,12 @@ const getUploadSummary = async (schoolYearId) => {
 // GET CONSOLIDATED RECORDS FOR A SCHOOL YEAR
 // ==========================================
 // One entry per student who has at least one recorded subject grade in
-// this school year, each with its per-subject breakdown.
+// this school year, each with its per-subject breakdown. Optional
+// ?section_id= filters to one section — used by the Section Progress
+// view's "View Students" drill-down. Filtered in JS rather than added to
+// buildRankedGradesQuery's WHERE clause, since that query is shared with
+// submissionController and fetchConsolidatedStudent, neither of which
+// needs section scoping.
 
 const getConsolidatedRecordsForSchoolYear = async (req, res) => {
     try {
@@ -283,7 +290,14 @@ const getConsolidatedRecordsForSchoolYear = async (req, res) => {
             });
         }
 
-        const students = await fetchConsolidatedStudents(schoolYearId);
+        let students = await fetchConsolidatedStudents(schoolYearId);
+
+        const sectionIdFilter = req.query.section_id ? Number(req.query.section_id) : null;
+
+        if (sectionIdFilter) {
+            students = students.filter((student) => student.section_id === sectionIdFilter);
+        }
+
         const uploadSummary = await getUploadSummary(schoolYearId);
 
         return res.json({
@@ -297,6 +311,174 @@ const getConsolidatedRecordsForSchoolYear = async (req, res) => {
 
         return res.status(500).json({
             message: "Failed to retrieve consolidated records.",
+        });
+    }
+};
+
+// ==========================================
+// GET SECTION PROGRESS FOR A SCHOOL YEAR
+// ==========================================
+// SPMP v1.0: the section-level consolidation view. Per section, how many
+// of that grade level's expected learning areas have a submitted
+// (Validated) upload for this section/school year yet, plus how many
+// students in it sit at each submission-workflow stage. Complements, not
+// replaces, the per-student view above — this is "which subjects/sections
+// still need attention" at a glance, before drilling into individual
+// students.
+//
+// student_count and submission_status_counts are read straight off
+// students.section_id, which is not itself scoped to school_year_id
+// (students only carries one section_id/grade_level, last-write-wins —
+// the same pre-existing modeling limitation gradeRecordPersistence
+// already has). Fine for a single-active-school-year deployment; would
+// need real per-year enrollment to hold up across multiple years at once.
+
+const getSectionProgressForSchoolYear = async (req, res) => {
+    try {
+        const schoolYearId = Number(req.params.schoolYearId);
+
+        if (!Number.isInteger(schoolYearId) || schoolYearId <= 0) {
+            return res.status(400).json({
+                message: "A valid school year ID is required.",
+            });
+        }
+
+        const schoolYearResult = await pool.query(
+            "SELECT school_year_id, school_year FROM school_years WHERE school_year_id = $1",
+            [schoolYearId]
+        );
+
+        if (schoolYearResult.rows.length === 0) {
+            return res.status(404).json({
+                message: "School year not found.",
+            });
+        }
+
+        const sectionsResult = await pool.query(
+            "SELECT section_id, section_name, grade_level, staffing_mode FROM sections ORDER BY grade_level, section_name"
+        );
+
+        if (sectionsResult.rows.length === 0) {
+            return res.json({ school_year: schoolYearResult.rows[0], sections: [] });
+        }
+
+        const expectedCounts = await pool.query(
+            "SELECT grade_level, COUNT(*) AS subject_count FROM subjects GROUP BY grade_level"
+        );
+
+        const expectedByGradeLevel = new Map(
+            expectedCounts.rows.map((row) => [row.grade_level, Number(row.subject_count)])
+        );
+
+        // Latest class_record per (section, subject) for this school year —
+        // same "latest upload wins" ranking buildRankedGradesQuery uses, just
+        // keyed by section+subject instead of student+subject, since one
+        // upload covers a whole section at once.
+        const latestSubjectStatusResult = await pool.query(
+            `
+            WITH ranked AS (
+                SELECT
+                    cr.section_id,
+                    cr.subject_id,
+                    cr.status,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY cr.section_id, cr.subject_id
+                        ORDER BY cr.upload_date DESC, cr.class_record_id DESC
+                    ) AS rn
+                FROM class_records cr
+                WHERE cr.school_year_id = $1 AND cr.section_id IS NOT NULL
+            )
+            SELECT section_id, subject_id, status
+            FROM ranked
+            WHERE rn = 1
+            `,
+            [schoolYearId]
+        );
+
+        const subjectRowsBySection = new Map();
+
+        latestSubjectStatusResult.rows.forEach((row) => {
+            if (!subjectRowsBySection.has(row.section_id)) {
+                subjectRowsBySection.set(row.section_id, []);
+            }
+
+            subjectRowsBySection.get(row.section_id).push(row);
+        });
+
+        const studentCountsResult = await pool.query(
+            `
+            SELECT section_id, COUNT(DISTINCT lrn) AS student_count
+            FROM students
+            WHERE section_id IS NOT NULL
+            GROUP BY section_id
+            `
+        );
+
+        const studentCountBySection = new Map(
+            studentCountsResult.rows.map((row) => [row.section_id, Number(row.student_count)])
+        );
+
+        const emptySubmissionCounts = () => ({
+            "Not Submitted": 0,
+            "Pending Approval": 0,
+            "Approved": 0,
+            "Rejected": 0,
+        });
+
+        const submissionCountsResult = await pool.query(
+            `
+            SELECT
+                s.section_id,
+                COALESCE(rs.status, 'Not Submitted') AS submission_status,
+                COUNT(*) AS student_count
+            FROM students s
+            LEFT JOIN record_submissions rs
+                ON rs.lrn = s.lrn AND rs.school_year_id = $1
+            WHERE s.section_id IS NOT NULL
+            GROUP BY s.section_id, COALESCE(rs.status, 'Not Submitted')
+            `,
+            [schoolYearId]
+        );
+
+        const submissionCountsBySection = new Map();
+
+        submissionCountsResult.rows.forEach((row) => {
+            if (!submissionCountsBySection.has(row.section_id)) {
+                submissionCountsBySection.set(row.section_id, emptySubmissionCounts());
+            }
+
+            submissionCountsBySection.get(row.section_id)[row.submission_status] = Number(row.student_count);
+        });
+
+        const sections = sectionsResult.rows.map((section) => {
+            const subjectsExpected = expectedByGradeLevel.get(section.grade_level) ?? 0;
+            const subjectRows = subjectRowsBySection.get(section.section_id) || [];
+
+            return {
+                section_id: section.section_id,
+                section_name: section.section_name,
+                grade_level: section.grade_level,
+                staffing_mode: section.staffing_mode,
+                subjects_expected: subjectsExpected,
+                subjects_submitted: subjectRows.filter((row) => row.status === "Validated").length,
+                subjects_needs_revision: subjectRows.filter((row) => row.status === "Needs Revision").length,
+                subjects_needs_attention: subjectRows.filter((row) => row.status === "Needs Attention").length,
+                subjects_not_started: Math.max(subjectsExpected - subjectRows.length, 0),
+                student_count: studentCountBySection.get(section.section_id) || 0,
+                submission_status_counts:
+                    submissionCountsBySection.get(section.section_id) || emptySubmissionCounts(),
+            };
+        });
+
+        return res.json({
+            school_year: schoolYearResult.rows[0],
+            sections,
+        });
+    } catch (error) {
+        console.error("Get section progress error:", error);
+
+        return res.status(500).json({
+            message: "Failed to retrieve section progress.",
         });
     }
 };
@@ -447,6 +629,7 @@ module.exports = {
     getSchoolYears,
     getConsolidatedRecordsForSchoolYear,
     getConsolidatedRecordForStudent,
+    getSectionProgressForSchoolYear,
     fetchConsolidatedStudents,
     fetchConsolidatedStudent,
     requestRevision,

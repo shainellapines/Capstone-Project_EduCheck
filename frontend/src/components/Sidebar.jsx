@@ -16,6 +16,7 @@ import {
     Settings,
     LogOut,
     UserCheck,
+    PieChart,
 } from "lucide-react";
 
 import "../pages/Dashboard.css";
@@ -40,6 +41,7 @@ const NAV_ITEMS_BY_ROLE = {
         // reconfigured, matching uploadController's enforcement.
         { key: "upload-files", label: "Upload Files", icon: Upload, path: "/class-record-upload" },
         { key: "consolidated-records", label: "Consolidated Records", icon: FileText, path: "/consolidated-records" },
+        { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "records-repository", label: "Records Repository", icon: Database, path: "/records-repository" },
         { key: "performance-analytics", label: "Performance Analytics", icon: BarChart3, path: null },
         { key: "validation-results", label: "Validation Results", icon: CheckCircle, path: null },
@@ -51,6 +53,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "teacher-management", label: "Teacher Management", icon: UserCog, path: "/teachers" },
         { key: "section-assignments", label: "Section & Teacher Assignments", icon: UserCheck, path: "/section-assignments" },
         { key: "consolidated-records", label: "Submission Review", icon: ClipboardCheck, path: "/consolidated-records" },
+        { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },
         { key: "academic-analytics", label: "Academic Analytics", icon: BarChart3, path: null },
     ],

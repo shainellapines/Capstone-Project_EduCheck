@@ -34,7 +34,7 @@ const SUBJECT_STATUS_BADGE_CLASS = {
 };
 
 function ConsolidatedRecords() {
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     const storedUser = localStorage.getItem("educheck_user");
     const user = storedUser ? JSON.parse(storedUser) : { role: "" };
@@ -46,6 +46,22 @@ function ConsolidatedRecords() {
     const highlightedLrn = searchParams.get("lrn");
     const highlightedRowRef = useRef(null);
     const hasAutoExpandedRef = useRef(false);
+
+    // Support the "View Students" drill-down from Section Progress
+    // (/consolidated-records?year=<id>&section=<id>&section_label=<text>) —
+    // section_label travels with the link purely for display, so this page
+    // doesn't need a second request just to look the section's name back up.
+    const sectionFilterId = searchParams.get("section");
+    const sectionFilterLabel = searchParams.get("section_label");
+
+    const clearSectionFilter = () => {
+        setSearchParams((previous) => {
+            const next = new URLSearchParams(previous);
+            next.delete("section");
+            next.delete("section_label");
+            return next;
+        });
+    };
 
     const [schoolYears, setSchoolYears] = useState([]);
     const [selectedSchoolYearId, setSelectedSchoolYearId] = useState("");
@@ -125,8 +141,10 @@ function ConsolidatedRecords() {
             setLoadingStudents(true);
             setError("");
 
+            const query = sectionFilterId ? `?section_id=${sectionFilterId}` : "";
+
             const response = await fetch(
-                `${API_URL}/consolidation/school-years/${selectedSchoolYearId}`,
+                `${API_URL}/consolidation/school-years/${selectedSchoolYearId}${query}`,
                 { headers: authHeaders() }
             );
 
@@ -149,7 +167,7 @@ function ConsolidatedRecords() {
         fetchStudents();
         setExpandedLrns(new Set());
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedSchoolYearId]);
+    }, [selectedSchoolYearId, sectionFilterId]);
 
     // Auto-expand and scroll to the student named in ?lrn= once their data
     // has loaded. Guarded to fire only once — otherwise every students
@@ -364,6 +382,19 @@ function ConsolidatedRecords() {
                 </header>
 
                 <section className="dashboard-content">
+
+                    {sectionFilterId && (
+                        <div className="cr-section-filter-banner">
+                            <span>
+                                Filtered by section:{" "}
+                                <strong>{sectionFilterLabel || `Section #${sectionFilterId}`}</strong>
+                            </span>
+
+                            <button type="button" className="cr-btn cr-btn-cancel" onClick={clearSectionFilter}>
+                                Clear filter
+                            </button>
+                        </div>
+                    )}
 
                     {user.role === "adviser" && students && students.length > 0 && (
                         <div className="cr-toolbar">
