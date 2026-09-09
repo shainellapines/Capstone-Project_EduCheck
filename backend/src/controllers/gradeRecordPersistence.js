@@ -30,7 +30,7 @@ const computeFinalGrade = (term1, term2, term3) => {
 // Learners without a valid 12-digit LRN are skipped — see the
 // MISSING_LRN / INVALID_LRN_FORMAT warnings from classRecordParser, which
 // already flag exactly these learners for the uploader to fix.
-const persistLearnerGradeRecords = async (dbClient, { classRecordId, parsedRecord, subject, schoolYear }) => {
+const persistLearnerGradeRecords = async (dbClient, { classRecordId, parsedRecord, subject, schoolYear, sectionId }) => {
     const termMaps = {
         term1: new Map(parsedRecord.terms.term1.map((record) => [getRecordKey(record), record])),
         term2: new Map(parsedRecord.terms.term2.map((record) => [getRecordKey(record), record])),
@@ -61,20 +61,22 @@ const persistLearnerGradeRecords = async (dbClient, { classRecordId, parsedRecor
                 last_name,
                 sex,
                 grade_level,
+                section_id,
                 school_year_id
             )
             VALUES
             (
-                $1, $2, $3, $4, $5, $6
+                $1, $2, $3, $4, $5, $6, $7
             )
             ON CONFLICT (lrn) DO UPDATE SET
                 first_name = EXCLUDED.first_name,
                 last_name = EXCLUDED.last_name,
                 sex = EXCLUDED.sex,
                 grade_level = EXCLUDED.grade_level,
+                section_id = EXCLUDED.section_id,
                 school_year_id = EXCLUDED.school_year_id
             `,
-            [learner.lrn, first_name, last_name, learner.gender, subject.grade_level, schoolYear.school_year_id]
+            [learner.lrn, first_name, last_name, learner.gender, subject.grade_level, sectionId ?? null, schoolYear.school_year_id]
         );
 
         const finalGrade = computeFinalGrade(term1, term2, term3);

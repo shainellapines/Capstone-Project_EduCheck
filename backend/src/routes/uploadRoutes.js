@@ -63,12 +63,15 @@ const upload =
 
 // ==========================================
 // ALL UPLOAD ROUTES
-// SUBJECT TEACHERS ONLY
+// SUBJECT TEACHERS, plus ADVISERS for Self-Contained sections
+// (per SPMP v1.0 US-011). Which specific (subject, section) pairs
+// either role can actually use is enforced inside uploadController via
+// teacher_assignments - this gate is just the coarse role check.
 // ==========================================
 
 router.use(
     authenticateToken,
-    authorizeRoles("subject")
+    authorizeRoles("subject", "adviser")
 );
 
 // ==========================================

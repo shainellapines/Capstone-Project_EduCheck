@@ -1,6 +1,8 @@
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
+const sectionRoutes = require("./routes/sectionRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
 const consolidationRoutes = require("./routes/consolidationRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
@@ -28,6 +30,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/teachers", teacherRoutes);
+app.use("/api/sections", sectionRoutes);
+app.use("/api/assignments", assignmentRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/consolidation", consolidationRoutes);
 app.use("/api/submissions", submissionRoutes);

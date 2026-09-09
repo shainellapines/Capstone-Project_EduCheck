@@ -11,31 +11,71 @@ const removeUploadedFile = (filePath) => {
     }
 };
 // ==========================================
-// GET SUBJECTS AND SCHOOL YEARS
+// GET UPLOAD OPTIONS (assignment-scoped)
 // ==========================================
-
+// Per SPMP v1.0 US-009/US-011: a Subject Teacher may only upload the
+// subject(s) they're explicitly assigned to, for the section(s) they're
+// assigned to. A Class Adviser may only upload when their assigned
+// section is Self-Contained - in that case they can upload any subject
+// for that section's grade level, since they're the section's only
+// teacher. "options" below is a flat list of valid (section, subject)
+// pairs this specific user is allowed to upload for right now; an empty
+// list means the Administrator hasn't assigned this person to anything
+// yet, not a system error.
 const getUploadOptions = async (req, res) => {
     try {
-        const subjectsResult = await pool.query(`
-            SELECT
-                subject_id,
-                subject_name,
-                grade_level
-            FROM subjects
-            ORDER BY grade_level, subject_name
-        `);
+        const teacherResult = await pool.query(
+            `SELECT teacher_id FROM teachers WHERE user_id = $1`,
+            [req.user.user_id]
+        );
 
         const schoolYearsResult = await pool.query(`
-            SELECT
-                school_year_id,
-                school_year,
-                status
+            SELECT school_year_id, school_year, status
             FROM school_years
             ORDER BY school_year_id DESC
         `);
 
+        if (teacherResult.rows.length === 0) {
+            return res.json({ options: [], school_years: schoolYearsResult.rows });
+        }
+
+        const teacherId = teacherResult.rows[0].teacher_id;
+
+        // Subject Teacher assignments: one option per explicit (subject, section) row.
+        const subjectTeacherOptions = await pool.query(
+            `
+            SELECT
+                sec.section_id, sec.section_name, sec.grade_level, sec.staffing_mode,
+                sub.subject_id, sub.subject_name,
+                ta.school_year_id
+            FROM teacher_assignments ta
+            INNER JOIN sections sec ON sec.section_id = ta.section_id
+            INNER JOIN subjects sub ON sub.subject_id = ta.subject_id
+            WHERE ta.teacher_id = $1 AND ta.subject_id IS NOT NULL
+            `,
+            [teacherId]
+        );
+
+        // Adviser assignments over a Self-Contained section: every subject
+        // for that section's grade level becomes a valid upload option.
+        const adviserOptions = await pool.query(
+            `
+            SELECT
+                sec.section_id, sec.section_name, sec.grade_level, sec.staffing_mode,
+                sub.subject_id, sub.subject_name,
+                ta.school_year_id
+            FROM teacher_assignments ta
+            INNER JOIN sections sec ON sec.section_id = ta.section_id
+            INNER JOIN subjects sub ON sub.grade_level = sec.grade_level
+            WHERE ta.teacher_id = $1
+              AND ta.subject_id IS NULL
+              AND sec.staffing_mode = 'Self-Contained'
+            `,
+            [teacherId]
+        );
+
         res.json({
-            subjects: subjectsResult.rows,
+            options: [...subjectTeacherOptions.rows, ...adviserOptions.rows],
             school_years: schoolYearsResult.rows
         });
 
@@ -47,9 +87,34 @@ const getUploadOptions = async (req, res) => {
 
         res.status(500).json({
             message:
-                "Failed to retrieve subjects and school years."
+                "Failed to retrieve upload options."
         });
     }
+};
+
+// Shared authorization check for an upload attempt: does this teacher
+// actually have a live assignment covering this exact (subject, section,
+// school year)? Same two paths as getUploadOptions above, checked
+// directly against the attempted combination rather than the full list.
+const isUploadAuthorized = async ({ teacherId, sectionId, subjectId, schoolYearId }) => {
+    const result = await pool.query(
+        `
+        SELECT 1
+        FROM teacher_assignments ta
+        INNER JOIN sections sec ON sec.section_id = ta.section_id
+        WHERE ta.teacher_id = $1
+          AND ta.section_id = $2
+          AND ta.school_year_id = $3
+          AND (
+              ta.subject_id = $4
+              OR (ta.subject_id IS NULL AND sec.staffing_mode = 'Self-Contained')
+          )
+        LIMIT 1
+        `,
+        [teacherId, sectionId, schoolYearId, subjectId]
+    );
+
+    return result.rows.length > 0;
 };
 
 // ==========================================
@@ -403,13 +468,13 @@ const uploadClassRecord = async (req, res) => {
             });
         }
 
-        const { subject_id, school_year_id } = req.body;
+        const { subject_id, section_id, school_year_id } = req.body;
 
-        if (!subject_id || !school_year_id) {
+        if (!subject_id || !section_id || !school_year_id) {
             removeUploadedFile(req.file?.path);
 
             return res.status(400).json({
-                message: "Subject and school year are required.",
+                message: "Subject, section, and school year are required.",
             });
         }
 
@@ -497,6 +562,44 @@ const uploadClassRecord = async (req, res) => {
 
         const schoolYear = schoolYearResult.rows[0];
 
+        const sectionResult = await pool.query(
+            `
+            SELECT
+                section_id,
+                section_name,
+                grade_level,
+                staffing_mode
+            FROM sections
+            WHERE section_id = $1
+            `,
+            [section_id]
+        );
+
+        if (sectionResult.rows.length === 0) {
+            removeUploadedFile(file.path);
+
+            return res.status(404).json({
+                message: "Selected section was not found.",
+            });
+        }
+
+        const section = sectionResult.rows[0];
+
+        const authorized = await isUploadAuthorized({
+            teacherId: teacher.teacher_id,
+            sectionId: section.section_id,
+            subjectId: subject.subject_id,
+            schoolYearId: schoolYear.school_year_id,
+        });
+
+        if (!authorized) {
+            removeUploadedFile(file.path);
+
+            return res.status(403).json({
+                message: "You are not assigned to upload this subject for this section. Contact your Administrator to confirm your assignment.",
+            });
+        }
+
         let parsedRecord;
         let validationResult;
 
@@ -529,6 +632,7 @@ const uploadClassRecord = async (req, res) => {
         (
             teacher_id,
             subject_id,
+            section_id,
             school_year_id,
             file_name,
             stored_file_name,
@@ -539,12 +643,13 @@ const uploadClassRecord = async (req, res) => {
         )
         VALUES
         (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
         )
         RETURNING
             class_record_id,
             teacher_id,
             subject_id,
+            section_id,
             school_year_id,
             upload_date,
             file_name,
@@ -557,6 +662,7 @@ const uploadClassRecord = async (req, res) => {
                 [
                     teacher.teacher_id,
                     subject.subject_id,
+                    section.section_id,
                     schoolYear.school_year_id,
                     file.originalname,
                     file.filename,
@@ -606,6 +712,7 @@ const uploadClassRecord = async (req, res) => {
                 parsedRecord,
                 subject,
                 schoolYear,
+                sectionId: section.section_id,
             });
 
             await dbClient.query("COMMIT");
@@ -628,6 +735,8 @@ const uploadClassRecord = async (req, res) => {
                 subject_id: classRecord.subject_id,
                 subject_name: subject.subject_name,
                 grade_level: subject.grade_level,
+                section_id: classRecord.section_id,
+                section_name: section.section_name,
                 school_year_id: classRecord.school_year_id,
                 school_year: schoolYear.school_year,
                 upload_date: classRecord.upload_date,
