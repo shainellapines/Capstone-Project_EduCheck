@@ -17,6 +17,7 @@ import {
     LogOut,
     UserCheck,
     PieChart,
+    Eye,
 } from "lucide-react";
 
 import "../pages/Dashboard.css";
@@ -63,12 +64,23 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "validation-results", label: "Validation Results", icon: CheckCircle, path: null },
         { key: "submission-status", label: "Submission Status", icon: Send, path: null },
     ],
+    // SPMP v1.0 US-008: view-only. Every path below lands on a page that
+    // is already read-only for any role but adviser/admin (ConsolidatedRecords'
+    // approve/reject/request-revision actions, RecordsRepository's search-only
+    // UI) — no separate "principal mode" needed on those pages themselves.
+    principal: [
+        { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+        { key: "consolidated-records", label: "Submission Review", icon: Eye, path: "/consolidated-records" },
+        { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
+        { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },
+    ],
 };
 
 const ROLE_BADGE_LABEL = {
     adviser: "Adviser",
     admin: "School Administrator",
     subject: "Subject Teacher",
+    principal: "Principal",
 };
 
 // `activeKey` is one of the `key` values above — the page rendering the

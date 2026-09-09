@@ -17,14 +17,17 @@ const router = express.Router();
 
 // ==========================================
 // ALL CONSOLIDATION ROUTES
-// CLASS ADVISERS AND ADMINS ONLY
+// CLASS ADVISERS, ADMINS, AND (READ-ONLY) PRINCIPALS
 // ==========================================
 // Per the SPMP, the Class Adviser reviews consolidated records before
-// submission; the School Administrator oversees/approves them.
+// submission; the School Administrator oversees/approves them. The
+// Principal (US-008) gets the same read access — every route below is a
+// GET except request-revision, which layers its own authorizeRoles("adviser")
+// on top and stays off-limits to admin and principal alike.
 
 router.use(
     authenticateToken,
-    authorizeRoles("adviser", "admin")
+    authorizeRoles("adviser", "admin", "principal")
 );
 
 // ==========================================

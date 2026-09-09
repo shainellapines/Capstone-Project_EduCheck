@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import SubjectDashboard from "./pages/SubjectDashboard";
+import PrincipalDashboard from "./pages/PrincipalDashboard";
 import UserManagement from "./pages/UserManagement";
 import TeacherManagement from "./pages/TeacherManagement";
 import SectionAssignments from "./pages/SectionAssignments";
@@ -45,6 +46,10 @@ function RoleBasedDashboard() {
 
     if (user.role === "adviser") {
         return <Dashboard />;
+    }
+
+    if (user.role === "principal") {
+        return <PrincipalDashboard />;
     }
 
     return <Navigate to="/" replace />;
@@ -114,7 +119,7 @@ function App() {
                 <Route
                     path="/consolidated-records"
                     element={
-                        <ProtectedRoute allowedRoles={["adviser", "admin"]}>
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
                             <ConsolidatedRecords />
                         </ProtectedRoute>
                     }
@@ -123,7 +128,7 @@ function App() {
                 <Route
                     path="/section-progress"
                     element={
-                        <ProtectedRoute allowedRoles={["adviser", "admin"]}>
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
                             <SectionProgress />
                         </ProtectedRoute>
                     }
@@ -132,7 +137,7 @@ function App() {
                 <Route
                     path="/records-repository"
                     element={
-                        <ProtectedRoute allowedRoles={["adviser", "admin"]}>
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
                             <RecordsRepository />
                         </ProtectedRoute>
                     }
@@ -141,7 +146,7 @@ function App() {
                 <Route
                     path="/notifications"
                     element={
-                        <ProtectedRoute allowedRoles={["adviser", "admin", "subject"]}>
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "subject", "principal"]}>
                             <Notifications />
                         </ProtectedRoute>
                     }

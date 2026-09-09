@@ -301,9 +301,15 @@
     background: #edf4ff;
 }
 
-.role-teacher {
+.role-teacher,
+.role-subject {
     color: #008849;
     background: #eafff1;
+}
+
+.role-principal {
+    color: #b45309;
+    background: #fef3c7;
 }
 
 .status-pill.active {

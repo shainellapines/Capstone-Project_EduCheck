@@ -13,7 +13,7 @@ const router = express.Router();
 // in front of it, not a separate audience.
 router.use(
     authenticateToken,
-    authorizeRoles("adviser", "admin")
+    authorizeRoles("adviser", "admin", "principal")
 );
 
 router.get("/search", searchStudents);

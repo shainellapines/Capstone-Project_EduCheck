@@ -590,7 +590,7 @@ function UserManagement() {
                                         value={formData.role}
                                         onChange={handleChange}
                                     >
-                                        <option value="teacher">
+                                        <option value="subject">
                                             Subject Teacher
                                         </option>
 
@@ -600,6 +600,10 @@ function UserManagement() {
 
                                         <option value="admin">
                                             School Administrator
+                                        </option>
+
+                                        <option value="principal">
+                                            Principal
                                         </option>
                                     </select>
                                 </div>

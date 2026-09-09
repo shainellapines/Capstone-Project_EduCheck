@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, User, BookOpen, ShieldCheck } from "lucide-react";
+import { GraduationCap, User, BookOpen, ShieldCheck, Eye } from "lucide-react";
 
 function Login() {
     const [role, setRole] = useState("adviser");
@@ -112,6 +112,15 @@ function Login() {
                         >
                             <ShieldCheck size={20} />
                             <span>Admin</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            className={role === "principal" ? "role active" : "role"}
+                            onClick={() => setRole("principal")}
+                        >
+                            <Eye size={20} />
+                            <span>Principal</span>
                         </button>
 
                     </div>
