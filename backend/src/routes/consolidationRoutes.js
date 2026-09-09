@@ -4,6 +4,7 @@ const {
     getSchoolYears,
     getConsolidatedRecordsForSchoolYear,
     getConsolidatedRecordForStudent,
+    requestRevision,
 } = require("../controllers/consolidationController");
 
 const {
@@ -50,6 +51,17 @@ router.get(
 router.get(
     "/school-years/:schoolYearId/students/:lrn",
     getConsolidatedRecordForStudent
+);
+
+// ==========================================
+// REQUEST REVISION ON A CLASS RECORD
+// CLASS ADVISER ONLY (US-006)
+// ==========================================
+
+router.post(
+    "/class-records/:classRecordId/request-revision",
+    authorizeRoles("adviser"),
+    requestRevision
 );
 
 module.exports = router;

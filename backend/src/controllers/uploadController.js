@@ -179,6 +179,7 @@ const getMyClassRecords = async (req, res) => {
                 cr.upload_date,
                 cr.file_name,
                 cr.status,
+                cr.revision_remarks,
 
                 s.subject_name,
                 s.grade_level,
@@ -294,6 +295,7 @@ const getMyClassRecordSummary = async (req, res) => {
                 COUNT(*) FILTER (
                     WHERE LOWER(status) IN (
                         'needs attention',
+                        'needs revision',
                         'rejected',
                         'invalid'
                     )
@@ -364,6 +366,8 @@ const getMyClassRecordValidation = async (req, res) => {
                 cr.validation_error_count,
                 cr.validation_warning_count,
                 cr.ready_for_submission,
+                cr.revision_remarks,
+                cr.revision_requested_at,
 
                 s.subject_name,
                 s.grade_level,
@@ -439,6 +443,8 @@ const getMyClassRecordValidation = async (req, res) => {
                 school_year: record.school_year,
                 upload_date: record.upload_date,
                 status: record.status,
+                revision_remarks: record.revision_remarks,
+                revision_requested_at: record.revision_requested_at,
             },
 
             validation: {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
     ChevronDown,
@@ -10,6 +10,7 @@ import {
     Users,
     Send,
     XCircle,
+    Undo2,
 } from "lucide-react";
 
 import "./Dashboard.css";
@@ -23,6 +24,13 @@ const SUBMISSION_BADGE_CLASS = {
     "Pending Approval": "pending-approval",
     "Approved": "approved",
     "Rejected": "rejected",
+};
+
+const SUBJECT_STATUS_BADGE_CLASS = {
+    "Uploaded": "subject-uploaded",
+    "Validated": "subject-validated",
+    "Needs Attention": "subject-needs-attention",
+    "Needs Revision": "subject-needs-revision",
 };
 
 function ConsolidatedRecords() {
@@ -52,6 +60,14 @@ function ConsolidatedRecords() {
     const [pendingLrns, setPendingLrns] = useState(new Set());
     const [rejectingLrn, setRejectingLrn] = useState(null);
     const [rejectReason, setRejectReason] = useState("");
+
+    // Adviser return-to-subject-teacher correction (SPMP v1.0 US-006) — acts
+    // on one class_record_id, not one lrn, since one subject upload covers
+    // every student in it. Separate pending/panel state from the reject flow
+    // above, which is keyed by lrn for the whole-student Admin decision.
+    const [pendingClassRecordIds, setPendingClassRecordIds] = useState(new Set());
+    const [revisingClassRecordId, setRevisingClassRecordId] = useState(null);
+    const [revisionReason, setRevisionReason] = useState("");
 
     const authHeaders = (extra = {}) => {
         const token = localStorage.getItem("educheck_token");
@@ -237,6 +253,47 @@ function ConsolidatedRecords() {
             setRejectReason("");
             await fetchStudents();
         });
+
+    const requestRevision = async (classRecordId) => {
+        if (!revisionReason.trim()) {
+            setError("A reason is required so the teacher knows what to correct.");
+            return;
+        }
+
+        setActionMessage("");
+        setError("");
+        setPendingClassRecordIds((previous) => new Set(previous).add(classRecordId));
+
+        try {
+            const response = await fetch(
+                `${API_URL}/consolidation/class-records/${classRecordId}/request-revision`,
+                {
+                    method: "POST",
+                    headers: authHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify({ remarks: revisionReason }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to request revision.");
+            }
+
+            setActionMessage("Revision requested. The teacher has been notified.");
+            setRevisingClassRecordId(null);
+            setRevisionReason("");
+            await fetchStudents();
+        } catch (actionError) {
+            setError(actionError.message || "Failed to request revision.");
+        } finally {
+            setPendingClassRecordIds((previous) => {
+                const next = new Set(previous);
+                next.delete(classRecordId);
+                return next;
+            });
+        }
+    };
 
     const submitAllEligible = async () => {
         setActionMessage("");
@@ -520,26 +577,126 @@ function ConsolidatedRecords() {
                                                             <th>Term 3</th>
                                                             <th>Final</th>
                                                             <th>Status</th>
+                                                            {user.role === "adviser" && <th>Actions</th>}
                                                         </tr>
                                                     </thead>
 
                                                     <tbody>
-                                                        {student.subjects.map((subject) => (
-                                                            <tr key={subject.subject_id}>
-                                                                <td>
-                                                                    <FileText size={14} className="subject-icon" />
-                                                                    {subject.subject_name}
-                                                                </td>
-                                                                <td>{subject.teacher_name}</td>
-                                                                <td>{subject.term_1 ?? "—"}</td>
-                                                                <td>{subject.term_2 ?? "—"}</td>
-                                                                <td>{subject.term_3 ?? "—"}</td>
-                                                                <td className="final-grade">
-                                                                    {subject.final_grade ?? "—"}
-                                                                </td>
-                                                                <td>{subject.status}</td>
-                                                            </tr>
-                                                        ))}
+                                                        {student.subjects.map((subject) => {
+                                                            const isRevisionRequested =
+                                                                subject.status === "Needs Revision";
+                                                            const isRevisionPanelOpen =
+                                                                revisingClassRecordId === subject.class_record_id;
+                                                            const isRevisionPending = pendingClassRecordIds.has(
+                                                                subject.class_record_id
+                                                            );
+
+                                                            return (
+                                                                <Fragment key={subject.subject_id}>
+                                                                    <tr>
+                                                                        <td>
+                                                                            <FileText size={14} className="subject-icon" />
+                                                                            {subject.subject_name}
+                                                                        </td>
+                                                                        <td>{subject.teacher_name}</td>
+                                                                        <td>{subject.term_1 ?? "—"}</td>
+                                                                        <td>{subject.term_2 ?? "—"}</td>
+                                                                        <td>{subject.term_3 ?? "—"}</td>
+                                                                        <td className="final-grade">
+                                                                            {subject.final_grade ?? "—"}
+                                                                        </td>
+                                                                        <td>
+                                                                            <span
+                                                                                className={`subject-status-badge ${
+                                                                                    SUBJECT_STATUS_BADGE_CLASS[subject.status] ||
+                                                                                    "subject-uploaded"
+                                                                                }`}
+                                                                            >
+                                                                                {subject.status}
+                                                                            </span>
+                                                                        </td>
+
+                                                                        {user.role === "adviser" && (
+                                                                            <td>
+                                                                                {!isRevisionRequested && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="cr-btn cr-btn-revision"
+                                                                                        onClick={() => {
+                                                                                            setRevisingClassRecordId(
+                                                                                                isRevisionPanelOpen
+                                                                                                    ? null
+                                                                                                    : subject.class_record_id
+                                                                                            );
+                                                                                            setRevisionReason("");
+                                                                                        }}
+                                                                                        disabled={isRevisionPending}
+                                                                                    >
+                                                                                        <Undo2 size={14} />
+                                                                                        Request Revision
+                                                                                    </button>
+                                                                                )}
+                                                                            </td>
+                                                                        )}
+                                                                    </tr>
+
+                                                                    {isRevisionRequested && subject.revision_remarks && (
+                                                                        <tr>
+                                                                            <td
+                                                                                colSpan={user.role === "adviser" ? 8 : 7}
+                                                                                className="cr-revision-remarks-cell"
+                                                                            >
+                                                                                Revision reason: {subject.revision_remarks}
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+
+                                                                    {isRevisionPanelOpen && (
+                                                                        <tr>
+                                                                            <td
+                                                                                colSpan={user.role === "adviser" ? 8 : 7}
+                                                                            >
+                                                                                <div className="cr-reject-panel">
+                                                                                    <textarea
+                                                                                        className="cr-reject-textarea"
+                                                                                        value={revisionReason}
+                                                                                        onChange={(e) =>
+                                                                                            setRevisionReason(e.target.value)
+                                                                                        }
+                                                                                        placeholder={`Reason this ${subject.subject_name} upload needs revision (shown to the teacher)`}
+                                                                                        rows={2}
+                                                                                    />
+
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="cr-btn cr-btn-revision"
+                                                                                        onClick={() =>
+                                                                                            requestRevision(
+                                                                                                subject.class_record_id
+                                                                                            )
+                                                                                        }
+                                                                                        disabled={isRevisionPending}
+                                                                                    >
+                                                                                        Confirm Request
+                                                                                    </button>
+
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="cr-btn cr-btn-cancel"
+                                                                                        onClick={() => {
+                                                                                            setRevisingClassRecordId(null);
+                                                                                            setRevisionReason("");
+                                                                                        }}
+                                                                                    >
+                                                                                        Cancel
+                                                                                    </button>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+                                                                </Fragment>
+                                                            );
+                                                        })}
                                                     </tbody>
                                                 </table>
                                             </div>

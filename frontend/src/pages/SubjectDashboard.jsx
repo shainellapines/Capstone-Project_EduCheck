@@ -18,7 +18,7 @@ const API_URL = "http://localhost:5000/api";
 // forward yet — mirrors the FILTER clause getMyClassRecordSummary uses
 // server-side for its own "needs_attention" count, so the flagged list
 // built here always agrees with that number.
-const NEEDS_ATTENTION_STATUSES = ["needs attention", "rejected", "invalid"];
+const NEEDS_ATTENTION_STATUSES = ["needs attention", "needs revision", "rejected", "invalid"];
 
 function SubjectDashboard() {
     const navigate = useNavigate();
@@ -237,6 +237,13 @@ function SubjectDashboard() {
                                             {flaggedRecords[0].status}
                                         </span>
                                     </div>
+
+                                    {flaggedRecords[0].status?.toLowerCase() === "needs revision" &&
+                                        flaggedRecords[0].revision_remarks && (
+                                            <p className="revision-remarks-note">
+                                                Your Adviser sent this back: "{flaggedRecords[0].revision_remarks}"
+                                            </p>
+                                        )}
                                 </div>
 
                             </div>
@@ -338,6 +345,13 @@ function SubjectDashboard() {
                                         <span>
                                             {record.school_year} • {record.file_name}
                                         </span>
+
+                                        {record.status?.toLowerCase() === "needs revision" &&
+                                            record.revision_remarks && (
+                                                <span className="revision-remarks-note">
+                                                    Adviser's note: "{record.revision_remarks}"
+                                                </span>
+                                            )}
                                     </div>
 
                                     <div className="record-status">
@@ -347,7 +361,9 @@ function SubjectDashboard() {
                                                     ? "status-badge submitted"
                                                     : record.status?.toLowerCase() === "needs attention"
                                                         ? "status-badge needs-attention"
-                                                        : "status-badge draft"
+                                                        : record.status?.toLowerCase() === "needs revision"
+                                                            ? "status-badge needs-revision"
+                                                            : "status-badge draft"
                                             }
                                         >
                                             {record.status}

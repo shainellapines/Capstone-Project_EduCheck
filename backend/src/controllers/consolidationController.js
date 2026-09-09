@@ -24,6 +24,7 @@ const buildRankedGradesQuery = (extraWhere) => `
             cr.upload_date,
             cr.ready_for_submission,
             cr.status,
+            cr.revision_remarks,
             ROW_NUMBER() OVER (
                 PARTITION BY gr.lrn, cr.subject_id
                 ORDER BY cr.upload_date DESC, cr.class_record_id DESC
@@ -50,6 +51,7 @@ const buildRankedGradesQuery = (extraWhere) => `
         rg.upload_date,
         rg.ready_for_submission,
         rg.status,
+        rg.revision_remarks,
         t.first_name AS teacher_first_name,
         t.last_name AS teacher_last_name,
         t.user_id AS teacher_user_id
@@ -96,6 +98,7 @@ const groupRowsByStudent = (rows) => {
             upload_date: row.upload_date,
             ready_for_submission: row.ready_for_submission,
             status: row.status,
+            revision_remarks: row.revision_remarks,
         });
     });
 
@@ -337,10 +340,114 @@ const getConsolidatedRecordForStudent = async (req, res) => {
     }
 };
 
+// ==========================================
+// REQUEST REVISION ON ONE CLASS RECORD
+// (Class Adviser only)
+// ==========================================
+// SPMP v1.0 US-006: lets the Adviser send one specific subject upload back
+// to the Subject Teacher who owns it, independent of the Admin
+// approve/reject pipeline in submissionController — a revision request can
+// happen before that student's record is ever submitted to the Admin at
+// all. Acts on the whole class_record (one uploaded file covers every
+// student in that subject/section/school-year), not a single student's row
+// — the Subject Teacher corrects and re-uploads the file, which creates a
+// new class_records row that naturally outranks this one in the
+// "latest upload wins" ranking the consolidated view already uses, so no
+// separate "clear the flag" action is needed.
+//
+// Known limitation, not handled here: if the student's whole record has
+// already been Approved via record_submissions, this still flags the
+// subject — there is no un-approve/amend workflow yet to reconcile that
+// against (same gap submitForApproval's own comment already flags).
+
+const requestRevision = async (req, res) => {
+    try {
+        const classRecordId = Number(req.params.classRecordId);
+        const { remarks } = req.body || {};
+
+        if (!Number.isInteger(classRecordId) || classRecordId <= 0) {
+            return res.status(400).json({
+                message: "A valid class record ID is required.",
+            });
+        }
+
+        if (!remarks || !remarks.trim()) {
+            return res.status(400).json({
+                message: "A reason is required so the teacher knows what to correct.",
+            });
+        }
+
+        const recordResult = await pool.query(
+            `
+            SELECT
+                cr.class_record_id,
+                t.user_id AS teacher_user_id,
+                sub.subject_name,
+                sec.section_name,
+                sy.school_year
+            FROM class_records cr
+            INNER JOIN teachers t ON t.teacher_id = cr.teacher_id
+            INNER JOIN subjects sub ON sub.subject_id = cr.subject_id
+            LEFT JOIN sections sec ON sec.section_id = cr.section_id
+            INNER JOIN school_years sy ON sy.school_year_id = cr.school_year_id
+            WHERE cr.class_record_id = $1
+            `,
+            [classRecordId]
+        );
+
+        if (recordResult.rows.length === 0) {
+            return res.status(404).json({
+                message: "Class record not found.",
+            });
+        }
+
+        const record = recordResult.rows[0];
+        const trimmedRemarks = remarks.trim();
+
+        await pool.query(
+            `
+            UPDATE class_records
+            SET status = 'Needs Revision',
+                revision_remarks = $1,
+                revision_requested_by = $2,
+                revision_requested_at = NOW()
+            WHERE class_record_id = $3
+            `,
+            [trimmedRemarks, req.user.user_id, classRecordId]
+        );
+
+        const sectionLabel = record.section_name ? ` — ${record.section_name}` : "";
+
+        await pool.query(
+            `
+            INSERT INTO notifications (user_id, title, message, status)
+            VALUES ($1, $2, $3, 'Unread')
+            `,
+            [
+                record.teacher_user_id,
+                "Revision Requested",
+                `Your ${record.subject_name}${sectionLabel} upload (${record.school_year}) needs revision. ` +
+                    `Reason: ${trimmedRemarks} Please correct the file and re-upload.`,
+            ]
+        );
+
+        return res.json({
+            message: "Revision requested. The teacher has been notified.",
+        });
+    } catch (error) {
+        console.error("Request revision error:", error);
+
+        return res.status(500).json({
+            message: "Failed to request revision.",
+        });
+    }
+};
+
 module.exports = {
     getSchoolYears,
     getConsolidatedRecordsForSchoolYear,
     getConsolidatedRecordForStudent,
     fetchConsolidatedStudents,
     fetchConsolidatedStudent,
+    requestRevision,
 };

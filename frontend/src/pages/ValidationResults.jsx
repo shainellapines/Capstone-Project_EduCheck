@@ -10,6 +10,7 @@ import {
     FileText,
     Loader2,
     Upload,
+    Undo2,
 } from "lucide-react";
 
 import "./Dashboard.css";
@@ -156,6 +157,18 @@ function ValidationResults() {
                                     {isReady ? "Ready for Submission" : "Needs Attention"}
                                 </div>
                             </div>
+
+                            {data.class_record.status?.toLowerCase() === "needs revision" &&
+                                data.class_record.revision_remarks && (
+                                    <div className="error-banner vr-revision-banner">
+                                        <Undo2 size={20} />
+                                        <span>
+                                            Your Adviser sent this record back for revision: "
+                                            {data.class_record.revision_remarks}". Correct the file and re-upload it
+                                            for the same subject and section.
+                                        </span>
+                                    </div>
+                                )}
 
                             <div className="vr-category-grid">
 

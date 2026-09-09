@@ -252,6 +252,53 @@
     color: #64748b;
 }
 
+.subject-status-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.subject-status-badge.subject-uploaded {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.subject-status-badge.subject-validated {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.subject-status-badge.subject-needs-attention {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.subject-status-badge.subject-needs-revision {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.cr-btn-revision {
+    background: #7c3aed;
+    color: #ffffff;
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.cr-btn-revision:hover:not(:disabled) {
+    background: #6d28d9;
+}
+
+.cr-revision-remarks-cell {
+    background: #f5f3ff;
+    color: #6d28d9;
+    font-size: 13px;
+    font-style: italic;
+}
+
 @media (max-width: 700px) {
     .cr-row-summary {
         align-items: flex-start;

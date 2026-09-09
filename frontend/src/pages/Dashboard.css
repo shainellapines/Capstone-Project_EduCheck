@@ -569,6 +569,19 @@
     background: #fee2e2;
 }
 
+.status-badge.needs-revision {
+    color: #6d28d9;
+    background: #ede9fe;
+}
+
+.revision-remarks-note {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    font-style: italic;
+    color: #6d28d9;
+}
+
 .view-results-button {
     border: none;
     border-radius: 6px;
