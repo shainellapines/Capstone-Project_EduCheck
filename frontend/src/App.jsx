@@ -19,16 +19,19 @@ import ConsolidatedRecords from "./pages/ConsolidatedRecords";
 import RecordsRepository from "./pages/RecordsRepository";
 import Notifications from "./pages/Notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { isSessionValid, getStoredUser, clearSession } from "./utils/session";
 
 
 function RoleBasedDashboard() {
-    const userData = localStorage.getItem("educheck_user");
+    // Same expired/invalid-session gap ProtectedRoute had — this route
+    // bypassed ProtectedRoute entirely and did its own (weaker) check.
+    if (!isSessionValid()) {
+        clearSession();
 
-    if (!userData) {
         return <Navigate to="/" replace />;
     }
 
-    const user = JSON.parse(userData);
+    const user = getStoredUser();
 
     if (user.role === "admin") {
         return <AdminDashboard />;

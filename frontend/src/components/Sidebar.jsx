@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import "../pages/Dashboard.css";
+import { getStoredUser, getToken, clearSession } from "../utils/session";
 
 const API_URL = "http://localhost:5000/api";
 const POLL_INTERVAL_MS = 30000;
@@ -68,15 +69,14 @@ const ROLE_BADGE_LABEL = {
 // under different labels, so a path-based guess would be ambiguous).
 function Sidebar({ activeKey }) {
     const navigate = useNavigate();
-    const storedUser = localStorage.getItem("educheck_user");
-    const user = storedUser ? JSON.parse(storedUser) : { username: "", role: "adviser" };
+    const user = getStoredUser() || { username: "", role: "adviser" };
 
     const navItems = NAV_ITEMS_BY_ROLE[user.role] || [];
 
     const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
-        const token = localStorage.getItem("educheck_token");
+        const token = getToken();
         if (!token) return;
 
         const fetchUnreadCount = async () => {
@@ -103,8 +103,7 @@ function Sidebar({ activeKey }) {
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem("educheck_token");
-        localStorage.removeItem("educheck_user");
+        clearSession();
 
         window.location.href = "/";
     };
