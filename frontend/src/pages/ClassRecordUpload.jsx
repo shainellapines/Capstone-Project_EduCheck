@@ -12,8 +12,15 @@ import {
 import "./Dashboard.css";
 import "./ClassRecordUpload.css";
 import Sidebar from "../components/Sidebar";
+import { getToken } from "../utils/session";
 
 const API_URL = "http://localhost:5000/api";
+
+// One option = one (subject, section, school year) combination this
+// user is actually assigned/authorized to upload for - see
+// uploadController.getUploadOptions. Stable per-row key since none of
+// section_id/subject_id/school_year_id alone is unique across options.
+const optionKey = (option) => `${option.section_id}-${option.subject_id}-${option.school_year_id}`;
 
 function ClassRecordUpload() {
     const navigate = useNavigate();
@@ -21,10 +28,8 @@ function ClassRecordUpload() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [isDragActive, setIsDragActive] = useState(false);
 
-    const [subjects, setSubjects] = useState([]);
-    const [schoolYears, setSchoolYears] = useState([]);
-    const [selectedSubjectId, setSelectedSubjectId] = useState("");
-    const [selectedSchoolYearId, setSelectedSchoolYearId] = useState("");
+    const [options, setOptions] = useState([]);
+    const [selectedOptionKey, setSelectedOptionKey] = useState("");
     const [loadingOptions, setLoadingOptions] = useState(true);
 
     const [uploading, setUploading] = useState(false);
@@ -32,12 +37,14 @@ function ClassRecordUpload() {
     const [successMessage, setSuccessMessage] = useState("");
     const [result, setResult] = useState(null);
 
+    const selectedOption = options.find((option) => optionKey(option) === selectedOptionKey) || null;
+
     const fetchUploadOptions = async () => {
         try {
             setLoadingOptions(true);
             setError("");
 
-            const token = localStorage.getItem("educheck_token");
+            const token = getToken();
 
             if (!token) {
                 throw new Error("Authentication token not found. Please log in again.");
@@ -53,11 +60,10 @@ function ClassRecordUpload() {
                 throw new Error(data.message || "Failed to load upload options.");
             }
 
-            setSubjects(data.subjects || []);
-            setSchoolYears(data.school_years || []);
+            setOptions(data.options || []);
         } catch (fetchError) {
             console.error("Load upload options error:", fetchError);
-            setError(fetchError.message || "Failed to load subjects and school years.");
+            setError(fetchError.message || "Failed to load your assigned subjects and sections.");
         } finally {
             setLoadingOptions(false);
         }
@@ -105,13 +111,8 @@ function ClassRecordUpload() {
     };
 
     const handleUpload = async () => {
-        if (!selectedSubjectId) {
-            setError("Please select a subject first.");
-            return;
-        }
-
-        if (!selectedSchoolYearId) {
-            setError("Please select a school year first.");
+        if (!selectedOption) {
+            setError("Please select a subject and section first.");
             return;
         }
 
@@ -126,15 +127,16 @@ function ClassRecordUpload() {
         setResult(null);
 
         try {
-            const token = localStorage.getItem("educheck_token");
+            const token = getToken();
 
             if (!token) {
                 throw new Error("Authentication token not found. Please log in again.");
             }
 
             const formData = new FormData();
-            formData.append("subject_id", selectedSubjectId);
-            formData.append("school_year_id", selectedSchoolYearId);
+            formData.append("subject_id", selectedOption.subject_id);
+            formData.append("section_id", selectedOption.section_id);
+            formData.append("school_year_id", selectedOption.school_year_id);
             formData.append("file", selectedFile);
 
             const response = await fetch(`${API_URL}/uploads`, {
@@ -167,8 +169,7 @@ function ClassRecordUpload() {
         }
     };
 
-    const isSubmitDisabled =
-        !selectedFile || !selectedSubjectId || !selectedSchoolYearId || uploading || loadingOptions;
+    const isSubmitDisabled = !selectedFile || !selectedOption || uploading || loadingOptions;
 
     return (
         <div className="dashboard-layout">
@@ -195,46 +196,37 @@ function ClassRecordUpload() {
 
                             <div>
                                 <h2>Class Record Information</h2>
-                                <p>Select the subject and school year before uploading the record.</p>
+                                <p>Select which subject and section you're uploading for.</p>
                             </div>
                         </div>
 
                         <div className="cru-field">
-                            <label htmlFor="subject">Subject</label>
+                            <label htmlFor="assignment">Subject &amp; Section</label>
 
                             <select
-                                id="subject"
-                                value={selectedSubjectId}
-                                onChange={(e) => setSelectedSubjectId(e.target.value)}
-                                disabled={loadingOptions || uploading}
+                                id="assignment"
+                                value={selectedOptionKey}
+                                onChange={(e) => setSelectedOptionKey(e.target.value)}
+                                disabled={loadingOptions || uploading || options.length === 0}
                             >
-                                <option value="">Select a subject</option>
+                                <option value="">
+                                    {loadingOptions ? "Loading your assignments..." : "Select a subject and section"}
+                                </option>
 
-                                {subjects.map((subject) => (
-                                    <option key={subject.subject_id} value={subject.subject_id}>
-                                        {subject.subject_name} - Grade {subject.grade_level}
+                                {options.map((option) => (
+                                    <option key={optionKey(option)} value={optionKey(option)}>
+                                        {option.subject_name} — {option.section_name} (Grade {option.grade_level}) ·{" "}
+                                        {option.school_year}
                                     </option>
                                 ))}
                             </select>
-                        </div>
 
-                        <div className="cru-field">
-                            <label htmlFor="school_year">School Year</label>
-
-                            <select
-                                id="school_year"
-                                value={selectedSchoolYearId}
-                                onChange={(e) => setSelectedSchoolYearId(e.target.value)}
-                                disabled={loadingOptions || uploading}
-                            >
-                                <option value="">Select a school year</option>
-
-                                {schoolYears.map((schoolYear) => (
-                                    <option key={schoolYear.school_year_id} value={schoolYear.school_year_id}>
-                                        {schoolYear.school_year} ({schoolYear.status})
-                                    </option>
-                                ))}
-                            </select>
+                            {!loadingOptions && options.length === 0 && (
+                                <small className="cru-no-assignments">
+                                    You don't have any subject/section assignments yet. Contact your Administrator
+                                    to be assigned before you can upload.
+                                </small>
+                            )}
                         </div>
 
                         <div
@@ -334,6 +326,10 @@ function ClassRecordUpload() {
 
                                     <div className="cru-info-row">
                                         Subject: <strong>{result.class_record.subject_name}</strong>
+                                    </div>
+
+                                    <div className="cru-info-row">
+                                        Section: <strong>{result.class_record.section_name}</strong>
                                     </div>
 
                                     <div className="cru-info-row">

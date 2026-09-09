@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SubjectDashboard from "./pages/SubjectDashboard";
 import UserManagement from "./pages/UserManagement";
 import TeacherManagement from "./pages/TeacherManagement";
+import SectionAssignments from "./pages/SectionAssignments";
 import ClassRecordUpload from "./pages/ClassRecordUpload";
 import ValidationResults from "./pages/ValidationResults";
 import ConsolidatedRecords from "./pages/ConsolidatedRecords";
@@ -83,9 +84,18 @@ function App() {
                 />
 
                 <Route
+                    path="/section-assignments"
+                    element={
+                        <ProtectedRoute allowedRoles={["admin"]}>
+                            <SectionAssignments />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
                     path="/class-record-upload"
                     element={
-                        <ProtectedRoute allowedRoles={["subject"]}>
+                        <ProtectedRoute allowedRoles={["subject", "adviser"]}>
                             <ClassRecordUpload />
                         </ProtectedRoute>
                     }

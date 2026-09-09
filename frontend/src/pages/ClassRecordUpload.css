@@ -79,6 +79,13 @@
     cursor: not-allowed;
 }
 
+.cru-no-assignments {
+    display: block;
+    margin-top: 8px;
+    color: #b47a00;
+    font-size: 13px;
+}
+
 .cru-dropzone {
     border: 2px dashed #cbd5e1;
     border-radius: 12px;

@@ -1,6 +1,7 @@
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
+const subjectRoutes = require("./routes/subjectRoutes");
 const sectionRoutes = require("./routes/sectionRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/teachers", teacherRoutes);
+app.use("/api/subjects", subjectRoutes);
 app.use("/api/sections", sectionRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/uploads", uploadRoutes);

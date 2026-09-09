@@ -47,10 +47,11 @@ const getUploadOptions = async (req, res) => {
             SELECT
                 sec.section_id, sec.section_name, sec.grade_level, sec.staffing_mode,
                 sub.subject_id, sub.subject_name,
-                ta.school_year_id
+                ta.school_year_id, sy.school_year
             FROM teacher_assignments ta
             INNER JOIN sections sec ON sec.section_id = ta.section_id
             INNER JOIN subjects sub ON sub.subject_id = ta.subject_id
+            INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
             WHERE ta.teacher_id = $1 AND ta.subject_id IS NOT NULL
             `,
             [teacherId]
@@ -63,10 +64,11 @@ const getUploadOptions = async (req, res) => {
             SELECT
                 sec.section_id, sec.section_name, sec.grade_level, sec.staffing_mode,
                 sub.subject_id, sub.subject_name,
-                ta.school_year_id
+                ta.school_year_id, sy.school_year
             FROM teacher_assignments ta
             INNER JOIN sections sec ON sec.section_id = ta.section_id
             INNER JOIN subjects sub ON sub.grade_level = sec.grade_level
+            INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
             WHERE ta.teacher_id = $1
               AND ta.subject_id IS NULL
               AND sec.staffing_mode = 'Self-Contained'

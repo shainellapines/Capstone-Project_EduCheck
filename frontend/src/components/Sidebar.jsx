@@ -15,6 +15,7 @@ import {
     Bell,
     Settings,
     LogOut,
+    UserCheck,
 } from "lucide-react";
 
 import "../pages/Dashboard.css";
@@ -33,7 +34,11 @@ const NAV_ITEMS_BY_ROLE = {
     adviser: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         { key: "encode-grades", label: "Encode Grades", icon: FileText, path: null },
-        { key: "upload-files", label: "Upload Files", icon: Upload, path: null },
+        // Only meaningful for a Self-Contained section's Adviser (see
+        // SectionAssignments) - a Departmentalized Adviser can still open
+        // it, but every subject will 403 until their section is
+        // reconfigured, matching uploadController's enforcement.
+        { key: "upload-files", label: "Upload Files", icon: Upload, path: "/class-record-upload" },
         { key: "consolidated-records", label: "Consolidated Records", icon: FileText, path: "/consolidated-records" },
         { key: "records-repository", label: "Records Repository", icon: Database, path: "/records-repository" },
         { key: "performance-analytics", label: "Performance Analytics", icon: BarChart3, path: null },
@@ -44,6 +49,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         { key: "user-management", label: "User Management", icon: Users, path: "/users" },
         { key: "teacher-management", label: "Teacher Management", icon: UserCog, path: "/teachers" },
+        { key: "section-assignments", label: "Section & Teacher Assignments", icon: UserCheck, path: "/section-assignments" },
         { key: "consolidated-records", label: "Submission Review", icon: ClipboardCheck, path: "/consolidated-records" },
         { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },
         { key: "academic-analytics", label: "Academic Analytics", icon: BarChart3, path: null },

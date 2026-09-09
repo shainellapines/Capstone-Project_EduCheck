@@ -1,0 +1,220 @@
+/* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
+   dashboard-header, dashboard-content, content-card, card-header,
+   error-banner, loading-state, empty-state, table-container) - this file
+   only covers what's specific to this page. */
+
+.sa-header-icon {
+    vertical-align: -3px;
+    margin-right: 8px;
+    color: #2568ed;
+}
+
+.sa-success-banner {
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background: #edfff4;
+    color: #009c49;
+    font-weight: 600;
+}
+
+.sa-add-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.sa-add-button:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.sa-add-button:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+.sa-hint {
+    margin: 0 28px 20px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.sa-inline-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 0 28px 24px;
+}
+
+.sa-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 180px;
+}
+
+.sa-field label {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #334155;
+    font-size: 14px;
+}
+
+.sa-field label span {
+    font-weight: 400;
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+.sa-field input,
+.sa-field select {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #334155;
+    box-sizing: border-box;
+    background: #ffffff;
+}
+
+.sa-field input:focus,
+.sa-field select:focus {
+    outline: none;
+    border-color: #2568ed;
+    box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
+}
+
+.sa-form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.sa-cancel-button {
+    padding: 12px 18px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.sa-save-button {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #009c49;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.sa-save-button:hover:not(:disabled) {
+    background: #00803c;
+}
+
+.sa-save-button:disabled,
+.sa-cancel-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sa-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sa-table th {
+    text-align: left;
+    padding: 14px 20px;
+    font-size: 13px;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.sa-table td {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.sa-table tr:last-child td {
+    border-bottom: none;
+}
+
+.sa-teacher-role {
+    display: block;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.sa-mode-select {
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-weight: 600;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.sa-mode-self-contained {
+    background: #edfff4;
+    color: #009c49;
+}
+
+.sa-mode-departmentalized {
+    background: #edf4ff;
+    color: #1769ed;
+}
+
+.sa-adviser-tag {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.sa-delete-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    background: #fff5f5;
+    color: #d92929;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.sa-delete-button:hover {
+    background: #ffe4e4;
+}
+
+@media (max-width: 700px) {
+    .sa-inline-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
