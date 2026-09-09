@@ -6,6 +6,10 @@ const {
     parseClassRecord,
 } = require("../controllers/classRecordParser");
 
+const {
+    authenticateToken,
+} = require("../middleware/authMiddleware");
+
 const router = express.Router();
 
 const upload = multer({
@@ -15,8 +19,14 @@ const upload = multer({
     ),
 });
 
+// Dev diagnostic route (parse an Excel file without persisting anything) —
+// was mounted with no auth at all, so anyone who found the URL could POST
+// arbitrary files to it. Not scoped to a specific role since it doesn't
+// touch the database or any user's data, but it does need to require
+// being logged in like every other route in this API.
 router.post(
     "/",
+    authenticateToken,
     upload.single("file"),
     (req, res) => {
 
