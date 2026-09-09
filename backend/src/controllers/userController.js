@@ -1,6 +1,11 @@
 const bcrypt = require("bcryptjs");
 const pool = require("../db");
 
+// Minimal complexity rule: 8+ characters, at least one letter and one
+// number. Not a full policy (no symbol/case requirements) - just enough
+// to rule out things like "12345678" or "password".
+const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
 // GET all users
 const getUsers = async (req, res) => {
     try {
@@ -62,6 +67,12 @@ const createUser = async (req, res) => {
         if (!username || !password || !email || !role) {
             return res.status(400).json({
                 message: "Username, password, email, and role are required."
+            });
+        }
+
+        if (!PASSWORD_RULE.test(password)) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters and include both a letter and a number."
             });
         }
 
