@@ -416,7 +416,7 @@ function AdminDashboard() {
 
                             <button
                                 className="quick-action orange-action"
-                                style={{ cursor: "default" }}
+                                onClick={() => navigate("/analytics")}
                             >
                                 <BarChart3 size={24} />
 

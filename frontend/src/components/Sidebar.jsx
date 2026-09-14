@@ -44,7 +44,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "consolidated-records", label: "Consolidated Records", icon: FileText, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "records-repository", label: "Records Repository", icon: Database, path: "/records-repository" },
-        { key: "performance-analytics", label: "Performance Analytics", icon: BarChart3, path: null },
+        { key: "analytics", label: "Performance Analytics", icon: BarChart3, path: "/analytics" },
         { key: "validation-results", label: "Validation Results", icon: CheckCircle, path: null },
         { key: "submission-workflow", label: "Submission Workflow", icon: Send, path: null },
     ],
@@ -56,7 +56,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "consolidated-records", label: "Submission Review", icon: ClipboardCheck, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },
-        { key: "academic-analytics", label: "Academic Analytics", icon: BarChart3, path: null },
+        { key: "analytics", label: "Academic Analytics", icon: BarChart3, path: "/analytics" },
     ],
     subject: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -72,6 +72,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         { key: "consolidated-records", label: "Submission Review", icon: Eye, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
+        { key: "analytics", label: "Academic Analytics", icon: BarChart3, path: "/analytics" },
         { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },
     ],
 };

@@ -633,4 +633,8 @@ module.exports = {
     fetchConsolidatedStudents,
     fetchConsolidatedStudent,
     requestRevision,
+    // Exported for analyticsController — same "latest class_record wins"
+    // grade data, aggregated a different way (by grade band/section/subject
+    // instead of grouped per student).
+    buildRankedGradesQuery,
 };
