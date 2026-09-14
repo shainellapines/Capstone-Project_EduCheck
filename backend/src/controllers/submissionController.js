@@ -10,9 +10,13 @@ const isValidLrn = (value) => typeof value === "string" && /^\d{12}$/.test(value
 // ==========================================
 // Only allowed once every expected subject has a recorded grade — an
 // incomplete record has nothing meaningful to review yet. Re-submitting a
-// previously Rejected record is allowed (it re-enters "Pending Approval");
-// re-submitting an Approved one is not — that record is final until a
-// separate un-approve/amend workflow exists.
+// previously Rejected or Amendment Requested record is allowed (it
+// re-enters "Pending Approval"); re-submitting an Approved one is not —
+// that record is final until an Adviser revision request reopens it (see
+// consolidationController.requestRevision). Blocked, either way, while any
+// subject still carries a live "Needs Revision" flag — closing the loop
+// from the other direction, so a record can't be (re)approved while it's
+// still telling the subject teacher a correction is owed.
 
 const submitForApproval = async (req, res) => {
     try {
@@ -46,6 +50,18 @@ const submitForApproval = async (req, res) => {
         if (student.submission.status === "Approved") {
             return res.status(409).json({
                 message: "This record has already been approved and cannot be resubmitted.",
+            });
+        }
+
+        const subjectsNeedingRevision = student.subjects.filter(
+            (subject) => subject.status === "Needs Revision"
+        );
+
+        if (subjectsNeedingRevision.length > 0) {
+            return res.status(409).json({
+                message:
+                    "This record has one or more subjects awaiting a teacher's revision — resolve them before submitting for approval.",
+                subjects_needing_revision: subjectsNeedingRevision.map((subject) => subject.subject_name),
             });
         }
 
@@ -83,9 +99,11 @@ const submitForApproval = async (req, res) => {
 // SUBMIT EVERY ELIGIBLE STUDENT AT ONCE
 // (Class Adviser)
 // ==========================================
-// "Eligible" = complete (all_subjects_submitted) and not already Approved.
-// Skips everyone else rather than erroring, and reports counts so the
-// adviser can see what happened.
+// "Eligible" = complete (all_subjects_submitted), not already Approved, and
+// no subject still flagged "Needs Revision" — same two guards
+// submitForApproval enforces one student at a time. Skips everyone else
+// rather than erroring, and reports counts so the adviser can see what
+// happened.
 
 const submitAllEligible = async (req, res) => {
     try {
@@ -97,7 +115,10 @@ const submitAllEligible = async (req, res) => {
 
         const students = await fetchConsolidatedStudents(schoolYearId);
         const eligible = students.filter(
-            (student) => student.all_subjects_submitted && student.submission.status !== "Approved"
+            (student) =>
+                student.all_subjects_submitted &&
+                student.submission.status !== "Approved" &&
+                !student.subjects.some((subject) => subject.status === "Needs Revision")
         );
 
         let submittedCount = 0;

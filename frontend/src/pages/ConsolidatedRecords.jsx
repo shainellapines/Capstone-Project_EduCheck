@@ -24,6 +24,9 @@ const SUBMISSION_BADGE_CLASS = {
     "Pending Approval": "pending-approval",
     "Approved": "approved",
     "Rejected": "rejected",
+    // A revision request against one of this student's subjects reopened an
+    // already-Approved record — see consolidationController.requestRevision.
+    "Amendment Requested": "amendment-requested",
 };
 
 const SUBJECT_STATUS_BADGE_CLASS = {
@@ -338,7 +341,10 @@ function ConsolidatedRecords() {
 
     const eligibleForBulkSubmit =
         students?.filter(
-            (student) => student.all_subjects_submitted && student.submission.status !== "Approved"
+            (student) =>
+                student.all_subjects_submitted &&
+                student.submission.status !== "Approved" &&
+                !student.subjects.some((subject) => subject.status === "Needs Revision")
         ).length || 0;
 
     return (
@@ -515,7 +521,9 @@ function ConsolidatedRecords() {
 
                                                 {user.role === "adviser" &&
                                                     student.all_subjects_submitted &&
-                                                    (submissionStatus === "Not Submitted" || submissionStatus === "Rejected") && (
+                                                    (submissionStatus === "Not Submitted" ||
+                                                        submissionStatus === "Rejected" ||
+                                                        submissionStatus === "Amendment Requested") && (
                                                         <button
                                                             type="button"
                                                             className="cr-btn cr-btn-primary"
@@ -593,6 +601,14 @@ function ConsolidatedRecords() {
                                         {submissionStatus === "Rejected" && student.submission.remarks && (
                                             <div className="cr-rejection-reason">
                                                 Rejection reason: {student.submission.remarks}
+                                            </div>
+                                        )}
+
+                                        {submissionStatus === "Amendment Requested" && (
+                                            <div className="cr-amendment-note">
+                                                This record was previously approved, but a subject below was
+                                                flagged for revision and reopened it. Once the teacher's
+                                                correction is in, resolve the flag and submit again.
                                             </div>
                                         )}
 

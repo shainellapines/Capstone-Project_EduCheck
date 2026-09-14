@@ -146,6 +146,7 @@ function AdminDashboard() {
     const getStatusBadgeClass = (status) => {
         if (status === "Approved") return "status-badge submitted";
         if (status === "Rejected") return "status-badge needs-attention";
+        if (status === "Amendment Requested") return "status-badge needs-revision";
         return "status-badge draft";
     };
 

@@ -423,6 +423,9 @@ const getSectionProgressForSchoolYear = async (req, res) => {
             "Pending Approval": 0,
             "Approved": 0,
             "Rejected": 0,
+            // A subject revision request reopened a previously Approved
+            // record — see consolidationController.requestRevision.
+            "Amendment Requested": 0,
         });
 
         const submissionCountsResult = await pool.query(
@@ -537,10 +540,13 @@ const getConsolidatedRecordForStudent = async (req, res) => {
 // "latest upload wins" ranking the consolidated view already uses, so no
 // separate "clear the flag" action is needed.
 //
-// Known limitation, not handled here: if the student's whole record has
-// already been Approved via record_submissions, this still flags the
-// subject — there is no un-approve/amend workflow yet to reconcile that
-// against (same gap submitForApproval's own comment already flags).
+// If any of this class_record's students already had their whole record
+// Approved via record_submissions, that approval is stale the moment a
+// subject inside it is flagged — reopenApprovedSubmissions below reconciles
+// that (record_submissions -> 'Amendment Requested') rather than leaving an
+// "Approved" record silently sitting on top of a subject flagged "Needs
+// Revision". submitForApproval refuses to resubmit while any subject is
+// still flagged, so this can't be re-approved again until the flag clears.
 
 const requestRevision = async (req, res) => {
     try {
@@ -563,6 +569,7 @@ const requestRevision = async (req, res) => {
             `
             SELECT
                 cr.class_record_id,
+                cr.school_year_id,
                 t.user_id AS teacher_user_id,
                 sub.subject_name,
                 sec.section_name,
@@ -613,8 +620,51 @@ const requestRevision = async (req, res) => {
             ]
         );
 
+        // Reopen any already-Approved record_submissions rows this class
+        // record's students are part of — one upload covers every student in
+        // the subject/section, and some of them may have had their whole
+        // record approved before this particular subject was flagged.
+        const amendedResult = await pool.query(
+            `
+            UPDATE record_submissions rs
+            SET status = 'Amendment Requested', updated_at = NOW()
+            FROM students s, grade_records gr
+            WHERE rs.lrn = s.lrn
+              AND gr.lrn = s.lrn
+              AND gr.class_record_id = $1
+              AND rs.school_year_id = $2
+              AND rs.status = 'Approved'
+            RETURNING rs.lrn, rs.approved_by, s.first_name, s.last_name
+            `,
+            [classRecordId, record.school_year_id]
+        );
+
+        for (const amended of amendedResult.rows) {
+            if (!amended.approved_by) continue;
+
+            await pool.query(
+                `
+                INSERT INTO notifications (user_id, title, message, status)
+                VALUES ($1, $2, $3, 'Unread')
+                `,
+                [
+                    amended.approved_by,
+                    "Approved Record Needs Amendment",
+                    `${amended.last_name}, ${amended.first_name}'s consolidated record was previously ` +
+                        `approved, but a ${record.subject_name}${sectionLabel} revision request has reopened ` +
+                        "it for amendment.",
+                ]
+            );
+        }
+
+        const amendedNote =
+            amendedResult.rows.length > 0
+                ? ` ${amendedResult.rows.length} previously approved record(s) reopened for amendment.`
+                : "";
+
         return res.json({
-            message: "Revision requested. The teacher has been notified.",
+            message: `Revision requested. The teacher has been notified.${amendedNote}`,
+            amended_count: amendedResult.rows.length,
         });
     } catch (error) {
         console.error("Request revision error:", error);

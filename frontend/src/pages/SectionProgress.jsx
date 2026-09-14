@@ -20,6 +20,7 @@ const EMPTY_SUBMISSION_COUNTS = {
     "Pending Approval": 0,
     "Approved": 0,
     "Rejected": 0,
+    "Amendment Requested": 0,
 };
 
 // Section-level consolidation view (SPMP v1.0) — complements the
@@ -272,6 +273,11 @@ function SectionProgress() {
                                             <span className="sp-submission-item rejected">
                                                 {submissionCounts["Rejected"]} Rejected
                                             </span>
+                                            {submissionCounts["Amendment Requested"] > 0 && (
+                                                <span className="sp-submission-item amendment-requested">
+                                                    {submissionCounts["Amendment Requested"]} Needs Amendment
+                                                </span>
+                                            )}
                                         </div>
 
                                         <button

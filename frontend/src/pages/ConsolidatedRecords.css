@@ -196,6 +196,11 @@
     color: #b91c1c;
 }
 
+.submission-badge.amendment-requested {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
 .cr-reject-panel {
     padding: 0 20px 16px 50px;
     display: flex;
@@ -225,6 +230,15 @@
     padding: 10px 12px;
     background: #fef2f2;
     color: #991b1b;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.cr-amendment-note {
+    margin: 0 20px 16px 50px;
+    padding: 10px 12px;
+    background: #ede9fe;
+    color: #5b21b6;
     border-radius: 8px;
     font-size: 13px;
 }
