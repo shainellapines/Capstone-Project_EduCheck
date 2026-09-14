@@ -1,0 +1,118 @@
+/* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
+   dashboard-header, dashboard-content, content-card, error-banner,
+   loading-state, school-year-select, empty-state-card) for everything
+   generic — this file only covers the row list and its expandable diff. */
+
+.al-truncated-note {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.al-row {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.al-row:last-child {
+    border-bottom: none;
+}
+
+.al-row-summary {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+}
+
+.al-action-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.al-action-create {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.al-action-update {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.al-action-delete {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.al-entity {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.al-actor {
+    color: #64748b;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.al-timestamp {
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.al-details {
+    padding: 0 4px 16px 36px;
+    overflow-x: auto;
+}
+
+.al-empty-note {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.al-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.al-table th {
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 12px;
+    color: #475569;
+}
+
+.al-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+    color: #334155;
+    word-break: break-word;
+}
+
+@media (max-width: 700px) {
+    .al-row-summary {
+        flex-wrap: wrap;
+    }
+
+    .al-timestamp {
+        margin-left: 32px;
+    }
+}

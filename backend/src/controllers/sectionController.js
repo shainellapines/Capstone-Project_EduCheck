@@ -1,4 +1,5 @@
 const pool = require("../db");
+const { recordAuditLog } = require("../utils/auditLog");
 
 const VALID_STAFFING_MODES = ["Self-Contained", "Departmentalized"];
 
@@ -49,6 +50,15 @@ const createSection = async (req, res) => {
             [section_name, grade_level, staffing_mode]
         );
 
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "create",
+            entityType: "section",
+            entityId: result.rows[0].section_id,
+            beforeData: null,
+            afterData: result.rows[0],
+        });
+
         res.status(201).json({
             message: "Section created successfully.",
             section: result.rows[0]
@@ -74,6 +84,17 @@ const updateSection = async (req, res) => {
             });
         }
 
+        const beforeResult = await pool.query(
+            `SELECT section_id, section_name, grade_level, staffing_mode FROM sections WHERE section_id = $1`,
+            [id]
+        );
+
+        if (beforeResult.rows.length === 0) {
+            return res.status(404).json({
+                message: "Section not found."
+            });
+        }
+
         const result = await pool.query(
             `UPDATE sections
              SET section_name = COALESCE($1, section_name),
@@ -84,11 +105,14 @@ const updateSection = async (req, res) => {
             [section_name, grade_level, staffing_mode, id]
         );
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "Section not found."
-            });
-        }
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "update",
+            entityType: "section",
+            entityId: result.rows[0].section_id,
+            beforeData: beforeResult.rows[0],
+            afterData: result.rows[0],
+        });
 
         res.json({
             message: "Section updated successfully.",
@@ -109,7 +133,7 @@ const deleteSection = async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(
-            `DELETE FROM sections WHERE section_id = $1 RETURNING section_id, section_name`,
+            `DELETE FROM sections WHERE section_id = $1 RETURNING *`,
             [id]
         );
 
@@ -118,6 +142,15 @@ const deleteSection = async (req, res) => {
                 message: "Section not found."
             });
         }
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "delete",
+            entityType: "section",
+            entityId: result.rows[0].section_id,
+            beforeData: result.rows[0],
+            afterData: null,
+        });
 
         res.json({
             message: "Section deleted successfully.",

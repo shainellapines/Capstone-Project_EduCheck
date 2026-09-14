@@ -18,6 +18,7 @@ import {
     UserCheck,
     PieChart,
     Eye,
+    History,
 } from "lucide-react";
 
 import "../pages/Dashboard.css";
@@ -53,6 +54,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "user-management", label: "User Management", icon: Users, path: "/users" },
         { key: "teacher-management", label: "Teacher Management", icon: UserCog, path: "/teachers" },
         { key: "section-assignments", label: "Section & Teacher Assignments", icon: UserCheck, path: "/section-assignments" },
+        { key: "audit-log", label: "Audit Log", icon: History, path: "/audit-log" },
         { key: "consolidated-records", label: "Submission Review", icon: ClipboardCheck, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },

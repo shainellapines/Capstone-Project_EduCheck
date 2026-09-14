@@ -10,6 +10,7 @@ const submissionRoutes = require("./routes/submissionRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const repositoryRoutes = require("./routes/repositoryRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 const parserTestRoutes = require("./routes/parserTestRoutes");
 
 const {
@@ -41,6 +42,7 @@ app.use("/api/submissions", submissionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/repository", repositoryRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/audit-logs", auditLogRoutes);
 
 app.use(
     "/api/parser-test",

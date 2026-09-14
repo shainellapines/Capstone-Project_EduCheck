@@ -20,6 +20,7 @@ import ValidationResults from "./pages/ValidationResults";
 import ConsolidatedRecords from "./pages/ConsolidatedRecords";
 import SectionProgress from "./pages/SectionProgress";
 import Analytics from "./pages/Analytics";
+import AuditLog from "./pages/AuditLog";
 import RecordsRepository from "./pages/RecordsRepository";
 import Notifications from "./pages/Notifications";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -140,6 +141,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
                             <Analytics />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/audit-log"
+                    element={
+                        <ProtectedRoute allowedRoles={["admin"]}>
+                            <AuditLog />
                         </ProtectedRoute>
                     }
                 />

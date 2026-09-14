@@ -1,4 +1,5 @@
 const pool = require("../db");
+const { recordAuditLog } = require("../utils/auditLog");
 
 // GET all assignments (admin view - joined with readable names)
 const getAssignments = async (req, res) => {
@@ -108,6 +109,15 @@ const createAssignment = async (req, res) => {
             [teacher_id, section_id, subject_id, school_year_id]
         );
 
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "create",
+            entityType: "teacher_assignment",
+            entityId: result.rows[0].assignment_id,
+            beforeData: null,
+            afterData: result.rows[0],
+        });
+
         res.status(201).json({
             message: "Assignment created successfully.",
             assignment: result.rows[0]
@@ -147,7 +157,7 @@ const deleteAssignment = async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(
-            `DELETE FROM teacher_assignments WHERE assignment_id = $1 RETURNING assignment_id`,
+            `DELETE FROM teacher_assignments WHERE assignment_id = $1 RETURNING *`,
             [id]
         );
 
@@ -156,6 +166,15 @@ const deleteAssignment = async (req, res) => {
                 message: "Assignment not found."
             });
         }
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "delete",
+            entityType: "teacher_assignment",
+            entityId: result.rows[0].assignment_id,
+            beforeData: result.rows[0],
+            afterData: null,
+        });
 
         res.json({
             message: "Assignment removed successfully."
