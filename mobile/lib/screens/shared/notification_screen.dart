@@ -26,6 +26,52 @@ class NotificationScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Notifications',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      'Stay updated with your record submissions',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1554D1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  '2 unread',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
           _notificationCard(
             icon: Icons.check_circle,
             title: 'Validation Complete',
@@ -42,6 +88,30 @@ class NotificationScreen extends StatelessWidget {
                 '3rd Quarter records are due on April 15, 2026.',
             date: '4/10/2026',
             unread: true,
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF1554D1),
+                side: const BorderSide(
+                  color: Color(0xFF1554D1),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'View All Notifications',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -102,7 +172,10 @@ class NotificationScreen extends StatelessWidget {
                       Container(
                         width: 8,
                         height: 8,
-                        margin: const EdgeInsets.only(top: 5, left: 8),
+                        margin: const EdgeInsets.only(
+                          top: 5,
+                          left: 8,
+                        ),
                         decoration: const BoxDecoration(
                           color: Color(0xFF1554D1),
                           shape: BoxShape.circle,
