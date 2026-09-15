@@ -5,6 +5,9 @@ import 'performance_analytics_screen.dart';
 import 'upload_files_screen.dart';
 import 'encode_grades_screen.dart';
 import 'validation_results_screen.dart';
+import 'consolidated_records_screen.dart';
+import 'submission_workflow_screen.dart';
+import '../shared/notification_screen.dart';
 
 class AdviserDashboardScreen extends StatefulWidget {
   const AdviserDashboardScreen({super.key});
@@ -119,11 +122,11 @@ class _AdviserDashboardScreenState
                         child: OutlinedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'You are viewing all available notifications.',
-                                ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const NotificationScreen(),
                               ),
                             );
                           },
@@ -249,10 +252,189 @@ class _AdviserDashboardScreenState
     );
   }
 
+  void openConsolidatedRecords() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const ConsolidatedRecordsScreen(),
+      ),
+    );
+  }
+
+  void openPerformanceAnalytics() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const PerformanceAnalyticsScreen(),
+      ),
+    );
+  }
+
+  void openSubmissionWorkflow() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const SubmissionWorkflowScreen(),
+      ),
+    );
+  }
+
+  void openNotificationFromDrawer() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const NotificationScreen(),
+      ),
+    );
+  }
+
+  void logOut() {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/login',
+      (route) => false,
+    );
+  }
+
+  Widget buildDrawer() {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(
+                24,
+                30,
+                24,
+                26,
+              ),
+              color: const Color(0xFF1554D1),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person_outline_rounded,
+                      color: Color(0xFF1554D1),
+                      size: 36,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Maria Santos',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    'Adviser / Homeroom Teacher',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Grade 6 - Sampaguita',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            buildDrawerItem(
+              icon: Icons.table_chart_outlined,
+              title: 'Consolidated Records',
+              onTap: openConsolidatedRecords,
+            ),
+            buildDrawerItem(
+              icon: Icons.analytics_outlined,
+              title: 'Performance Analytics',
+              onTap: openPerformanceAnalytics,
+            ),
+            buildDrawerItem(
+              icon: Icons.sync_alt_rounded,
+              title: 'Submission Workflow',
+              onTap: openSubmissionWorkflow,
+            ),
+            buildDrawerItem(
+              icon: Icons.notifications_none_rounded,
+              title: 'Notification',
+              onTap: openNotificationFromDrawer,
+            ),
+            const Spacer(),
+            const Divider(
+              height: 1,
+              color: Color(0xFFE4E7EC),
+            ),
+            buildDrawerItem(
+              icon: Icons.logout_rounded,
+              title: 'Log out',
+              onTap: logOut,
+              isLogout: true,
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isLogout = false,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 2,
+      ),
+      leading: Icon(
+        icon,
+        size: 23,
+        color: isLogout
+            ? const Color(0xFFDC2626)
+            : const Color(0xFF1554D1),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: isLogout
+              ? const Color(0xFFDC2626)
+              : const Color(0xFF1F2937),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
+      drawer: buildDrawer(),
       body: SafeArea(
         child: selectedIndex == 0
             ? buildDashboard()
@@ -261,9 +443,9 @@ class _AdviserDashboardScreenState
                 : selectedIndex == 2
                     ? const EncodeGradesScreen()
                     : selectedIndex == 3
-                      ? const UploadFilesScreen()
-                      : const ValidationResultsScreen(),
-                        ),
+                        ? const UploadFilesScreen()
+                        : const ValidationResultsScreen(),
+      ),
       bottomNavigationBar: buildBottomNavigationBar(),
     );
   }
@@ -302,92 +484,98 @@ class _AdviserDashboardScreenState
   }
 
   Widget buildHeader() {
-    return Container(
-      height: 100,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1554D1),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.menu_rounded,
-              color: Colors.white,
-              size: 34,
+    return Builder(
+      builder: (context) {
+        return Container(
+          height: 100,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          decoration: const BoxDecoration(
+            color: Color(0xFF1554D1),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
             ),
           ),
-          const SizedBox(width: 4),
-          const Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'EduCheck',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold,
-                  ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+                icon: const Icon(
+                  Icons.menu_rounded,
+                  color: Colors.white,
+                  size: 34,
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'Academic Records',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: openNotifications,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(
-                    Icons.notifications_none_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                  Positioned(
-                    right: -4,
-                    top: -8,
-                    child: Container(
-                      width: 22,
-                      height: 22,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFDC2626),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Text(
-                        '2',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+              const SizedBox(width: 4),
+              const Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'EduCheck',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(height: 2),
+                    Text(
+                      'Academic Records',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              GestureDetector(
+                onTap: openNotifications,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(
+                        Icons.notifications_none_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                      Positioned(
+                        right: -4,
+                        top: -8,
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFDC2626),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Text(
+                            '2',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

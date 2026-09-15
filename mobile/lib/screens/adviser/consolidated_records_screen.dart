@@ -21,6 +21,9 @@ class _ConsolidatedRecordsScreenState
   String? sortBy;
   bool sortAscending = true;
 
+  String recordStatus = 'Pending Review';
+  String returnReason = '';
+
   final List<String> records = [
     'Grade 6 - Sampaguita (2nd Quarter, 2025-2026)',
   ];
@@ -121,40 +124,76 @@ class _ConsolidatedRecordsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: primaryBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        toolbarHeight: 56,
-        titleSpacing: 16,
-        title: const Text(
-          'Consolidated Student Records',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildAppHeader(context),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildPageHeader(),
+                      const SizedBox(height: 18),
+                      _buildFilters(),
+                      const SizedBox(height: 18),
+                      if (selectedRecord == null)
+                        _buildEmptyState()
+                      else
+                        _buildSelectedRecordContent(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildPageHeader(),
-                const SizedBox(height: 18),
-                _buildFilters(),
-                const SizedBox(height: 18),
-                if (selectedRecord == null)
-                  _buildEmptyState()
-                else
-                  _buildSelectedRecordContent(),
-              ],
+    );
+  }
+
+  Widget _buildAppHeader(BuildContext context) {
+    return Container(
+      height: 56,
+      width: double.infinity,
+      color: primaryBlue,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(
+                minWidth: 40,
+                minHeight: 40,
+              ),
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
           ),
-        ),
+          const SizedBox(width: 4),
+          const Expanded(
+            child: Text(
+              'Consolidated Student Records',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -172,7 +211,7 @@ class _ConsolidatedRecordsScreenState
           ),
         ),
         const SizedBox(height: 4),
-        Text(
+        const Text(
           'View merged academic data with performance indicators',
           style: TextStyle(
             fontSize: 13,
@@ -280,6 +319,8 @@ class _ConsolidatedRecordsScreenState
               selectedStatus = 'All Students';
               sortBy = null;
               sortAscending = true;
+              recordStatus = 'Pending Review';
+              returnReason = '';
             });
           },
         ),
@@ -541,6 +582,8 @@ class _ConsolidatedRecordsScreenState
         _buildSummaryCards(),
         const SizedBox(height: 18),
         _buildStudentRecordsTable(students),
+        const SizedBox(height: 18),
+        _buildRecordReviewCard(),
       ],
     );
   }
@@ -894,6 +937,426 @@ class _ConsolidatedRecordsScreenState
         ],
       ),
     );
+  }
+
+  Widget _buildRecordReviewCard() {
+    final bool canReview = recordStatus == 'Pending Review' ||
+        recordStatus == 'Under Adviser Review';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Record Review',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'Review the consolidated record before verifying or returning it.',
+            style: TextStyle(
+              fontSize: 12,
+              color: secondaryTextColor,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Text(
+                'Current Status',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(width: 10),
+              _buildRecordStatusChip(recordStatus),
+            ],
+          ),
+          if (returnReason.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFFED7AA),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Return Reason',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF9A3412),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    returnReason,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF7C2D12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (canReview) ...[
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _showReturnDialog,
+                    icon: const Icon(
+                      Icons.undo_outlined,
+                      size: 18,
+                    ),
+                    label: const Text('Return'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      side: const BorderSide(
+                        color: Color(0xFFFCA5A5),
+                      ),
+                      minimumSize: const Size(
+                        double.infinity,
+                        46,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _showVerifyDialog,
+                    icon: const Icon(
+                      Icons.check_circle_outline,
+                      size: 18,
+                    ),
+                    label: const Text('Verify Record'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      minimumSize: const Size(
+                        double.infinity,
+                        46,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else if (recordStatus == 'Verified by Adviser') ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFBBF7D0),
+                ),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF16A34A),
+                    size: 20,
+                  ),
+                  SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'This record has been verified by the adviser and is ready for the next workflow step.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF166534),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (recordStatus == 'Returned for Revision') ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFFFECACA),
+                ),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Color(0xFFDC2626),
+                    size: 20,
+                  ),
+                  SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'This record was returned for revision. The submitted record needs to be corrected before it can be reviewed again.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF991B1B),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordStatusChip(String status) {
+    Color textColorValue;
+    Color backgroundColorValue;
+    IconData icon;
+
+    switch (status) {
+      case 'Verified by Adviser':
+        textColorValue = const Color(0xFF15803D);
+        backgroundColorValue = const Color(0xFFDCFCE7);
+        icon = Icons.check_circle_outline;
+        break;
+      case 'Returned for Revision':
+        textColorValue = const Color(0xFFDC2626);
+        backgroundColorValue = const Color(0xFFFEE2E2);
+        icon = Icons.undo_outlined;
+        break;
+      default:
+        textColorValue = const Color(0xFFD97706);
+        backgroundColorValue = const Color(0xFFFEF3C7);
+        icon = Icons.pending_outlined;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 9,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColorValue,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: textColorValue,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            status,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: textColorValue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showVerifyDialog() async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Confirm Verification',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to verify this academic record?',
+            style: TextStyle(
+              fontSize: 14,
+              color: secondaryTextColor,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryBlue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Verify'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() {
+        recordStatus = 'Verified by Adviser';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Record verified successfully.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showReturnDialog() async {
+    final TextEditingController reasonController =
+        TextEditingController();
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Return Record',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please provide a reason for returning this record for revision.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: secondaryTextColor,
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: reasonController,
+                maxLines: 4,
+                textInputAction: TextInputAction.newline,
+                decoration: InputDecoration(
+                  hintText: 'Enter return reason...',
+                  hintStyle: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF94A3B8),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFD1D5DB),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFD1D5DB),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: primaryBlue,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (reasonController.text.trim().isEmpty) {
+                  return;
+                }
+
+                Navigator.pop(dialogContext, true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Return Record'),
+            ),
+          ],
+        );
+      },
+    );
+
+    final String reason = reasonController.text.trim();
+    reasonController.dispose();
+
+    if (confirmed == true && reason.isNotEmpty && mounted) {
+      setState(() {
+        recordStatus = 'Returned for Revision';
+        returnReason = reason;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Record returned for revision.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildNoStudentsFound() {
