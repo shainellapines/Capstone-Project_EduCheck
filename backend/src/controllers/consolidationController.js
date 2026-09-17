@@ -64,6 +64,34 @@ const buildRankedGradesQuery = (extraWhere) => `
     ORDER BY s.last_name, s.first_name, subj.subject_name
 `;
 
+// ==========================================
+// ADVISER SECTION OWNERSHIP
+// ==========================================
+// Per SPMP v1.0: an Adviser's write actions on consolidated records
+// (request-revision, submit-for-approval, submit-all) are scoped to
+// "own section only" - full visibility elsewhere, but not the ability to
+// act on another Adviser's section. Ownership is the same teacher_assignments
+// row uploadController's isUploadAuthorized already treats as "Class
+// Adviser for this section" (subject_id IS NULL), for the given school
+// year. Returns the set of section_ids this user (by user_id, not
+// teacher_id) is the Adviser of - an Adviser with no assignment yet gets
+// an empty set, not an error.
+const getAdviserSectionIds = async ({ userId, schoolYearId }) => {
+    const result = await pool.query(
+        `
+        SELECT ta.section_id
+        FROM teacher_assignments ta
+        INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+        WHERE t.user_id = $1
+          AND ta.school_year_id = $2
+          AND ta.subject_id IS NULL
+        `,
+        [userId, schoolYearId]
+    );
+
+    return new Set(result.rows.map((row) => row.section_id));
+};
+
 // Groups the flat per-(student, subject) rows above into one entry per
 // student, each carrying its list of per-subject grades.
 const groupRowsByStudent = (rows) => {
@@ -570,6 +598,7 @@ const requestRevision = async (req, res) => {
             SELECT
                 cr.class_record_id,
                 cr.school_year_id,
+                cr.section_id,
                 t.user_id AS teacher_user_id,
                 sub.subject_name,
                 sec.section_name,
@@ -591,6 +620,18 @@ const requestRevision = async (req, res) => {
         }
 
         const record = recordResult.rows[0];
+
+        const adviserSectionIds = await getAdviserSectionIds({
+            userId: req.user.user_id,
+            schoolYearId: record.school_year_id,
+        });
+
+        if (!record.section_id || !adviserSectionIds.has(record.section_id)) {
+            return res.status(403).json({
+                message: "You can only request a revision for a section you are the Adviser of.",
+            });
+        }
+
         const trimmedRemarks = remarks.trim();
 
         await pool.query(
@@ -682,6 +723,7 @@ module.exports = {
     getSectionProgressForSchoolYear,
     fetchConsolidatedStudents,
     fetchConsolidatedStudent,
+    getAdviserSectionIds,
     requestRevision,
     // Exported for analyticsController — same "latest class_record wins"
     // grade data, aggregated a different way (by grade band/section/subject

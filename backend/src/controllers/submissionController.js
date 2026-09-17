@@ -1,5 +1,9 @@
 const pool = require("../db");
-const { fetchConsolidatedStudents, fetchConsolidatedStudent } = require("./consolidationController");
+const {
+    fetchConsolidatedStudents,
+    fetchConsolidatedStudent,
+    getAdviserSectionIds,
+} = require("./consolidationController");
 
 const isValidSchoolYearId = (value) => Number.isInteger(value) && value > 0;
 const isValidLrn = (value) => typeof value === "string" && /^\d{12}$/.test(value);
@@ -36,6 +40,17 @@ const submitForApproval = async (req, res) => {
         if (!student) {
             return res.status(404).json({
                 message: "No consolidated record found for this LRN in this school year.",
+            });
+        }
+
+        const adviserSectionIds = await getAdviserSectionIds({
+            userId: req.user.user_id,
+            schoolYearId,
+        });
+
+        if (!student.section_id || !adviserSectionIds.has(student.section_id)) {
+            return res.status(403).json({
+                message: "You can only submit records for a section you are the Adviser of.",
             });
         }
 
@@ -113,7 +128,14 @@ const submitAllEligible = async (req, res) => {
             return res.status(400).json({ message: "A valid school year ID is required." });
         }
 
-        const students = await fetchConsolidatedStudents(schoolYearId);
+        const adviserSectionIds = await getAdviserSectionIds({
+            userId: req.user.user_id,
+            schoolYearId,
+        });
+
+        const students = (await fetchConsolidatedStudents(schoolYearId)).filter(
+            (student) => student.section_id && adviserSectionIds.has(student.section_id)
+        );
         const eligible = students.filter(
             (student) =>
                 student.all_subjects_submitted &&
