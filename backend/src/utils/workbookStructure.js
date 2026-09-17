@@ -7,11 +7,25 @@ const workbookStructure = {
         summary: "SUMMARY OF GRADES",
         helper: "Helper (Do Not Delete)",
         doNotDelete: "DO NOT DELETE",
+        // Optional supplementary sheet, not part of the official DepEd template.
+        // Added per adviser guidance so learners can be matched across each
+        // subject's separate e-Class Record using their LRN. Same row layout
+        // as INPUT (list number + name) so rows line up 1:1 by position,
+        // with name matching as the authoritative cross-check.
+        lrn: "LRN",
     },
 
     learner: {
         numberColumn: "A",
         nameColumn: "B",
+    },
+
+    // Columns on the LRN sheet. Mirrors the INPUT sheet's learner section
+    // row ranges (see extractLearners / extractLrnRoster).
+    lrnSheet: {
+        numberColumn: "A",
+        nameColumn: "B",
+        lrnColumn: "C",
     },
 
     terms: {

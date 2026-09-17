@@ -1,7 +1,16 @@
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
+const subjectRoutes = require("./routes/subjectRoutes");
+const sectionRoutes = require("./routes/sectionRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const consolidationRoutes = require("./routes/consolidationRoutes");
+const submissionRoutes = require("./routes/submissionRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const repositoryRoutes = require("./routes/repositoryRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 const parserTestRoutes = require("./routes/parserTestRoutes");
 
 const {
@@ -24,7 +33,16 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/teachers", teacherRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/sections", sectionRoutes);
+app.use("/api/assignments", assignmentRoutes);
 app.use("/api/uploads", uploadRoutes);
+app.use("/api/consolidation", consolidationRoutes);
+app.use("/api/submissions", submissionRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/repository", repositoryRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/audit-logs", auditLogRoutes);
 
 app.use(
     "/api/parser-test",

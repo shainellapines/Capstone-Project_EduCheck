@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { parseClassRecord } = require("./classRecordParser");
 const { validateClassRecord } = require("./classRecordValidator");
+const { persistLearnerGradeRecords } = require("./gradeRecordPersistence");
 const pool = require("../db");
 
 const removeUploadedFile = (filePath) => {
@@ -10,31 +11,73 @@ const removeUploadedFile = (filePath) => {
     }
 };
 // ==========================================
-// GET SUBJECTS AND SCHOOL YEARS
+// GET UPLOAD OPTIONS (assignment-scoped)
 // ==========================================
-
+// Per SPMP v1.0 US-009/US-011: a Subject Teacher may only upload the
+// subject(s) they're explicitly assigned to, for the section(s) they're
+// assigned to. A Class Adviser may only upload when their assigned
+// section is Self-Contained - in that case they can upload any subject
+// for that section's grade level, since they're the section's only
+// teacher. "options" below is a flat list of valid (section, subject)
+// pairs this specific user is allowed to upload for right now; an empty
+// list means the Administrator hasn't assigned this person to anything
+// yet, not a system error.
 const getUploadOptions = async (req, res) => {
     try {
-        const subjectsResult = await pool.query(`
-            SELECT
-                subject_id,
-                subject_name,
-                grade_level
-            FROM subjects
-            ORDER BY grade_level, subject_name
-        `);
+        const teacherResult = await pool.query(
+            `SELECT teacher_id FROM teachers WHERE user_id = $1`,
+            [req.user.user_id]
+        );
 
         const schoolYearsResult = await pool.query(`
-            SELECT
-                school_year_id,
-                school_year,
-                status
+            SELECT school_year_id, school_year, status
             FROM school_years
             ORDER BY school_year_id DESC
         `);
 
+        if (teacherResult.rows.length === 0) {
+            return res.json({ options: [], school_years: schoolYearsResult.rows });
+        }
+
+        const teacherId = teacherResult.rows[0].teacher_id;
+
+        // Subject Teacher assignments: one option per explicit (subject, section) row.
+        const subjectTeacherOptions = await pool.query(
+            `
+            SELECT
+                sec.section_id, sec.section_name, sec.grade_level, sec.staffing_mode,
+                sub.subject_id, sub.subject_name,
+                ta.school_year_id, sy.school_year
+            FROM teacher_assignments ta
+            INNER JOIN sections sec ON sec.section_id = ta.section_id
+            INNER JOIN subjects sub ON sub.subject_id = ta.subject_id
+            INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
+            WHERE ta.teacher_id = $1 AND ta.subject_id IS NOT NULL
+            `,
+            [teacherId]
+        );
+
+        // Adviser assignments over a Self-Contained section: every subject
+        // for that section's grade level becomes a valid upload option.
+        const adviserOptions = await pool.query(
+            `
+            SELECT
+                sec.section_id, sec.section_name, sec.grade_level, sec.staffing_mode,
+                sub.subject_id, sub.subject_name,
+                ta.school_year_id, sy.school_year
+            FROM teacher_assignments ta
+            INNER JOIN sections sec ON sec.section_id = ta.section_id
+            INNER JOIN subjects sub ON sub.grade_level = sec.grade_level
+            INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
+            WHERE ta.teacher_id = $1
+              AND ta.subject_id IS NULL
+              AND sec.staffing_mode = 'Self-Contained'
+            `,
+            [teacherId]
+        );
+
         res.json({
-            subjects: subjectsResult.rows,
+            options: [...subjectTeacherOptions.rows, ...adviserOptions.rows],
             school_years: schoolYearsResult.rows
         });
 
@@ -46,9 +89,34 @@ const getUploadOptions = async (req, res) => {
 
         res.status(500).json({
             message:
-                "Failed to retrieve subjects and school years."
+                "Failed to retrieve upload options."
         });
     }
+};
+
+// Shared authorization check for an upload attempt: does this teacher
+// actually have a live assignment covering this exact (subject, section,
+// school year)? Same two paths as getUploadOptions above, checked
+// directly against the attempted combination rather than the full list.
+const isUploadAuthorized = async ({ teacherId, sectionId, subjectId, schoolYearId }) => {
+    const result = await pool.query(
+        `
+        SELECT 1
+        FROM teacher_assignments ta
+        INNER JOIN sections sec ON sec.section_id = ta.section_id
+        WHERE ta.teacher_id = $1
+          AND ta.section_id = $2
+          AND ta.school_year_id = $3
+          AND (
+              ta.subject_id = $4
+              OR (ta.subject_id IS NULL AND sec.staffing_mode = 'Self-Contained')
+          )
+        LIMIT 1
+        `,
+        [teacherId, sectionId, schoolYearId, subjectId]
+    );
+
+    return result.rows.length > 0;
 };
 
 // ==========================================
@@ -111,6 +179,7 @@ const getMyClassRecords = async (req, res) => {
                 cr.upload_date,
                 cr.file_name,
                 cr.status,
+                cr.revision_remarks,
 
                 s.subject_name,
                 s.grade_level,
@@ -226,6 +295,7 @@ const getMyClassRecordSummary = async (req, res) => {
                 COUNT(*) FILTER (
                     WHERE LOWER(status) IN (
                         'needs attention',
+                        'needs revision',
                         'rejected',
                         'invalid'
                     )
@@ -296,6 +366,8 @@ const getMyClassRecordValidation = async (req, res) => {
                 cr.validation_error_count,
                 cr.validation_warning_count,
                 cr.ready_for_submission,
+                cr.revision_remarks,
+                cr.revision_requested_at,
 
                 s.subject_name,
                 s.grade_level,
@@ -349,6 +421,19 @@ const getMyClassRecordValidation = async (req, res) => {
             [classRecordId]
         );
 
+        // Distinct learners actually persisted for this class record — real
+        // coverage data (from grade_records, not re-derived from the issue
+        // list) so the frontend can show "N learners reviewed" without
+        // guessing at a total the validator itself doesn't report.
+        const learnerCountResult = await pool.query(
+            `
+            SELECT COUNT(DISTINCT lrn) AS learner_count
+            FROM grade_records
+            WHERE class_record_id = $1
+            `,
+            [classRecordId]
+        );
+
         return res.json({
             class_record: {
                 class_record_id: record.class_record_id,
@@ -358,12 +443,15 @@ const getMyClassRecordValidation = async (req, res) => {
                 school_year: record.school_year,
                 upload_date: record.upload_date,
                 status: record.status,
+                revision_remarks: record.revision_remarks,
+                revision_requested_at: record.revision_requested_at,
             },
 
             validation: {
                 ready_for_submission: record.ready_for_submission,
                 error_count: record.validation_error_count,
                 warning_count: record.validation_warning_count,
+                learner_count: Number(learnerCountResult.rows[0].learner_count),
                 issues: issuesResult.rows,
             },
         });
@@ -388,13 +476,13 @@ const uploadClassRecord = async (req, res) => {
             });
         }
 
-        const { subject_id, school_year_id } = req.body;
+        const { subject_id, section_id, school_year_id } = req.body;
 
-        if (!subject_id || !school_year_id) {
+        if (!subject_id || !section_id || !school_year_id) {
             removeUploadedFile(req.file?.path);
 
             return res.status(400).json({
-                message: "Subject and school year are required.",
+                message: "Subject, section, and school year are required.",
             });
         }
 
@@ -482,6 +570,44 @@ const uploadClassRecord = async (req, res) => {
 
         const schoolYear = schoolYearResult.rows[0];
 
+        const sectionResult = await pool.query(
+            `
+            SELECT
+                section_id,
+                section_name,
+                grade_level,
+                staffing_mode
+            FROM sections
+            WHERE section_id = $1
+            `,
+            [section_id]
+        );
+
+        if (sectionResult.rows.length === 0) {
+            removeUploadedFile(file.path);
+
+            return res.status(404).json({
+                message: "Selected section was not found.",
+            });
+        }
+
+        const section = sectionResult.rows[0];
+
+        const authorized = await isUploadAuthorized({
+            teacherId: teacher.teacher_id,
+            sectionId: section.section_id,
+            subjectId: subject.subject_id,
+            schoolYearId: schoolYear.school_year_id,
+        });
+
+        if (!authorized) {
+            removeUploadedFile(file.path);
+
+            return res.status(403).json({
+                message: "You are not assigned to upload this subject for this section. Contact your Administrator to confirm your assignment.",
+            });
+        }
+
         let parsedRecord;
         let validationResult;
 
@@ -502,6 +628,7 @@ const uploadClassRecord = async (req, res) => {
             : "Needs Attention";
 
         let classRecord;
+        let gradeRecordSummary;
         const dbClient = await pool.connect();
 
         try {
@@ -513,6 +640,7 @@ const uploadClassRecord = async (req, res) => {
         (
             teacher_id,
             subject_id,
+            section_id,
             school_year_id,
             file_name,
             stored_file_name,
@@ -523,12 +651,13 @@ const uploadClassRecord = async (req, res) => {
         )
         VALUES
         (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
         )
         RETURNING
             class_record_id,
             teacher_id,
             subject_id,
+            section_id,
             school_year_id,
             upload_date,
             file_name,
@@ -541,6 +670,7 @@ const uploadClassRecord = async (req, res) => {
                 [
                     teacher.teacher_id,
                     subject.subject_id,
+                    section.section_id,
                     schoolYear.school_year_id,
                     file.originalname,
                     file.filename,
@@ -585,6 +715,14 @@ const uploadClassRecord = async (req, res) => {
                 );
             }
 
+            gradeRecordSummary = await persistLearnerGradeRecords(dbClient, {
+                classRecordId: classRecord.class_record_id,
+                parsedRecord,
+                subject,
+                schoolYear,
+                sectionId: section.section_id,
+            });
+
             await dbClient.query("COMMIT");
         } catch (error) {
             await dbClient.query("ROLLBACK");
@@ -605,6 +743,8 @@ const uploadClassRecord = async (req, res) => {
                 subject_id: classRecord.subject_id,
                 subject_name: subject.subject_name,
                 grade_level: subject.grade_level,
+                section_id: classRecord.section_id,
+                section_name: section.section_name,
                 school_year_id: classRecord.school_year_id,
                 school_year: schoolYear.school_year,
                 upload_date: classRecord.upload_date,
@@ -626,6 +766,12 @@ const uploadClassRecord = async (req, res) => {
                 sheet_count: parsedRecord.workbook.sheet_count,
                 sheet_names: parsedRecord.workbook.sheet_names,
                 learner_count: parsedRecord.validation.learner_count,
+                has_lrn_sheet: parsedRecord.workbook.has_lrn_sheet,
+            },
+
+            grade_records: {
+                persisted_count: gradeRecordSummary.persisted_count,
+                skipped_no_lrn_count: gradeRecordSummary.skipped_no_lrn_count,
             },
 
             validation: {

@@ -1,22 +1,18 @@
 import { Navigate } from "react-router-dom";
+import { isSessionValid, getStoredUser, clearSession } from "../utils/session";
 
 function ProtectedRoute({ children, allowedRoles }) {
-    const storedUser = localStorage.getItem("educheck_user");
-
-    if (!storedUser) {
-        return <Navigate to="/" replace />;
-    }
-
-    let user;
-
-    try {
-        user = JSON.parse(storedUser);
-    } catch {
-        localStorage.removeItem("educheck_user");
-        localStorage.removeItem("educheck_token");
+    // Previously this only checked whether *something* was stored under
+    // "educheck_user" — not whether the token alongside it was still
+    // valid, or even present. That let an expired (or hand-edited)
+    // session render the page shell instead of bouncing back to Login.
+    if (!isSessionValid()) {
+        clearSession();
 
         return <Navigate to="/" replace />;
     }
+
+    const user = getStoredUser();
 
     if (!allowedRoles.includes(user.role)) {
         return <Navigate to="/dashboard" replace />;

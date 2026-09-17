@@ -1,0 +1,124 @@
+/* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
+   dashboard-header, dashboard-content, content-card, card-header,
+   overview-grid/overview-card/card-icon, error-banner, loading-state,
+   school-year-select, empty-state-card) for everything generic — this file
+   only covers what's specific to the distribution bars and the
+   section/subject performance tables. */
+
+.an-panel {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.an-empty-note {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+/* GRADE DISTRIBUTION */
+
+.an-distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.an-band-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 40px;
+    align-items: center;
+    gap: 14px;
+}
+
+.an-band-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.an-band-range {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.an-band-descriptor {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.an-band-bar-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: #f1f5f9;
+    overflow: hidden;
+}
+
+.an-band-bar-fill {
+    height: 100%;
+    background: #2563eb;
+    border-radius: 999px;
+    transition: width 0.2s ease;
+}
+
+.an-band-count {
+    text-align: right;
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+}
+
+/* SECTION / SUBJECT TABLES */
+
+.an-table-wrap {
+    overflow-x: auto;
+    margin-top: 8px;
+}
+
+.an-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.an-table th {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 13px;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.an-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+    color: #334155;
+    white-space: nowrap;
+}
+
+.an-cell-strong {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.an-at-risk-pill {
+    display: inline-flex;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #fee2e2;
+    color: #b91c1c;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+@media (max-width: 700px) {
+    .an-band-row {
+        grid-template-columns: 110px 1fr 30px;
+        gap: 8px;
+    }
+}
