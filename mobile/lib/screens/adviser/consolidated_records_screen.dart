@@ -11,7 +11,7 @@ class ConsolidatedRecordsScreen extends StatefulWidget {
 class _ConsolidatedRecordsScreenState
     extends State<ConsolidatedRecordsScreen> {
   static const Color primaryBlue = Color(0xFF1554D1);
-  static const Color backgroundColor = Color(0xFFF5F7FB);
+  static const Color backgroundColor = Color(0xFFF7F9FC);
   static const Color textColor = Color(0xFF1F2937);
   static const Color secondaryTextColor = Color(0xFF64748B);
 
@@ -125,100 +125,136 @@ class _ConsolidatedRecordsScreenState
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppHeader(context),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildPageHeader(),
-                      const SizedBox(height: 18),
-                      _buildFilters(),
-                      const SizedBox(height: 18),
-                      if (selectedRecord == null)
-                        _buildEmptyState()
-                      else
-                        _buildSelectedRecordContent(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopHeader(context),
+              const SizedBox(height: 20),
+              _buildRecordOverview(),
+              const SizedBox(height: 18),
+              _buildFilters(),
+              const SizedBox(height: 18),
+              if (selectedRecord == null)
+                _buildEmptyState()
+              else
+                _buildSelectedRecordContent(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildAppHeader(BuildContext context) {
-    return Container(
-      height: 56,
-      width: double.infinity,
-      color: primaryBlue,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: IconButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 40,
-                minHeight: 40,
+  Widget _buildTopHeader(BuildContext context) {
+    return Row(
+      children: [
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(11),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(11),
+            onTap: () {
+              Navigator.pop(context);
+            },
+            child: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: const Color(0xFFE2E8F0),
+                ),
               ),
-              icon: const Icon(
+              child: const Icon(
                 Icons.arrow_back,
-                color: Colors.white,
-                size: 24,
+                color: textColor,
+                size: 20,
               ),
             ),
           ),
-          const SizedBox(width: 4),
-          const Expanded(
-            child: Text(
-              'Consolidated Student Records',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+        ),
+        const SizedBox(width: 12),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Student Records',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
               ),
-              overflow: TextOverflow.ellipsis,
+              SizedBox(height: 3),
+              Text(
+                'Consolidated academic records for your class.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: secondaryTextColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecordOverview() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.school_outlined,
+              color: primaryBlue,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Grade 6 - Sampaguita',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Consolidated student academic records',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPageHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Consolidated Student Records',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: textColor,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'View merged academic data with performance indicators',
-          style: TextStyle(
-            fontSize: 13,
-            color: secondaryTextColor,
-          ),
-        ),
-      ],
     );
   }
 
@@ -228,7 +264,7 @@ class _ConsolidatedRecordsScreenState
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
@@ -236,6 +272,15 @@ class _ConsolidatedRecordsScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'Record Selection',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
           _buildRecordDropdown(),
           if (selectedRecord != null) ...[
             const SizedBox(height: 16),
@@ -249,167 +294,147 @@ class _ConsolidatedRecordsScreenState
   }
 
   Widget _buildRecordDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Select Record',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: textColor,
+    return DropdownButtonFormField<String>(
+      value: selectedRecord,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Select Record',
+        labelStyle: const TextStyle(
+          fontSize: 12,
+          color: secondaryTextColor,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 13,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFFE2E8F0),
           ),
         ),
-        const SizedBox(height: 7),
-        DropdownButtonFormField<String>(
-          value: selectedRecord,
-          isExpanded: true,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFD1D5DB),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFD1D5DB),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFF60A5FA),
-                width: 1.5,
-              ),
-            ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFFE2E8F0),
           ),
-          hint: const Text(
-            'Choose a record...',
-            style: TextStyle(
-              fontSize: 13,
-              color: secondaryTextColor,
-            ),
-          ),
-          items: records.map(
-            (record) {
-              return DropdownMenuItem<String>(
-                value: record,
-                child: Text(
-                  record,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: textColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            },
-          ).toList(),
-          onChanged: (value) {
-            setState(() {
-              selectedRecord = value;
-              selectedStatus = 'All Students';
-              sortBy = null;
-              sortAscending = true;
-              recordStatus = 'Pending Review';
-              returnReason = '';
-            });
-          },
         ),
-      ],
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: primaryBlue,
+            width: 1.4,
+          ),
+        ),
+      ),
+      hint: const Text(
+        'Choose a record...',
+        style: TextStyle(
+          fontSize: 12,
+          color: secondaryTextColor,
+        ),
+      ),
+      items: records.map((record) {
+        return DropdownMenuItem<String>(
+          value: record,
+          child: Text(
+            record,
+            style: const TextStyle(
+              fontSize: 12,
+              color: textColor,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          selectedRecord = value;
+          selectedStatus = 'All Students';
+          sortBy = null;
+          sortAscending = true;
+          recordStatus = 'Pending Review';
+          returnReason = '';
+        });
+      },
     );
   }
 
   Widget _buildStatusDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Filter by Status',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: textColor,
+    return DropdownButtonFormField<String>(
+      value: selectedStatus,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Filter Students',
+        labelStyle: const TextStyle(
+          fontSize: 12,
+          color: secondaryTextColor,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 13,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFFE2E8F0),
           ),
         ),
-        const SizedBox(height: 7),
-        DropdownButtonFormField<String>(
-          value: selectedStatus,
-          isExpanded: true,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFD1D5DB),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFFD1D5DB),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFF60A5FA),
-                width: 1.5,
-              ),
-            ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFFE2E8F0),
           ),
-          items: const [
-            DropdownMenuItem(
-              value: 'All Students',
-              child: Text(
-                'All Students',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-            DropdownMenuItem(
-              value: 'On Track',
-              child: Text(
-                'On Track',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-            DropdownMenuItem(
-              value: 'At Risk',
-              child: Text(
-                'At Risk',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-            DropdownMenuItem(
-              value: 'Needs Intervention',
-              child: Text(
-                'Needs Intervention',
-                style: TextStyle(fontSize: 13),
-              ),
-            ),
-          ],
-          onChanged: (value) {
-            if (value == null) return;
-
-            setState(() {
-              selectedStatus = value;
-            });
-          },
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: primaryBlue,
+            width: 1.4,
+          ),
+        ),
+      ),
+      items: const [
+        DropdownMenuItem(
+          value: 'All Students',
+          child: Text(
+            'All Students',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
+        DropdownMenuItem(
+          value: 'On Track',
+          child: Text(
+            'On Track',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
+        DropdownMenuItem(
+          value: 'At Risk',
+          child: Text(
+            'At Risk',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
+        DropdownMenuItem(
+          value: 'Needs Intervention',
+          child: Text(
+            'Needs Intervention',
+            style: TextStyle(fontSize: 12),
+          ),
         ),
       ],
+      onChanged: (value) {
+        if (value == null) return;
+
+        setState(() {
+          selectedStatus = value;
+        });
+      },
     );
   }
 
@@ -418,34 +443,34 @@ class _ConsolidatedRecordsScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Sort By',
+          'Sort Students',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: textColor,
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _buildSortButton(
                 label: 'Name',
-                icon: Icons.swap_vert,
+                icon: Icons.sort_by_alpha,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildSortButton(
                 label: 'Average',
-                icon: Icons.swap_vert,
+                icon: Icons.bar_chart_outlined,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: _buildSortButton(
                 label: 'Status',
-                icon: Icons.swap_vert,
+                icon: Icons.filter_list,
               ),
             ),
           ],
@@ -463,7 +488,7 @@ class _ConsolidatedRecordsScreenState
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         onTap: () {
           setState(() {
             if (sortBy == label) {
@@ -475,13 +500,13 @@ class _ConsolidatedRecordsScreenState
           });
         },
         child: Container(
-          height: 42,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 7),
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xFFEFF6FF)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(8),
+                : const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected
                   ? const Color(0xFF93C5FD)
@@ -491,28 +516,34 @@ class _ConsolidatedRecordsScreenState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? primaryBlue : secondaryTextColor,
+              ),
+              const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: textColor,
+                    color: isSelected ? primaryBlue : textColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 3),
-              Icon(
-                isSelected
-                    ? (sortAscending
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward)
-                    : icon,
-                size: 14,
-                color: secondaryTextColor,
-              ),
+              if (isSelected) ...[
+                const SizedBox(width: 2),
+                Icon(
+                  sortAscending
+                      ? Icons.arrow_upward
+                      : Icons.arrow_downward,
+                  size: 11,
+                  color: primaryBlue,
+                ),
+              ],
             ],
           ),
         ),
@@ -523,19 +554,15 @@ class _ConsolidatedRecordsScreenState
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(
-        minHeight: 250,
-      ),
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             width: 64,
@@ -546,7 +573,7 @@ class _ConsolidatedRecordsScreenState
             ),
             child: const Icon(
               Icons.description_outlined,
-              size: 34,
+              size: 32,
               color: Color(0xFF94A3B8),
             ),
           ),
@@ -554,18 +581,19 @@ class _ConsolidatedRecordsScreenState
           const Text(
             'No Record Selected',
             style: TextStyle(
-              fontSize: 17,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textColor,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 6),
           const Text(
-            'Please select a record from the dropdown above to view consolidated student data.',
+            'Select a record above to view the consolidated student data.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: secondaryTextColor,
+              height: 1.4,
             ),
           ),
         ],
@@ -595,11 +623,11 @@ class _ConsolidatedRecordsScreenState
           children: [
             Expanded(
               child: _buildSummaryCard(
-                title: 'Total Students',
+                title: 'Students',
                 value: totalStudents.toString(),
-                icon: Icons.description_outlined,
-                iconColor: const Color(0xFF2563EB),
-                backgroundColor: const Color(0xFFEFF6FF),
+                icon: Icons.people_outline,
+                iconColor: primaryBlue,
+                cardColor: const Color(0xFFEFF6FF),
               ),
             ),
             const SizedBox(width: 10),
@@ -609,7 +637,7 @@ class _ConsolidatedRecordsScreenState
                 value: onTrackCount.toString(),
                 icon: Icons.check_circle_outline,
                 iconColor: const Color(0xFF16A34A),
-                backgroundColor: const Color(0xFFF0FDF4),
+                cardColor: const Color(0xFFF0FDF4),
               ),
             ),
           ],
@@ -622,18 +650,18 @@ class _ConsolidatedRecordsScreenState
                 title: 'At Risk',
                 value: atRiskCount.toString(),
                 icon: Icons.warning_amber_rounded,
-                iconColor: const Color(0xFFF59E0B),
-                backgroundColor: const Color(0xFFFFFBEB),
+                iconColor: const Color(0xFFD97706),
+                cardColor: const Color(0xFFFFF7ED),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: _buildSummaryCard(
-                title: 'Needs Intervention',
+                title: 'Intervention',
                 value: interventionCount.toString(),
-                icon: Icons.cancel_outlined,
-                iconColor: const Color(0xFFEF4444),
-                backgroundColor: const Color(0xFFFEF2F2),
+                icon: Icons.priority_high_rounded,
+                iconColor: const Color(0xFFDC2626),
+                cardColor: const Color(0xFFFEF2F2),
               ),
             ),
           ],
@@ -647,13 +675,13 @@ class _ConsolidatedRecordsScreenState
     required String value,
     required IconData icon,
     required Color iconColor,
-    required Color backgroundColor,
+    required Color cardColor,
   }) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
@@ -664,13 +692,13 @@ class _ConsolidatedRecordsScreenState
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(9),
+              color: cardColor,
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
               color: iconColor,
-              size: 20,
+              size: 19,
             ),
           ),
           const SizedBox(width: 9),
@@ -709,7 +737,7 @@ class _ConsolidatedRecordsScreenState
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
@@ -717,7 +745,54 @@ class _ConsolidatedRecordsScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTableHeader(students.length),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(15, 15, 15, 12),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Student Records',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                      SizedBox(height: 3),
+                      Text(
+                        'Academic performance overview',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: secondaryTextColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${students.length} students',
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: secondaryTextColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const Divider(
             height: 1,
             color: Color(0xFFE2E8F0),
@@ -729,32 +804,6 @@ class _ConsolidatedRecordsScreenState
               scrollDirection: Axis.horizontal,
               child: _buildStudentTable(students),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTableHeader(int count) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-      child: Row(
-        children: [
-          const Text(
-            'Student Records',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '($count total)',
-            style: const TextStyle(
-              fontSize: 13,
-              color: secondaryTextColor,
-            ),
-          ),
         ],
       ),
     );
@@ -784,32 +833,28 @@ class _ConsolidatedRecordsScreenState
         ),
       ),
       children: [
-        _buildTableHeaderRow(),
+        const TableRow(
+          decoration: BoxDecoration(
+            color: Color(0xFFF8FAFC),
+          ),
+          children: [
+            _HeaderCell('#'),
+            _HeaderCell('Student'),
+            _HeaderCell('Filipino'),
+            _HeaderCell('English'),
+            _HeaderCell('Math'),
+            _HeaderCell('Science'),
+            _HeaderCell('AP'),
+            _HeaderCell('MAPEH'),
+            _HeaderCell('ESP'),
+            _HeaderCell('TLE'),
+            _HeaderCell('Average'),
+            _HeaderCell('Status'),
+          ],
+        ),
         ...students.map(
           (student) => _buildStudentRow(student),
         ),
-      ],
-    );
-  }
-
-  TableRow _buildTableHeaderRow() {
-    return const TableRow(
-      decoration: BoxDecoration(
-        color: Color(0xFFF8FAFC),
-      ),
-      children: [
-        _HeaderCell('#'),
-        _HeaderCell('Student'),
-        _HeaderCell('Filipino'),
-        _HeaderCell('English'),
-        _HeaderCell('Math'),
-        _HeaderCell('Science'),
-        _HeaderCell('AP'),
-        _HeaderCell('MAPEH'),
-        _HeaderCell('ESP'),
-        _HeaderCell('TLE'),
-        _HeaderCell('Average'),
-        _HeaderCell('Status'),
       ],
     );
   }
@@ -887,25 +932,27 @@ class _ConsolidatedRecordsScreenState
   }
 
   Widget _buildStatusChip(String status) {
-    Color textColorValue;
-    Color backgroundColorValue;
+    Color statusTextColor;
+    Color statusBackgroundColor;
     IconData icon;
 
     switch (status) {
       case 'On Track':
-        textColorValue = const Color(0xFF16A34A);
-        backgroundColorValue = const Color(0xFFDCFCE7);
+        statusTextColor = const Color(0xFF16A34A);
+        statusBackgroundColor = const Color(0xFFDCFCE7);
         icon = Icons.check_circle_outline;
         break;
+
       case 'At Risk':
-        textColorValue = const Color(0xFFD97706);
-        backgroundColorValue = const Color(0xFFFEF3C7);
+        statusTextColor = const Color(0xFFD97706);
+        statusBackgroundColor = const Color(0xFFFEF3C7);
         icon = Icons.warning_amber_rounded;
         break;
+
       default:
-        textColorValue = const Color(0xFFDC2626);
-        backgroundColorValue = const Color(0xFFFEE2E2);
-        icon = Icons.cancel_outlined;
+        statusTextColor = const Color(0xFFDC2626);
+        statusBackgroundColor = const Color(0xFFFEE2E2);
+        icon = Icons.priority_high_rounded;
     }
 
     return Container(
@@ -914,8 +961,8 @@ class _ConsolidatedRecordsScreenState
         vertical: 5,
       ),
       decoration: BoxDecoration(
-        color: backgroundColorValue,
-        borderRadius: BorderRadius.circular(6),
+        color: statusBackgroundColor,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -923,7 +970,7 @@ class _ConsolidatedRecordsScreenState
           Icon(
             icon,
             size: 12,
-            color: textColorValue,
+            color: statusTextColor,
           ),
           const SizedBox(width: 4),
           Text(
@@ -931,7 +978,7 @@ class _ConsolidatedRecordsScreenState
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w600,
-              color: textColorValue,
+              color: statusTextColor,
             ),
           ),
         ],
@@ -948,7 +995,7 @@ class _ConsolidatedRecordsScreenState
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFE2E8F0),
         ),
@@ -956,45 +1003,81 @@ class _ConsolidatedRecordsScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Record Review',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            'Review the consolidated record before verifying or returning it.',
-            style: TextStyle(
-              fontSize: 12,
-              color: secondaryTextColor,
-            ),
-          ),
-          const SizedBox(height: 16),
           Row(
             children: [
-              const Text(
-                'Current Status',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.fact_check_outlined,
+                  color: primaryBlue,
+                  size: 21,
                 ),
               ),
               const SizedBox(width: 10),
-              _buildRecordStatusChip(recordStatus),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Record Review',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Verify or return this academic record.',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Text(
+                  'Current Status',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: secondaryTextColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _buildRecordStatusChip(recordStatus),
+              ],
+            ),
+          ),
           if (returnReason.isNotEmpty) ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF7ED),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: const Color(0xFFFED7AA),
                 ),
@@ -1014,7 +1097,7 @@ class _ConsolidatedRecordsScreenState
                   Text(
                     returnReason,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: Color(0xFF7C2D12),
                     ),
                   ),
@@ -1023,7 +1106,7 @@ class _ConsolidatedRecordsScreenState
             ),
           ],
           if (canReview) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -1031,9 +1114,15 @@ class _ConsolidatedRecordsScreenState
                     onPressed: _showReturnDialog,
                     icon: const Icon(
                       Icons.undo_outlined,
-                      size: 18,
+                      size: 17,
                     ),
-                    label: const Text('Return'),
+                    label: const Text(
+                      'Return',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFFDC2626),
                       side: const BorderSide(
@@ -1041,10 +1130,10 @@ class _ConsolidatedRecordsScreenState
                       ),
                       minimumSize: const Size(
                         double.infinity,
-                        46,
+                        44,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
@@ -1055,19 +1144,25 @@ class _ConsolidatedRecordsScreenState
                     onPressed: _showVerifyDialog,
                     icon: const Icon(
                       Icons.check_circle_outline,
-                      size: 18,
+                      size: 17,
                     ),
-                    label: const Text('Verify Record'),
+                    label: const Text(
+                      'Verify Record',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryBlue,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       minimumSize: const Size(
                         double.infinity,
-                        46,
+                        44,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
@@ -1075,70 +1170,26 @@ class _ConsolidatedRecordsScreenState
               ],
             ),
           ] else if (recordStatus == 'Verified by Adviser') ...[
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFFBBF7D0),
-                ),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: Color(0xFF16A34A),
-                    size: 20,
-                  ),
-                  SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      'This record has been verified by the adviser and is ready for the next workflow step.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF166534),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 14),
+            _buildReviewMessage(
+              icon: Icons.check_circle,
+              iconColor: const Color(0xFF16A34A),
+              backgroundColor: const Color(0xFFF0FDF4),
+              borderColor: const Color(0xFFBBF7D0),
+              textColorValue: const Color(0xFF166534),
+              text:
+                  'This record has been verified by the adviser and is ready for the next workflow step.',
             ),
           ] else if (recordStatus == 'Returned for Revision') ...[
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: const Color(0xFFFECACA),
-                ),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Color(0xFFDC2626),
-                    size: 20,
-                  ),
-                  SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      'This record was returned for revision. The submitted record needs to be corrected before it can be reviewed again.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF991B1B),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            const SizedBox(height: 14),
+            _buildReviewMessage(
+              icon: Icons.error_outline,
+              iconColor: const Color(0xFFDC2626),
+              backgroundColor: const Color(0xFFFEF2F2),
+              borderColor: const Color(0xFFFECACA),
+              textColorValue: const Color(0xFF991B1B),
+              text:
+                  'This record was returned for revision and needs to be corrected before it can be reviewed again.',
             ),
           ],
         ],
@@ -1146,25 +1197,69 @@ class _ConsolidatedRecordsScreenState
     );
   }
 
+  Widget _buildReviewMessage({
+    required IconData icon,
+    required Color iconColor,
+    required Color backgroundColor,
+    required Color borderColor,
+    required Color textColorValue,
+    required String text,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: borderColor,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            color: iconColor,
+            size: 20,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                color: textColorValue,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRecordStatusChip(String status) {
-    Color textColorValue;
-    Color backgroundColorValue;
+    Color statusTextColor;
+    Color statusBackgroundColor;
     IconData icon;
 
     switch (status) {
       case 'Verified by Adviser':
-        textColorValue = const Color(0xFF15803D);
-        backgroundColorValue = const Color(0xFFDCFCE7);
+        statusTextColor = const Color(0xFF15803D);
+        statusBackgroundColor = const Color(0xFFDCFCE7);
         icon = Icons.check_circle_outline;
         break;
+
       case 'Returned for Revision':
-        textColorValue = const Color(0xFFDC2626);
-        backgroundColorValue = const Color(0xFFFEE2E2);
+        statusTextColor = const Color(0xFFDC2626);
+        statusBackgroundColor = const Color(0xFFFEE2E2);
         icon = Icons.undo_outlined;
         break;
+
       default:
-        textColorValue = const Color(0xFFD97706);
-        backgroundColorValue = const Color(0xFFFEF3C7);
+        statusTextColor = const Color(0xFFD97706);
+        statusBackgroundColor = const Color(0xFFFEF3C7);
         icon = Icons.pending_outlined;
     }
 
@@ -1174,24 +1269,24 @@ class _ConsolidatedRecordsScreenState
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: backgroundColorValue,
-        borderRadius: BorderRadius.circular(7),
+        color: statusBackgroundColor,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size: 14,
-            color: textColorValue,
+            size: 13,
+            color: statusTextColor,
           ),
           const SizedBox(width: 5),
           Text(
             status,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: FontWeight.w600,
-              color: textColorValue,
+              color: statusTextColor,
             ),
           ),
         ],
@@ -1232,6 +1327,7 @@ class _ConsolidatedRecordsScreenState
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryBlue,
                 foregroundColor: Colors.white,
+                elevation: 0,
               ),
               child: const Text('Verify'),
             ),
@@ -1291,24 +1387,26 @@ class _ConsolidatedRecordsScreenState
                     fontSize: 13,
                     color: Color(0xFF94A3B8),
                   ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
                   contentPadding: const EdgeInsets.all(12),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
-                      color: Color(0xFFD1D5DB),
+                      color: Color(0xFFE2E8F0),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
-                      color: Color(0xFFD1D5DB),
+                      color: Color(0xFFE2E8F0),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(
                       color: primaryBlue,
-                      width: 1.5,
+                      width: 1.4,
                     ),
                   ),
                 ),
@@ -1333,6 +1431,7 @@ class _ConsolidatedRecordsScreenState
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626),
                 foregroundColor: Colors.white,
+                elevation: 0,
               ),
               child: const Text('Return Record'),
             ),
