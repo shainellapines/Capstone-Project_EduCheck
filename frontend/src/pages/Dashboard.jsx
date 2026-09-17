@@ -11,6 +11,7 @@ import {
 
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
+import { getToken, getStoredUser } from "../utils/session";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -34,10 +35,7 @@ const classifyStudent = (student) => {
 
 function Dashboard() {
     const navigate = useNavigate();
-    const storedUser = localStorage.getItem("educheck_user");
-    const user = storedUser
-        ? JSON.parse(storedUser)
-        : { username: "adviser", role: "adviser" };
+    const user = getStoredUser() || { username: "adviser", role: "adviser" };
 
     const [schoolYears, setSchoolYears] = useState([]);
     const [selectedSchoolYearId, setSelectedSchoolYearId] = useState("");
@@ -48,7 +46,7 @@ function Dashboard() {
     const [error, setError] = useState("");
 
     const authHeaders = () => {
-        const token = localStorage.getItem("educheck_token");
+        const token = getToken();
 
         if (!token) {
             throw new Error("Authentication token not found. Please log in again.");
@@ -410,15 +408,10 @@ function Dashboard() {
 
                         <div className="quick-actions">
 
-                            <button className="quick-action blue-action" style={{ cursor: "default" }}>
-                                <FileText size={24} />
-                                <strong>Encode Grades</strong>
-                                <span>
-                                    Input student grades by section
-                                </span>
-                            </button>
-
-                            <button className="quick-action purple-action" style={{ cursor: "default" }}>
+                            <button
+                                className="quick-action purple-action"
+                                onClick={() => navigate("/class-record-upload")}
+                            >
                                 <Upload size={24} />
                                 <strong>Upload Files</strong>
                                 <span>

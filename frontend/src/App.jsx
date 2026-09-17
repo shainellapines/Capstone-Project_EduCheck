@@ -112,7 +112,7 @@ function App() {
                 <Route
                     path="/validation-results/:classRecordId"
                     element={
-                        <ProtectedRoute allowedRoles={["subject"]}>
+                        <ProtectedRoute allowedRoles={["subject", "adviser"]}>
                             <ValidationResults />
                         </ProtectedRoute>
                     }
