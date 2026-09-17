@@ -115,6 +115,13 @@ function SectionAssignments() {
 
     const handleCreateSection = async (e) => {
         e.preventDefault();
+
+        const confirmed = window.confirm(
+            `Create section "${sectionForm.section_name}" (Grade ${sectionForm.grade_level} - ${sectionForm.staffing_mode})?`
+        );
+
+        if (!confirmed) return;
+
         setActionError("");
         setActionMessage("");
         setSavingSection(true);
@@ -207,6 +214,29 @@ function SectionAssignments() {
 
     const handleCreateAssignment = async (e) => {
         e.preventDefault();
+
+        const selectedTeacher = teachers.find(
+            (teacher) => String(teacher.teacher_id) === String(assignmentForm.teacher_id)
+        );
+        const selectedSection = sections.find(
+            (section) => String(section.section_id) === String(assignmentForm.section_id)
+        );
+        const selectedSubject = subjects.find(
+            (subject) => String(subject.subject_id) === String(assignmentForm.subject_id)
+        );
+
+        const teacherLabel = selectedTeacher
+            ? `${selectedTeacher.first_name} ${selectedTeacher.last_name}`
+            : "this teacher";
+        const sectionLabel = selectedSection ? selectedSection.section_name : "this section";
+        const roleLabel = selectedSubject ? selectedSubject.subject_name : "Class Adviser";
+
+        const confirmed = window.confirm(
+            `Assign ${teacherLabel} to ${sectionLabel} as ${roleLabel}? Double-check the subject and section before confirming.`
+        );
+
+        if (!confirmed) return;
+
         setActionError("");
         setActionMessage("");
         setSavingAssignment(true);
