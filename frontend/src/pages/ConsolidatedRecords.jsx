@@ -137,11 +137,18 @@ function ConsolidatedRecords() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const fetchStudents = async () => {
+    // `silent` skips the loadingStudents flag, which normally unmounts the
+    // whole table in favor of a loading placeholder (see the render logic
+    // below). That's fine on the initial load/filter change, but doing it
+    // after an approve/reject/submit action collapses the page's content
+    // height mid-scroll, snapping the browser's scroll position back to
+    // the top. Action handlers refetch silently instead so the table stays
+    // mounted (and the scroll position stays put) while fresh data loads in.
+    const fetchStudents = async ({ silent = false } = {}) => {
         if (!selectedSchoolYearId) return;
 
         try {
-            setLoadingStudents(true);
+            if (!silent) setLoadingStudents(true);
             setError("");
 
             const query = sectionFilterId ? `?section_id=${sectionFilterId}` : "";
@@ -162,7 +169,7 @@ function ConsolidatedRecords() {
             setError(fetchError.message || "Failed to load consolidated records.");
             setStudents(null);
         } finally {
-            setLoadingStudents(false);
+            if (!silent) setLoadingStudents(false);
         }
     };
 
@@ -232,7 +239,7 @@ function ConsolidatedRecords() {
             }
 
             setActionMessage(`Submitted ${lrn} for approval.`);
-            await fetchStudents();
+            await fetchStudents({ silent: true });
         });
 
     const approveRecord = (lrn) =>
@@ -249,7 +256,7 @@ function ConsolidatedRecords() {
             }
 
             setActionMessage(`Approved ${lrn}.`);
-            await fetchStudents();
+            await fetchStudents({ silent: true });
         });
 
     const rejectRecord = (lrn) =>
@@ -272,7 +279,7 @@ function ConsolidatedRecords() {
             setActionMessage(`Rejected ${lrn}.`);
             setRejectingLrn(null);
             setRejectReason("");
-            await fetchStudents();
+            await fetchStudents({ silent: true });
         });
 
     const requestRevision = async (classRecordId) => {
@@ -304,7 +311,7 @@ function ConsolidatedRecords() {
             setActionMessage("Revision requested. The teacher has been notified.");
             setRevisingClassRecordId(null);
             setRevisionReason("");
-            await fetchStudents();
+            await fetchStudents({ silent: true });
         } catch (actionError) {
             setError(actionError.message || "Failed to request revision.");
         } finally {
@@ -333,7 +340,7 @@ function ConsolidatedRecords() {
             }
 
             setActionMessage(data.message);
-            await fetchStudents();
+            await fetchStudents({ silent: true });
         } catch (submitError) {
             setError(submitError.message || "Failed to submit records for approval.");
         }
