@@ -27,7 +27,6 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
     'Home',
     'Records',
     'Students',
-    'Notifications',
     'Profile',
   ];
 
@@ -35,7 +34,6 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
     Icons.home_rounded,
     Icons.description_outlined,
     Icons.people_outline_rounded,
-    Icons.notifications_none_rounded,
     Icons.person_outline_rounded,
   ];
 
@@ -53,6 +51,15 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
       builder: (context) {
         return _buildNotificationBottomSheet();
       },
+    );
+  }
+
+  void openNotificationHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const NotificationScreen(),
+      ),
     );
   }
 
@@ -103,9 +110,6 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
         return const StudentsScreen();
 
       case 3:
-        return const NotificationScreen();
-
-      case 4:
         return const ProfileScreen();
 
       default:
@@ -770,10 +774,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.pop(context);
-
-                  setState(() {
-                    selectedIndex = 3;
-                  });
+                  openNotificationHistory();
                 },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: primaryBlue,
@@ -931,43 +932,11 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
             ),
             const SizedBox(height: 10),
             _buildDrawerItem(
-              icon: Icons.home_outlined,
-              title: 'Home',
-              onTap: () {
-                Navigator.pop(context);
-                selectNavigation(0);
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.description_outlined,
-              title: 'Records',
-              onTap: () {
-                Navigator.pop(context);
-                selectNavigation(1);
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.people_outline_rounded,
-              title: 'Students',
-              onTap: () {
-                Navigator.pop(context);
-                selectNavigation(2);
-              },
-            ),
-            _buildDrawerItem(
               icon: Icons.notifications_none_rounded,
-              title: 'Notifications',
+              title: 'Notification History',
               onTap: () {
                 Navigator.pop(context);
-                selectNavigation(3);
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.person_outline_rounded,
-              title: 'Profile',
-              onTap: () {
-                Navigator.pop(context);
-                selectNavigation(4);
+                openNotificationHistory();
               },
             ),
             const Spacer(),

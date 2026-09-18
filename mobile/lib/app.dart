@@ -15,7 +15,7 @@ class EduCheckApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'EduCheck',
       theme: AppTheme.lightTheme,
-      home: const AdviserDashboardScreen(),
+      home: const SubjectDashboardScreen(),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/adviser-dashboard': (context) =>
