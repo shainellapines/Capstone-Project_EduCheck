@@ -1,530 +1,402 @@
 import 'package:flutter/material.dart';
-import 'subject_dashboard_screen.dart';
-import 'subject_encoding_screen.dart';
 
-class ValidationResultScreen extends StatefulWidget {
+class ValidationResultScreen extends StatelessWidget {
   const ValidationResultScreen({super.key});
 
-  @override
-  State<ValidationResultScreen> createState() =>
-      _ValidationResultScreenState();
-}
+  static const Color primaryBlue = Color(0xFF1554D1);
+  static const Color backgroundColor = Color(0xFFF7F9FC);
+  static const Color textColor = Color(0xFF1F2937);
+  static const Color secondaryTextColor = Color(0xFF64748B);
+  static const Color borderColor = Color(0xFFE2E8F0);
+  static const Color errorColor = Color(0xFFDC2626);
+  static const Color warningColor = Color(0xFFD97706);
 
-class _ValidationResultScreenState
-    extends State<ValidationResultScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-      body: SafeArea(
+    return Container(
+      color: backgroundColor,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  18,
-                  16,
-                  30,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    buildTitleSection(),
-                    const SizedBox(height: 22),
-                    buildRecordCard(
-                      quarter: '3rd Quarter',
-                      schoolYear: '2025-2026',
-                      status: 'Draft',
-                      completed: '0/0',
-                      missing: '0',
-                      invalid: '0',
-                      duplicates: '0',
-                      crossFile: '0',
-                      readyText: 'Submission Ready',
-                      readyStatus: 'Not Ready',
-                      showReviseButton: true,
-                    ),
-                    const SizedBox(height: 18),
-                    buildRecordCard(
-                      quarter: '2nd Quarter',
-                      schoolYear: '2025-2026',
-                      status: 'Submitted',
-                      completed: '30/30',
-                      missing: '0',
-                      invalid: '0',
-                      duplicates: '0',
-                      crossFile: '0',
-                      readyText: 'Submission Ready',
-                      readyStatus: 'Not Ready',
-                      showReviseButton: false,
-                      submittedText:
-                          'Submitted on 4/8/2026, 10:30:00 AM',
-                    ),
-                  ],
-                ),
+            _buildPageHeader(),
+            const SizedBox(height: 20),
+            _buildRecordCard(),
+            const SizedBox(height: 20),
+            _buildSummaryCard(),
+            const SizedBox(height: 24),
+            const Text(
+              'Validation Issues',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: textColor,
               ),
             ),
+            const SizedBox(height: 12),
+            _buildIssueCard(
+              icon: Icons.grade_outlined,
+              title: 'Missing Grade',
+              student: 'Juan Dela Cruz',
+              field: 'Mathematics',
+              value: 'No grade entered',
+              reason:
+                  'A grade is missing for this student in the submitted record.',
+              color: errorColor,
+              backgroundColor: const Color(0xFFFFF2F2),
+            ),
+            const SizedBox(height: 10),
+            _buildIssueCard(
+              icon: Icons.rule_outlined,
+              title: 'Invalid Grade Value',
+              student: 'Maria Santos',
+              field: 'Mathematics',
+              value: '105',
+              reason:
+                  'The entered grade is outside the allowed range of 0 to 100.',
+              color: errorColor,
+              backgroundColor: const Color(0xFFFFF2F2),
+            ),
+            const SizedBox(height: 10),
+            _buildIssueCard(
+              icon: Icons.person_off_outlined,
+              title: 'Incomplete Student Information',
+              student: 'Pedro Reyes',
+              field: 'Student Information',
+              value: 'Missing LRN',
+              reason:
+                  'The student record does not contain the required LRN information.',
+              color: warningColor,
+              backgroundColor: const Color(0xFFFFF8E8),
+            ),
+            const SizedBox(height: 10),
+            _buildIssueCard(
+              icon: Icons.content_copy_outlined,
+              title: 'Duplicate Student Record',
+              student: 'Ana Garcia',
+              field: 'Student Record',
+              value: 'Duplicate entry detected',
+              reason:
+                  'Another record with matching student information was found.',
+              color: warningColor,
+              backgroundColor: const Color(0xFFFFF8E8),
+            ),
+            const SizedBox(height: 20),
+            _buildReadOnlyNotice(),
           ],
         ),
       ),
-      bottomNavigationBar: buildBottomNavigationBar(),
     );
   }
 
-  Widget buildHeader() {
-    return Container(
-      height: 56,
-      width: double.infinity,
-      color: const Color(0xFF1554D1),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerLeft,
-      child: const Text(
-        'Validation Results',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget buildTitleSection() {
+  Widget _buildPageHeader() {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Validation Results',
+          'Validation',
           style: TextStyle(
-            fontSize: 23,
+            fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF101828),
+            color: textColor,
           ),
         ),
-        SizedBox(height: 6),
+        SizedBox(height: 4),
         Text(
-          'Review validation status of your academic records',
+          'View validation issues detected by the rule-based engine.',
           style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFF667085),
+            fontSize: 12,
+            color: secondaryTextColor,
           ),
         ),
       ],
     );
   }
 
-  Widget buildRecordCard({
-    required String quarter,
-    required String schoolYear,
-    required String status,
-    required String completed,
-    required String missing,
-    required String invalid,
-    required String duplicates,
-    required String crossFile,
-    required String readyText,
-    required String readyStatus,
-    required bool showReviseButton,
-    String? submittedText,
+  Widget _buildRecordCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: borderColor,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.description_outlined,
+              color: primaryBlue,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '3rd Quarter',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Mathematics • Grade 6 - Sampaguita',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: secondaryTextColor,
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'SY 2025-2026',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: secondaryTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFDE68A),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.warning_amber_rounded,
+              color: warningColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '4 issues found',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'The rule-based validation engine flagged issues that need to be reviewed.',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: secondaryTextColor,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIssueCard({
+    required IconData icon,
+    required String title,
+    required String student,
+    required String field,
+    required String value,
+    required String reason,
+    required Color color,
+    required Color backgroundColor,
   }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color: borderColor,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Grade 6 - Sampaguita',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF101828),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      '$quarter • $schoolYear',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF667085),
-                      ),
-                    ),
-                  ],
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 21,
                 ),
               ),
-              buildStatusChip(status),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
+              const SizedBox(width: 10),
               Expanded(
-                child: buildValidationItem(
-                  icon: Icons.check_circle_outline,
-                  iconColor: const Color(0xFF16A34A),
-                  title: 'Completed',
-                  value: completed,
-                  background: const Color(0xFFEAF8EF),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: buildValidationItem(
-                  icon: Icons.warning_amber_rounded,
-                  iconColor: const Color(0xFFD97706),
-                  title: 'Missing',
-                  value: missing,
-                  background: const Color(0xFFFFFBEB),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: buildValidationItem(
-                  icon: Icons.cancel_outlined,
-                  iconColor: const Color(0xFFDC2626),
-                  title: 'Invalid',
-                  value: invalid,
-                  background: const Color(0xFFFEECEC),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: buildValidationItem(
-                  icon: Icons.warning_amber_rounded,
-                  iconColor: const Color(0xFFD97706),
-                  title: 'Duplicates',
-                  value: duplicates,
-                  background: const Color(0xFFFFFBEB),
-                ),
-              ),
-            ],
+          const SizedBox(height: 14),
+          _buildIssueDetail(
+            label: 'Student',
+            value: student,
           ),
-          const SizedBox(height: 8),
-          buildValidationItem(
-            icon: Icons.warning_amber_rounded,
-            iconColor: const Color(0xFFD97706),
-            title: 'Cross-File',
-            value: crossFile,
-            background: const Color(0xFFFFFBEB),
+          const SizedBox(height: 7),
+          _buildIssueDetail(
+            label: 'Field',
+            value: field,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 7),
+          _buildIssueDetail(
+            label: 'Value',
+            value: value,
+          ),
+          const SizedBox(height: 12),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(11),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFE2E8F0),
-              ),
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: color,
+                  size: 16,
+                ),
+                const SizedBox(width: 7),
                 Expanded(
                   child: Text(
-                    readyText,
+                    reason,
                     style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF344054),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEECEC),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    readyStatus,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFDC2626),
+                      fontSize: 10.5,
+                      color: secondaryTextColor,
+                      height: 1.35,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          if (showReviseButton) ...[
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const SubjectEncodingScreen(),
-                    ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.edit_outlined,
-                  size: 20,
-                ),
-                label: const Text(
-                  'Revise Record',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1554D1),
-                  side: const BorderSide(
-                    color: Color(0xFF1554D1),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ],
-          if (submittedText != null) ...[
-            const SizedBox(height: 18),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF2FF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle_outline,
-                    color: Color(0xFF1554D1),
-                    size: 21,
-                  ),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      submittedText,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF475467),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  Widget buildValidationItem({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
+  Widget _buildIssueDetail({
+    required String label,
     required String value,
-    required Color background,
   }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 52,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: secondaryTextColor,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReadOnlyNotice() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFD9E7FF),
+        ),
       ),
-      child: Row(
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            icon,
-            color: iconColor,
-            size: 21,
+            Icons.lock_outline_rounded,
+            color: primaryBlue,
+            size: 19,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 9),
           Expanded(
             child: Text(
-              title,
+              'This screen is read-only. Fix the flagged issues through the EduCheck web platform.',
               style: TextStyle(
                 fontSize: 11,
-                color: iconColor,
-                fontWeight: FontWeight.w600,
+                color: textColor,
+                height: 1.4,
               ),
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              color: iconColor,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget buildStatusChip(String status) {
-    final bool isSubmitted = status == 'Submitted';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
-      decoration: BoxDecoration(
-        color: isSubmitted
-            ? const Color(0xFFEAF8EF)
-            : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: isSubmitted
-              ? const Color(0xFF16A34A)
-              : const Color(0xFF64748B),
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget buildBottomNavigationBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE4E7EC),
-            width: 1,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 68,
-          child: Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const SubjectDashboardScreen(),
-                      ),
-                    );
-                  },
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.home_outlined,
-                        size: 23,
-                        color: Color(0xFF667085),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Home',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF667085),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const SubjectEncodingScreen(),
-                      ),
-                    );
-                  },
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.edit_note_outlined,
-                        size: 23,
-                        color: Color(0xFF667085),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Subject Encoding',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF667085),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: () {},
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.verified,
-                        size: 23,
-                        color: Color(0xFF1554D1),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Validation Result',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF1554D1),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
