@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'submission_status_screen.dart';
 
-import 'consolidated_records_screen.dart';
-
-class ReviewQueueScreen extends StatelessWidget {
-  const ReviewQueueScreen({super.key});
+class ConsolidatedRecordsScreen extends StatelessWidget {
+  const ConsolidatedRecordsScreen({super.key});
 
   static const Color primaryBlue = Color(0xFF1554D1);
   static const Color backgroundColor = Color(0xFFF7F9FC);
@@ -28,7 +27,7 @@ class ReviewQueueScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             const Text(
-              'Records for Review',
+              'Academic Records',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
@@ -40,39 +39,39 @@ class ReviewQueueScreen extends StatelessWidget {
 
             _buildRecordCard(
               context: context,
-              gradeLevel: 'Grade 6 - Sampaguita',
               quarter: '3rd Quarter',
+              gradeLevel: 'Grade 6 - Sampaguita',
               schoolYear: 'SY 2025-2026',
-              status: 'Pending Review',
+              status: 'Validating',
               statusColor: const Color(0xFFD97706),
               statusBackgroundColor: const Color(0xFFFFF7ED),
-              showReviewButton: true,
+              progress: 0.60,
             ),
 
             const SizedBox(height: 10),
 
             _buildRecordCard(
               context: context,
-              gradeLevel: 'Grade 6 - Sampaguita',
               quarter: '2nd Quarter',
+              gradeLevel: 'Grade 6 - Sampaguita',
               schoolYear: 'SY 2025-2026',
               status: 'Submitted',
-              statusColor: const Color(0xFF16A34A),
-              statusBackgroundColor: const Color(0xFFF0FDF4),
-              showReviewButton: false,
+              statusColor: primaryBlue,
+              statusBackgroundColor: const Color(0xFFEFF6FF),
+              progress: 0.85,
             ),
 
             const SizedBox(height: 10),
 
             _buildRecordCard(
               context: context,
-              gradeLevel: 'Grade 6 - Sampaguita',
               quarter: '1st Quarter',
+              gradeLevel: 'Grade 6 - Sampaguita',
               schoolYear: 'SY 2025-2026',
-              status: 'Submitted',
+              status: 'Approved',
               statusColor: const Color(0xFF16A34A),
               statusBackgroundColor: const Color(0xFFF0FDF4),
-              showReviewButton: false,
+              progress: 1.0,
             ),
           ],
         ),
@@ -94,7 +93,7 @@ class ReviewQueueScreen extends StatelessWidget {
         ),
         SizedBox(height: 4),
         Text(
-          'Review and manage academic records for your class.',
+          'View and track the submission status of your academic records.',
           style: TextStyle(
             fontSize: 12,
             color: secondaryTextColor,
@@ -121,12 +120,12 @@ class ReviewQueueScreen extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
+              color: const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
-              Icons.fact_check_outlined,
-              color: Color(0xFFD97706),
+              Icons.description_outlined,
+              color: primaryBlue,
               size: 24,
             ),
           ),
@@ -136,7 +135,7 @@ class ReviewQueueScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '1 record needs review',
+                  '3 academic records',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -145,7 +144,7 @@ class ReviewQueueScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Review submitted academic records before proceeding.',
+                  'Mathematics • Grade 6 - Sampaguita',
                   style: TextStyle(
                     fontSize: 10,
                     color: secondaryTextColor,
@@ -162,16 +161,14 @@ class ReviewQueueScreen extends StatelessWidget {
 
   Widget _buildRecordCard({
     required BuildContext context,
-    required String gradeLevel,
     required String quarter,
+    required String gradeLevel,
     required String schoolYear,
     required String status,
     required Color statusColor,
     required Color statusBackgroundColor,
-    required bool showReviewButton,
+    required double progress,
   }) {
-    final bool isPending = status == 'Pending Review';
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(15),
@@ -179,9 +176,7 @@ class ReviewQueueScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isPending
-              ? const Color(0xFFFDE68A)
-              : const Color(0xFFE2E8F0),
+          color: const Color(0xFFE2E8F0),
         ),
       ),
       child: Column(
@@ -259,6 +254,49 @@ class ReviewQueueScreen extends StatelessWidget {
 
           const SizedBox(height: 12),
 
+          Row(
+            children: [
+              const Icon(
+                Icons.menu_book_outlined,
+                size: 17,
+                color: secondaryTextColor,
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'Mathematics',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: secondaryTextColor,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${(progress * 100).round()}%',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: const Color(0xFFE2E8F0),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                statusColor,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
           const Divider(
             height: 1,
             color: Color(0xFFE2E8F0),
@@ -282,40 +320,44 @@ class ReviewQueueScreen extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (showReviewButton)
-                SizedBox(
-                  height: 34,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const ConsolidatedRecordsScreen(),
+              SizedBox(
+                height: 34,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SubmissionStatusScreen(
+                          quarter: quarter,
+                          gradeLevel: gradeLevel,
+                          schoolYear: schoolYear,
+                          status: status,
+                          progress: progress,
                         ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: primaryBlue,
-                      side: const BorderSide(
-                        color: primaryBlue,
                       ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(9),
-                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryBlue,
+                    side: const BorderSide(
+                      color: primaryBlue,
                     ),
-                    child: const Text(
-                      'Review',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  ),
+                  child: const Text(
+                    'View',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ],

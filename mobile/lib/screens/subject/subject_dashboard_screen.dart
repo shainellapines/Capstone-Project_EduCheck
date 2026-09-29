@@ -1,40 +1,60 @@
 import 'package:flutter/material.dart';
 
-import 'consolidated_records_screen.dart';
-import 'review_queue_screen.dart';
-import 'performance_analytics_screen.dart';
-import 'students_screen.dart';
-import 'profile_screen.dart';
 import '../shared/notification_screen.dart';
+import 'consolidated_records_screen.dart';
+import 'submission_status_screen.dart';
+import 'validation_result_screen.dart';
 
-class AdviserDashboardScreen extends StatefulWidget {
-  const AdviserDashboardScreen({super.key});
+class SubjectDashboardScreen extends StatefulWidget {
+  const SubjectDashboardScreen({super.key});
 
   @override
-  State<AdviserDashboardScreen> createState() =>
-      _AdviserDashboardScreenState();
+  State<SubjectDashboardScreen> createState() =>
+      _SubjectDashboardScreenState();
 }
 
-class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
+class _SubjectDashboardScreenState extends State<SubjectDashboardScreen> {
   static const Color primaryBlue = Color(0xFF1554D1);
   static const Color backgroundColor = Color(0xFFF7F9FC);
   static const Color textColor = Color(0xFF1F2937);
   static const Color secondaryTextColor = Color(0xFF64748B);
+  static const Color borderColor = Color(0xFFE2E8F0);
 
   int selectedIndex = 0;
 
   final List<String> navigationLabels = [
     'Home',
     'Records',
-    'Students',
-    'Profile',
+    'Validation',
   ];
 
   final List<IconData> navigationIcons = [
     Icons.home_rounded,
     Icons.description_outlined,
-    Icons.people_outline_rounded,
-    Icons.person_outline_rounded,
+    Icons.verified_outlined,
+  ];
+
+  static const List<Map<String, dynamic>> recentRecords = [
+    {
+      'quarter': '3rd Quarter',
+      'schoolYear': '2025-2026',
+      'section': 'Grade 6 - Sampaguita',
+      'subject': 'Mathematics',
+      'status': 'Validating',
+      'date': 'Today, 10:32 AM',
+      'progress': 0.60,
+      'currentStep': 3,
+    },
+    {
+      'quarter': '2nd Quarter',
+      'schoolYear': '2025-2026',
+      'section': 'Grade 6 - Sampaguita',
+      'subject': 'Mathematics',
+      'status': 'Submitted',
+      'date': 'Sep 14, 2026',
+      'progress': 0.85,
+      'currentStep': 6,
+    },
   ];
 
   void selectNavigation(int index) {
@@ -63,19 +83,46 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
     );
   }
 
-  void openPerformanceAnalytics() {
+  void openRecords() {
+    setState(() {
+      selectedIndex = 1;
+    });
+  }
+
+  void openRecord(Map<String, dynamic> record) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const PerformanceAnalyticsScreen(),
+        builder: (context) => SubmissionStatusScreen(
+          quarter: record['quarter'] as String,
+          gradeLevel: record['section'] as String,
+          schoolYear: 'SY ${record['schoolYear']}',
+          status: record['status'] as String,
+          progress: record['progress'] as double,
+        ),
       ),
     );
   }
 
-  void openReviewQueue() {
+  void openValidationResults() {
     setState(() {
-      selectedIndex = 1;
+      selectedIndex = 2;
     });
+  }
+
+  void openSubmissionStatus() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SubmissionStatusScreen(
+          quarter: '3rd Quarter',
+          gradeLevel: 'Grade 6 - Sampaguita',
+          schoolYear: 'SY 2025-2026',
+          status: 'Validating',
+          progress: 0.60,
+        ),
+      ),
+    );
   }
 
   void logOut() {
@@ -92,34 +139,15 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
       backgroundColor: backgroundColor,
       drawer: _buildDrawer(),
       body: SafeArea(
-        child: _buildSelectedScreen(),
+        child: selectedIndex == 0
+            ? _buildDashboard()
+            : selectedIndex == 1
+                ? const ConsolidatedRecordsScreen()
+                : const ValidationResultScreen(),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
-
-  Widget _buildSelectedScreen() {
-    switch (selectedIndex) {
-      case 0:
-        return _buildDashboard();
-
-      case 1:
-        return const ReviewQueueScreen();
-
-      case 2:
-        return const StudentsScreen();
-
-      case 3:
-        return const ProfileScreen();
-
-      default:
-        return _buildDashboard();
-    }
-  }
-
-  // ============================================================
-  // DASHBOARD
-  // ============================================================
 
   Widget _buildDashboard() {
     return SingleChildScrollView(
@@ -134,10 +162,6 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
           _buildSectionTitle('Overview'),
           const SizedBox(height: 12),
           _buildOverview(),
-          const SizedBox(height: 24),
-          _buildSectionTitle('Students Needing Intervention'),
-          const SizedBox(height: 12),
-          _buildInterventionCard(),
           const SizedBox(height: 24),
           _buildRecentRecordsHeader(),
           const SizedBox(height: 12),
@@ -159,7 +183,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFE2E8F0),
+                  color: borderColor,
                 ),
               ),
               child: IconButton(
@@ -191,7 +215,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
               ),
               SizedBox(height: 2),
               Text(
-                'Adviser Dashboard',
+                'Subject Teacher Dashboard',
                 style: TextStyle(
                   fontSize: 12,
                   color: secondaryTextColor,
@@ -207,7 +231,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFFE2E8F0),
+              color: borderColor,
             ),
           ),
           child: Stack(
@@ -258,7 +282,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
-              Icons.school_rounded,
+              Icons.menu_book_rounded,
               color: Colors.white,
               size: 30,
             ),
@@ -269,7 +293,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Good day, Maria!',
+                  'Good day, Juan!',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -278,7 +302,15 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
                 ),
                 SizedBox(height: 5),
                 Text(
-                  'Adviser • Grade 6 - Sampaguita',
+                  'Subject Teacher • Mathematics',
+                  style: TextStyle(
+                    color: Color(0xFFDCE8FF),
+                    fontSize: 12,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Grade 6 - Sampaguita',
                   style: TextStyle(
                     color: Color(0xFFDCE8FF),
                     fontSize: 12,
@@ -304,60 +336,32 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
   }
 
   Widget _buildOverview() {
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatusCard(
-                title: 'Pending Validation',
-                value: '1',
-                icon: Icons.pending_actions_rounded,
-                iconColor: const Color(0xFFD97706),
-                backgroundColor: const Color(0xFFFFF7ED),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildStatusCard(
-                title: 'Ready to Submit',
-                value: '1',
-                icon: Icons.check_circle_outline_rounded,
-                iconColor: const Color(0xFF16A34A),
-                backgroundColor: const Color(0xFFF0FDF4),
-              ),
-            ),
-          ],
+        Expanded(
+          child: _buildOverviewCard(
+            title: 'In Progress',
+            value: '1',
+            icon: Icons.sync_rounded,
+            iconColor: const Color(0xFFD97706),
+            backgroundColor: const Color(0xFFFFF7ED),
+          ),
         ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatusCard(
-                title: 'Submitted',
-                value: '1',
-                icon: Icons.send_outlined,
-                iconColor: const Color(0xFF2563EB),
-                backgroundColor: const Color(0xFFEFF6FF),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _buildStatusCard(
-                title: 'Needs Attention',
-                value: '1',
-                icon: Icons.warning_amber_rounded,
-                iconColor: const Color(0xFFDC2626),
-                backgroundColor: const Color(0xFFFEF2F2),
-              ),
-            ),
-          ],
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildOverviewCard(
+            title: 'Needs Revision',
+            value: '0',
+            icon: Icons.warning_amber_rounded,
+            iconColor: const Color(0xFFDC2626),
+            backgroundColor: const Color(0xFFFFEEEE),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildStatusCard({
+  Widget _buildOverviewCard({
     required String title,
     required String value,
     required IconData icon,
@@ -370,7 +374,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color: borderColor,
         ),
       ),
       child: Row(
@@ -394,17 +398,6 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: secondaryTextColor,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
                   value,
                   style: TextStyle(
                     fontSize: 20,
@@ -412,133 +405,23 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
                     color: iconColor,
                   ),
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ============================================================
-  // STUDENTS NEEDING INTERVENTION
-  // ============================================================
-
-  Widget _buildInterventionCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFFECACA),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Color(0xFFDC2626),
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Grade 6 - Sampaguita',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      '1 student needs intervention',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: secondaryTextColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7F7),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  color: Color(0xFFDC2626),
-                  size: 18,
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Review the section performance to identify students who need support.',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: secondaryTextColor,
-                      height: 1.35,
-                    ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: secondaryTextColor,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 42,
-            child: OutlinedButton(
-              onPressed: openPerformanceAnalytics,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: primaryBlue,
-                side: const BorderSide(
-                  color: primaryBlue,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                'View Details',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
-
-  // ============================================================
-  // RECENT RECORDS
-  // ============================================================
 
   Widget _buildRecentRecordsHeader() {
     return Row(
@@ -554,7 +437,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
           ),
         ),
         TextButton(
-          onPressed: openReviewQueue,
+          onPressed: openRecords,
           style: TextButton.styleFrom(
             foregroundColor: primaryBlue,
             padding: const EdgeInsets.symmetric(
@@ -564,12 +447,22 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          child: const Text(
-            'View All',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'View All',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(width: 2),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 17,
+              ),
+            ],
           ),
         ),
       ],
@@ -578,116 +471,185 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
 
   Widget _buildRecentRecords() {
     return Column(
-      children: [
-        _buildRecentRecordItem(
-          title: '3rd Quarter',
-          subtitle: 'Grade 6 - Sampaguita',
-          status: 'Pending Review',
-          statusColor: const Color(0xFFD97706),
-          backgroundColor: const Color(0xFFFFF7ED),
-        ),
-        const SizedBox(height: 10),
-        _buildRecentRecordItem(
-          title: '2nd Quarter',
-          subtitle: 'Grade 6 - Sampaguita',
-          status: 'Submitted',
-          statusColor: const Color(0xFF16A34A),
-          backgroundColor: const Color(0xFFF0FDF4),
-        ),
-        const SizedBox(height: 10),
-        _buildRecentRecordItem(
-          title: '1st Quarter',
-          subtitle: 'Grade 6 - Sampaguita',
-          status: 'Submitted',
-          statusColor: const Color(0xFF16A34A),
-          backgroundColor: const Color(0xFFF0FDF4),
-        ),
-      ],
+      children: recentRecords.map((record) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: _buildRecentRecordItem(record),
+        );
+      }).toList(),
     );
   }
 
-  Widget _buildRecentRecordItem({
-    required String title,
-    required String subtitle,
-    required String status,
-    required Color statusColor,
-    required Color backgroundColor,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
+  Widget _buildRecentRecordItem(
+    Map<String, dynamic> record,
+  ) {
+    final String status = record['status'] as String;
+    final Color statusColor = _statusColor(status);
+    final Color statusBackground = _statusLightColor(status);
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(
-              Icons.description_outlined,
-              color: statusColor,
-              size: 22,
+        onTap: () {
+          openRecord(record);
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: borderColor,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: statusBackground,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: secondaryTextColor,
-                  ),
+                child: Icon(
+                  _statusIcon(status),
+                  color: statusColor,
+                  size: 22,
                 ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 9,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      record['quarter'] as String,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${record['subject']} • ${record['section']}',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusBackground,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            status,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: statusColor,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${((record['progress'] as double) * 100).round()}%',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF94A3B8),
+                size: 22,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  // ============================================================
-  // NOTIFICATION BOTTOM SHEET
-  // ============================================================
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'Uploaded':
+        return const Color(0xFF1554D1);
+      case 'Consolidating':
+        return const Color(0xFF7C3AED);
+      case 'Validating':
+        return const Color(0xFFF59E0B);
+      case 'Needs Revision':
+        return const Color(0xFFDC2626);
+      case 'Ready':
+        return const Color(0xFF0D9488);
+      case 'Submitted':
+        return const Color(0xFF4F46E5);
+      case 'Approved':
+        return const Color(0xFF16A34A);
+      default:
+        return secondaryTextColor;
+    }
+  }
+
+  Color _statusLightColor(String status) {
+    switch (status) {
+      case 'Uploaded':
+        return const Color(0xFFE8F0FF);
+      case 'Consolidating':
+        return const Color(0xFFF0E9FF);
+      case 'Validating':
+        return const Color(0xFFFFF5DD);
+      case 'Needs Revision':
+        return const Color(0xFFFFE9E9);
+      case 'Ready':
+        return const Color(0xFFE5F8F6);
+      case 'Submitted':
+        return const Color(0xFFEDEBFF);
+      case 'Approved':
+        return const Color(0xFFE8F8EC);
+      default:
+        return const Color(0xFFF1F5F9);
+    }
+  }
+
+  IconData _statusIcon(String status) {
+    switch (status) {
+      case 'Uploaded':
+        return Icons.upload_file_rounded;
+      case 'Consolidating':
+        return Icons.merge_type_rounded;
+      case 'Validating':
+        return Icons.fact_check_rounded;
+      case 'Needs Revision':
+        return Icons.edit_note_rounded;
+      case 'Ready':
+        return Icons.task_alt_rounded;
+      case 'Submitted':
+        return Icons.send_rounded;
+      case 'Approved':
+        return Icons.verified_rounded;
+      default:
+        return Icons.circle_outlined;
+    }
+  }
 
   Widget _buildNotificationBottomSheet() {
     return Container(
@@ -749,23 +711,23 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
             ),
             const SizedBox(height: 16),
             _buildNotificationPreview(
-              icon: Icons.fact_check_outlined,
-              iconColor: const Color(0xFFD97706),
-              iconBackground: const Color(0xFFFFF7ED),
-              title: 'Record Ready for Review',
+              icon: Icons.check_circle_outline_rounded,
+              iconColor: const Color(0xFF16A34A),
+              iconBackground: const Color(0xFFF0FDF4),
+              title: 'Validation Complete',
               message:
-                  '3rd Quarter Grade 6 - Sampaguita is ready for review.',
-              time: '10 min ago',
+                  'Grade 6 - Sampaguita 2nd Quarter records have been validated successfully.',
+              time: '1 hour ago',
             ),
             const SizedBox(height: 10),
             _buildNotificationPreview(
-              icon: Icons.warning_amber_rounded,
-              iconColor: const Color(0xFFDC2626),
-              iconBackground: const Color(0xFFFEF2F2),
-              title: 'Student Needs Attention',
+              icon: Icons.sync_rounded,
+              iconColor: const Color(0xFFD97706),
+              iconBackground: const Color(0xFFFFF7ED),
+              title: 'Submission Status Update',
               message:
-                  'Pedro Garcia has been identified as needing intervention.',
-              time: '1 hour ago',
+                  '3rd Quarter Mathematics records are currently being validated.',
+              time: '3 hours ago',
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -815,7 +777,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color: borderColor,
         ),
       ),
       child: Row(
@@ -883,10 +845,6 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
     );
   }
 
-  // ============================================================
-  // DRAWER
-  // ============================================================
-
   Widget _buildDrawer() {
     return Drawer(
       child: SafeArea(
@@ -912,7 +870,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
                   ),
                   SizedBox(height: 14),
                   Text(
-                    'Maria Santos',
+                    'Juan Dela Cruz',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -921,7 +879,15 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Adviser • Grade 6 - Sampaguita',
+                    'Subject Teacher • Mathematics',
+                    style: TextStyle(
+                      color: Color(0xFFDCE8FF),
+                      fontSize: 11,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Grade 6 - Sampaguita',
                     style: TextStyle(
                       color: Color(0xFFDCE8FF),
                       fontSize: 11,
@@ -942,7 +908,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
             const Spacer(),
             const Divider(
               height: 1,
-              color: Color(0xFFE2E8F0),
+              color: borderColor,
             ),
             _buildDrawerItem(
               icon: Icons.logout_rounded,
@@ -963,7 +929,7 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
     required String title,
     required VoidCallback onTap,
     Color iconColor = secondaryTextColor,
-    Color textColor = _AdviserDashboardScreenState.textColor,
+    Color textColor = _SubjectDashboardScreenState.textColor,
   }) {
     return ListTile(
       onTap: onTap,
@@ -986,17 +952,13 @@ class _AdviserDashboardScreenState extends State<AdviserDashboardScreen> {
     );
   }
 
-  // ============================================================
-  // BOTTOM NAVIGATION
-  // ============================================================
-
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
           top: BorderSide(
-            color: Color(0xFFE2E8F0),
+            color: borderColor,
           ),
         ),
       ),
