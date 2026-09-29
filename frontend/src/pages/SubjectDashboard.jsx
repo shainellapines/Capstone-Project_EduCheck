@@ -7,6 +7,8 @@ import {
     Bell,
     AlertTriangle,
     Clock,
+    ChevronDown,
+    ChevronUp,
 } from "lucide-react";
 
 import "./Dashboard.css";
@@ -20,12 +22,19 @@ const API_URL = "http://localhost:5000/api";
 // built here always agrees with that number.
 const NEEDS_ATTENTION_STATUSES = ["needs attention", "needs revision", "rejected", "invalid"];
 
+// Every upload ever made previously rendered here unbounded — fine for a
+// first upload, unusable after a school year of them. Collapsed to a
+// short preview by default; "Show all" reveals the rest client-side
+// (already fetched in one request, no extra call needed).
+const RECORD_PREVIEW_LIMIT = 5;
+
 function SubjectDashboard() {
     const navigate = useNavigate();
 
     const [records, setRecords] = useState([]);
     const [recordsLoading, setRecordsLoading] = useState(true);
     const [recordsError, setRecordsError] = useState("");
+    const [showAllRecords, setShowAllRecords] = useState(false);
 
     const [summary, setSummary] = useState({
         total_uploaded: 0,
@@ -332,7 +341,7 @@ function SubjectDashboard() {
 
                         {!recordsLoading &&
                             !recordsError &&
-                            records.map((record) => (
+                            (showAllRecords ? records : records.slice(0, RECORD_PREVIEW_LIMIT)).map((record) => (
                                 <div
                                     className="record-row"
                                     key={record.class_record_id}
@@ -373,7 +382,7 @@ function SubjectDashboard() {
                                     <div className="record-actions">
                                         <button
                                             type="button"
-                                            className="view-results-button"
+                                            className="view-results-button ghost"
                                             onClick={() =>
                                                 navigate(`/validation-results/${record.class_record_id}`)
                                             }
@@ -383,6 +392,26 @@ function SubjectDashboard() {
                                     </div>
                                 </div>
                             ))}
+
+                        {!recordsLoading && !recordsError && records.length > RECORD_PREVIEW_LIMIT && (
+                            <button
+                                type="button"
+                                className="record-show-more"
+                                onClick={() => setShowAllRecords((previous) => !previous)}
+                            >
+                                {showAllRecords ? (
+                                    <>
+                                        <ChevronUp size={15} />
+                                        Show fewer
+                                    </>
+                                ) : (
+                                    <>
+                                        <ChevronDown size={15} />
+                                        Show all {records.length} uploads
+                                    </>
+                                )}
+                            </button>
+                        )}
 
                     </div>
 

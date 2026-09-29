@@ -140,7 +140,7 @@ function Dashboard() {
         ).values()
     )
         .sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date))
-        .slice(0, 5);
+        .slice(0, 4);
 
     const getStatusBadgeClass = (status) => {
         if (status === "Validated") return "status-badge submitted";
@@ -397,7 +397,7 @@ function Dashboard() {
                                         <div className="record-actions">
                                             <button
                                                 type="button"
-                                                className="view-results-button"
+                                                className="view-results-button ghost"
                                                 onClick={() =>
                                                     navigate(`/validation-results/${upload.class_record_id}`)
                                                 }

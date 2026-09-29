@@ -637,6 +637,44 @@
     transform: translateY(-1px);
 }
 
+/* Used wherever the same action repeats once per row (dashboard "recent
+   uploads" previews) - a solid blue pill five times in a column reads as
+   noise, not emphasis. Same action, quieter until the row is hovered. */
+.view-results-button.ghost {
+    background: transparent;
+    color: var(--ec-primary-600);
+    border: 1.5px solid var(--ec-primary-100);
+}
+
+.view-results-button.ghost:hover {
+    background: var(--ec-primary-50);
+    border-color: var(--ec-primary-500);
+    transform: none;
+}
+
+.record-show-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-top: 1px solid var(--ec-slate-100);
+    background: transparent;
+    color: var(--ec-slate-600);
+    font-weight: 600;
+    font-size: 13px;
+    font-family: var(--ec-font-body);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.record-show-more:hover {
+    background: var(--ec-slate-50);
+    color: var(--ec-primary-600);
+}
+
 @media (max-width: 700px) {
     .record-row {
         flex-wrap: wrap;
