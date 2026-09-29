@@ -173,18 +173,6 @@ function Login() {
 
                 </form>
 
-                <div className="demo-credentials">
-                    <strong>Development Account</strong>
-
-                    <p>
-                        Adviser: adviser.grade6a
-                    </p>
-
-                    <p>
-                        Password: adviser123
-                    </p>
-                </div>
-
             </div>
         </div>
     );
