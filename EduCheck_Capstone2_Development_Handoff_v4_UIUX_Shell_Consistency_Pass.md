@@ -8,6 +8,42 @@
 
 ---
 
+## 0. Correction Added Same Day, After This Doc's Original Pause Point
+
+Two claims made below in §6/§7/§8 were **wrong when written** — not stale from later work, wrong at the time, because the SPMP-alignment review in §6 never actually inspected `git log` or the `mobile/` directory before drawing conclusions. Both were caught the same day (2026-09-07) via direct follow-up questions in this same overall conversation, after the user noticed `mobile/ios/Flutter/Debug.xcconfig` open in their editor and asked about it. Corrected here rather than silently edited below, so anyone reading this doc gets the accurate picture without also needing to read §6/§7/§8's original (wrong) text.
+
+**1. The mobile app is not "zero evidence" — it's real, substantial, and already merged into `main`.**
+A teammate, **Marjorie Gale Arizo**, has been building a Flutter app in `mobile/` since **2026-08-21**, with the bulk of it landing **2026-09-05 through 2026-09-07** (today) across 8 commits and **6 separate merged PRs** (#2–#7, branch `feature/flutter-mobile-app`, all confirmed ancestors of current `main` via `git merge-base --is-ancestor`). It covers the adviser role only, mirroring most of the web app's adviser-side epics:
+
+| Screen | Lines |
+|---|---|
+| `login_screen.dart` | 508 |
+| `adviser_dashboard_screen.dart` | 1,181 |
+| `consolidated_records_screen.dart` | 1,004 |
+| `encode_grades_screen.dart` | 1,270 |
+| `performance_analytics_screen.dart` | 1,121 |
+| `review_queue_screen.dart` | 264 |
+| `upload_files_screen.dart` | 591 |
+| `validation_results_screen.dart` | 438 |
+
+**Not yet wired to the real backend**: `pubspec.yaml`/`pubspec.lock` has no `http`/`dio`/networking package at all, and `grep -rn 'http://|https://|localhost|api/'` across `mobile/lib/` returns nothing. So this is UI-only scaffolding — real effort, no API integration yet. `encode_grades_screen.dart` also implies a manual-grade-encoding flow the web app doesn't have, which is worth a scope conversation on its own.
+
+This changes §6's "Mobile (Flutter) — listed as co-equal scope; zero evidence of any mobile work anywhere" divergence bullet, and changes §7 item 3 from "has mobile been cut from scope?" to "who's doing what on mobile, and will it get wired to the real backend?"
+
+**2. The "nothing committed in three sessions, no PR/review trail" claim was also wrong — there was a real PR/branch workflow the whole time, just not touched by whichever sessions produced v2/v3/v4's *uncommitted* working-tree changes.**
+`git log --oneline --reverse main` shows **8 merged pull requests** on this repo (#2 through #8), not zero: PRs #2–#7 are the mobile work above, and **PR #8** (`feature/web-app-development`, merged as `622d326`) contains exactly the three commits matching this session's own described work:
+```
+057a72b db: switch grade_records to 3-term structure, add submission tracking
+452fe48 backend: consolidation, submission workflow, notifications, repository search
+0657b4e frontend: consolidation/submission/notifications/repository UI, unified onto a shared sidebar shell
+ac0e998 docs: add development handoff notes and official SF10-ES reference template
+```
+`git status` is clean on `main` right now — none of this session's work is sitting uncommitted. So §7 item 4 ("decide whether to start committing") and §8's "everything described here is still uncommitted" are both already resolved/overtaken by events; there's nothing to decide there anymore.
+
+**The stray "ddgjsj" commit** (`1067bfa`) is real but was never actually a loose/unreconciled commit — it's already part of `main`'s normal linear history, sandwiched between the `mobile` and `feat(mobile): initialize Flutter EduCheck app` commits. It's just a badly-named commit, not a process problem needing reconciliation.
+
+---
+
 ## 1. Where We Left Off
 
 v3 ended right after the Records Repository was built and the user confirmed it worked live. This session picked up with "what's next" and, after the user chose it explicitly, did the UI/UX polish pass that v3 had deliberately deferred — but it turned into something bigger than a coat of paint: a real structural consistency pass across every page in the app, plus a live progress/alignment review against the project's actual SPMP.
@@ -31,7 +67,7 @@ v3 ended right after the Records Repository was built and the user confirmed it 
 10. **User asked about Admin dashboard redundancy.** Found the "Submission Overview" card repeated 3 of its 4 numbers verbatim from the Overview cards above it. Merged into a single 5-card Overview row (Total Users / Pending / Approved / Rejected / Needs Attention — all distinct, nothing repeated). Fixed 2 more `window.location.href` calls. Gave the still-unbuilt "Academic Analytics" quick action an explicit `cursor: default` instead of looking clickable.
 11. **User asked about the Adviser dashboard's own redundancy.** Removed a duplicated "Total Students" tile, and removed the "Performance Analytics" quick action entirely — unlike the other unbuilt items, its content (On Track/At Risk/Needs Intervention) is already shown inline on that same page, so pointing at a separate destination would only ever show what you're already looking at.
 12. **User reported a real visual bug via screenshot**: the "Approved" status badge on Admin's Recent Submissions list wasn't flush against the card's right edge. Root cause: `.record-row` was a fixed 3-column CSS Grid (`1fr 150px 130px`) sized for `SubjectDashboard.jsx`'s 3-child row (details + badge + a button), but Dashboard/AdminDashboard's rows only render 2 children — leaving an orphan empty 130px column. Fixed at the CSS level (switched to flex, first child grows, everything after it clusters flush-right regardless of count) — this fixed the same latent bug on **all three** dashboards' record lists at once, not just the one that was screenshotted.
-13. **User asked for a progress estimate.** Gave an epic-by-epic estimate against the project's actual SPMP (pulled and read `01-Project Managemet/01-EduCheck Software Development Plan.docx` for the first time this session) — landed on **≈70–75% for the web application**, explicitly flagged that the SPMP treats a Flutter mobile app as a co-equal deliverable with zero evidence of any mobile work existing, and flagged testing/deployment as the weakest epic.
+13. **User asked for a progress estimate.** Gave an epic-by-epic estimate against the project's actual SPMP (pulled and read `01-Project Managemet/01-EduCheck Software Development Plan.docx` for the first time this session) — landed on **≈70–75% for the web application**, ~~explicitly flagged that the SPMP treats a Flutter mobile app as a co-equal deliverable with zero evidence of any mobile work existing~~ **[this "zero evidence" claim was wrong — never checked `git log` or the `mobile/` directory before saying it; see §0]**, and flagged testing/deployment as the weakest epic.
 14. **User asked how well the built web app aligns with the SPMP specifically** (not just % complete). Findings — see §6.
 
 ### What's confirmed working via the user's own testing (not just automated checks)
@@ -234,10 +270,10 @@ Pulled and read the actual SPMP for the first time this session: `01-Project Man
 
 **Where it diverges:**
 - **SF10 Generation** — the SPMP's own flagship feature ("Automated Academic Record Consolidation **and SF10 Generation**") doesn't function yet (blocked externally, not a build failure — see v3 §3).
-- **Mobile (Flutter)** — listed as co-equal scope; zero evidence of any mobile work anywhere.
+- **Mobile (Flutter)** — ~~listed as co-equal scope; zero evidence of any mobile work anywhere~~ **[CORRECTED, see §0]:** real work exists — a teammate has built 8 adviser-role screens (~6,400 lines) in `mobile/`, merged into `main` via 6 PRs. It's UI-only (no backend wiring yet), and adviser-only, but it is not zero.
 - **Principal role** — specified (§2.3/§6.2 of the SPMP) with defined responsibilities ("Monitors reports, analytics, and submission progress"); not built at all. Confirmed absent again this session, same as v2/v3.
 - **Academic Analytics** — thinner than the SPMP's 3 named sub-features (performance summaries / submission progress / intervention monitoring).
-- **Process (§8/§10 of the SPMP — Agile-Kanban, branching, code review):** the sharpest divergence, and it's not a feature gap. SPMP prescribes feature-branch → PR → review → merge-develop → merge-main, 2-week sprints with adviser sign-off, and a Definition of Done requiring code review + documentation + demo + acceptance. **Nothing has been committed at all across three entire development sessions now** (v2, v3, this one), everything built directly against `main`, plus one still-unreconciled stray commit ("ddgjsj"). No visible PR/review trail.
+- **Process (§8/§10 of the SPMP — Agile-Kanban, branching, code review):** ~~the sharpest divergence... nothing has been committed at all across three entire development sessions... no visible PR/review trail~~ **[CORRECTED, see §0]:** wrong — there are 8 merged PRs on this repo (#2–#8), and PR #8 already contains this session's exact work, merged the same day. The real, narrower gap: `git log` shows no evidence of the SPMP's prescribed *review* step (no PR descriptions, no linked review, no sprint/DoD artifacts) — the branch→PR→merge *mechanics* are happening, but not obviously the sign-off/review substance the SPMP asks for. That's a smaller, more precise divergence than "nothing is committed."
 
 **Neither of these two things (progress %, SPMP alignment) has been discussed with the user as decisions to act on yet** — they were informational answers to direct questions, not agreed-upon next steps. Worth raising explicitly next session rather than assuming a direction.
 
@@ -249,8 +285,8 @@ No task was left mid-flight — this is a clean pause after the last fix (the `r
 
 1. **The user has not yet run the app locally against this session's changes.** First and lowest-effort next step: `cd backend && npm run dev`, `cd frontend && npm run dev`, click through Login → each of the 3 dashboards → Consolidated Records → Records Repository → Validation Results → Notifications → Upload e-Class Record, and confirm nothing regressed. Every change was build/lint-verified but **not one of them has been eyeballed live by the user yet** this session — that's a meaningfully bigger unverified surface than v2/v3 left behind.
 2. **`UserManagement.jsx`/`TeacherManagement.jsx` were never touched this session** — same inline-style-heavy, non-shell-integrated pattern the other pages had before this pass. Explicitly out of scope so far only because it never came up, not because it was judged fine.
-3. **The mobile-app question raised in §6 is still open** — the user was asked directly ("Has mobile been formally cut from scope, or is that still on the table?") and hadn't answered as of this pause. This materially changes what "done" means for grading purposes and is worth resolving before further progress-% conversations.
-4. **The git/process divergence from the SPMP (§6) is unaddressed** — nothing has been committed in three sessions. Worth deciding, with the user, whether to start committing now (and if so, what to do about the stray "ddgjsj" commit already on `main`) rather than letting the gap widen further.
+3. **[UPDATED, see §0] The mobile-app question isn't "has it been cut" anymore — it's "who's doing what, and will it get wired to the real backend."** A teammate has already built 8 adviser-role Flutter screens, merged into `main`. Worth a conversation with that teammate (not a unilateral scope call) about API integration plans and whether other roles (admin/subject) are also planned for mobile.
+4. **[RESOLVED, see §0] The git/process gap is smaller than originally stated and doesn't need a decision here** — PRs are already happening (8 merged, including this session's own work via PR #8). The one real open thread: the SPMP's review/sign-off step doesn't show up in the commit history the way branch→PR→merge mechanics do — worth asking the user/team whether review is happening out-of-band (Slack, in-person) or not at all.
 5. Longer-standing items carried forward from v3, still untouched: SF10 generation (blocked on DepEd, nothing to do proactively), fuller Academic Analytics Dashboard, Principal role, offline/mobile, admin reporting.
 
 **No standing recommendation was made for which of 1–4 to pick first** — the session ended on informational questions, not a decision point.
@@ -262,6 +298,6 @@ No task was left mid-flight — this is a clean pause after the last fix (the `r
 - **Verify before trusting any visual claim in this doc:** run `npm run build` and `npm run lint` inside `frontend/` — both were clean as of this pause (`oxlint` shows only one pre-existing, unrelated warning in `UserManagement.jsx`).
 - **Seeded test accounts:** unchanged — see v2 §3 / v3 §3.
 - **The live DB has real usage data from three sessions now** (v2 + v3 + whatever the user has clicked through since) — do not wipe `record_submissions`, `notifications`, `students`, or `grade_records` without checking with the user first. Row counts were not re-verified this session; treat v3's snapshot as stale.
-- **Git status at this pause:** everything described here (and everything from v2/v3) is still uncommitted in the working tree. The user has not asked for a commit at any point across any of the three sessions — confirm before committing or pushing. The stray "ddgjsj" commit on `main` remains unreconciled.
+- **Git status at this pause:** ~~everything described here is still uncommitted~~ **[CORRECTED, see §0]:** this session's work was committed and merged into `main` the same day via PR #8 (`622d326`); `git status` is clean. Still confirm with the user before committing or pushing *future* work — that norm hasn't changed, only the historical claim about this session's own state. The "ddgjsj" commit (`1067bfa`) is ordinary already-merged history, not a stray/unreconciled commit.
 - **`NotificationBell.jsx` no longer exists** — deleted this session, confirmed unused first. If something still references it, that's a regression, not an expected file.
 - **New shared component**: `frontend/src/components/Sidebar.jsx` is now the only place adviser/admin/subject nav items are defined. Adding or renaming a nav destination belongs there, not inline in a page.
