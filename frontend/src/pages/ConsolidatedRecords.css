@@ -38,7 +38,7 @@
 }
 
 .cr-btn:disabled {
-    background: #94a3b8 !important;
+    background: var(--ec-slate-400) !important;
     cursor: not-allowed;
 }
 
@@ -74,21 +74,21 @@
 }
 
 .cr-btn-cancel {
-    background: #ffffff;
-    color: #334155;
-    border: 1px solid #cbd5e1;
+    background: var(--ec-surface);
+    color: var(--ec-slate-700);
+    border: 1px solid var(--ec-slate-300);
     padding: 8px 14px;
     font-size: 13px;
 }
 
 .cr-btn-cancel:hover {
-    background: #f8fafc;
+    background: var(--ec-slate-50);
 }
 
 .cr-list-count {
     padding: 16px 20px;
-    border-bottom: 1px solid #e2e8f0;
-    color: #334155;
+    border-bottom: 1px solid var(--ec-slate-200);
+    color: var(--ec-slate-700);
     font-weight: 600;
 }
 
@@ -103,11 +103,11 @@
 .cr-pagination-status {
     font-size: 14px;
     font-weight: 600;
-    color: #334155;
+    color: var(--ec-slate-700);
 }
 
 .cr-student-row {
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--ec-slate-100);
     transition: background 0.15s ease;
 }
 
@@ -142,12 +142,12 @@
 
 .cr-row-toggle .name {
     font-weight: 600;
-    color: #0f172a;
+    color: var(--ec-slate-900);
 }
 
 .cr-row-toggle .meta {
     font-size: 13px;
-    color: #64748b;
+    color: var(--ec-slate-500);
     margin-top: 2px;
 }
 
@@ -160,7 +160,7 @@
 
 .cr-subject-count {
     font-size: 13px;
-    color: #64748b;
+    color: var(--ec-slate-500);
 }
 
 .pill-badge {
@@ -191,8 +191,8 @@
 }
 
 .submission-badge.not-submitted {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--ec-slate-100);
+    color: var(--ec-slate-600);
 }
 
 .submission-badge.pending-approval {
@@ -226,7 +226,7 @@
 .cr-reject-textarea {
     flex: 1 1 300px;
     padding: 8px 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--ec-slate-300);
     border-radius: 8px;
     font-family: inherit;
     font-size: 13px;
@@ -270,17 +270,17 @@
 .cr-table th {
     text-align: left;
     padding: 8px 10px;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    border-bottom: 1px solid var(--ec-slate-200);
+    background: var(--ec-slate-50);
     font-size: 13px;
-    color: #475569;
+    color: var(--ec-slate-600);
 }
 
 .cr-table td {
     padding: 8px 10px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--ec-slate-100);
     font-size: 14px;
-    color: #334155;
+    color: var(--ec-slate-700);
 }
 
 .cr-table td.final-grade {
@@ -290,7 +290,7 @@
 .cr-table .subject-icon {
     vertical-align: middle;
     margin-right: 6px;
-    color: #64748b;
+    color: var(--ec-slate-500);
 }
 
 .subject-status-badge {
@@ -303,8 +303,8 @@
 }
 
 .subject-status-badge.subject-uploaded {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--ec-slate-100);
+    color: var(--ec-slate-600);
 }
 
 .subject-status-badge.subject-validated {

@@ -174,7 +174,11 @@ function Sidebar({ activeKey }) {
 
             <div className="sidebar-bottom">
 
-                <a className="nav-item">
+                <a
+                    className={activeKey === "settings" ? "nav-item active" : "nav-item"}
+                    onClick={() => navigate("/settings")}
+                    style={{ cursor: "pointer" }}
+                >
                     <Settings size={19} />
                     Settings
                 </a>

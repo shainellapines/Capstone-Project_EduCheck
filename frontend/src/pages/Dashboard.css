@@ -1,7 +1,7 @@
 .dashboard-layout {
     min-height: 100vh;
     display: flex;
-    background: var(--ec-slate-50);
+    background: var(--ec-page-bg);
     font-family: var(--ec-font-body);
 }
 
@@ -10,7 +10,7 @@
 .sidebar {
     width: 280px;
     min-height: 100vh;
-    background: linear-gradient(190deg, var(--ec-primary-600) 0%, var(--ec-primary-700) 100%);
+    background: linear-gradient(190deg, var(--ec-sidebar-start) 0%, var(--ec-sidebar-end) 100%);
     color: white;
     display: flex;
     flex-direction: column;
@@ -33,7 +33,7 @@
     width: 50px;
     height: 50px;
     border-radius: var(--ec-radius-sm);
-    background: white;
+    background: var(--ec-surface);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -127,7 +127,7 @@
     bottom: 9px;
     width: 3px;
     border-radius: 0 4px 4px 0;
-    background: white;
+    background: var(--ec-surface);
 }
 
 .notification-badge {
@@ -170,7 +170,7 @@
 
 .dashboard-header {
     min-height: 112px;
-    background: white;
+    background: var(--ec-surface);
     border-bottom: 1px solid var(--ec-slate-200);
     padding: 26px 36px;
     display: flex;
@@ -208,7 +208,7 @@
     font-weight: 600;
     font-family: var(--ec-font-body);
     color: var(--ec-slate-900);
-    background: white;
+    background: var(--ec-surface);
     cursor: pointer;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -317,7 +317,7 @@
 }
 
 .overview-card {
-    background: white;
+    background: var(--ec-surface);
     border: 1px solid var(--ec-slate-200);
     border-radius: var(--ec-radius-md);
     padding: 22px 24px;
@@ -403,7 +403,7 @@
 /* CARDS */
 
 .content-card {
-    background: white;
+    background: var(--ec-surface);
     border: 1px solid var(--ec-slate-200);
     border-radius: var(--ec-radius-md);
     margin-bottom: 26px;
@@ -501,7 +501,7 @@
 }
 
 .class-alert {
-    background: white;
+    background: var(--ec-surface);
     border: 1px solid #fed7aa;
     padding: 13px 14px;
     border-radius: var(--ec-radius-xs);
@@ -568,7 +568,7 @@
 }
 
 .record-row .record-details span {
-    color: #718096;
+    color: var(--ec-slate-500);
     margin-top: 6px;
     font-size: 14px;
     overflow: hidden;

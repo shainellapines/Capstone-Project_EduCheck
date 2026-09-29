@@ -4,9 +4,9 @@
 
 .teacher-management-page {
     min-height: 100vh;
-    background: #f5f7fb;
+    background: var(--ec-slate-50);
     padding: 32px;
-    color: #172033;
+    color: var(--ec-slate-900);
     box-sizing: border-box;
 }
 
@@ -32,12 +32,12 @@
     margin: 0;
     font-size: 30px;
     font-weight: 700;
-    color: #172033;
+    color: var(--ec-slate-900);
 }
 
 .teacher-management-header p {
     margin: 6px 0 0;
-    color: #667085;
+    color: var(--ec-slate-500);
     font-size: 15px;
 }
 
@@ -54,7 +54,7 @@
 
     border: none;
     background: transparent;
-    color: #475467;
+    color: var(--ec-slate-600);
 
     font-size: 14px;
     font-weight: 500;
@@ -113,9 +113,9 @@
 }
 
 .summary-card {
-    background: #ffffff;
+    background: var(--ec-surface);
 
-    border: 1px solid #e4e7ec;
+    border: 1px solid var(--ec-slate-200);
     border-radius: 12px;
 
     padding: 20px;
@@ -130,7 +130,7 @@
 .summary-card span {
     display: block;
 
-    color: #667085;
+    color: var(--ec-slate-500);
 
     font-size: 13px;
     margin-bottom: 8px;
@@ -139,7 +139,7 @@
 .summary-card strong {
     display: block;
 
-    color: #172033;
+    color: var(--ec-slate-900);
 
     font-size: 26px;
     font-weight: 700;
@@ -177,9 +177,9 @@
    ================================ */
 
 .user-management-card {
-    background: #ffffff;
+    background: var(--ec-surface);
 
-    border: 1px solid #e4e7ec;
+    border: 1px solid var(--ec-slate-200);
     border-radius: 12px;
 
     overflow: hidden;
@@ -194,7 +194,7 @@
 
     padding: 22px 24px;
 
-    border-bottom: 1px solid #eaecf0;
+    border-bottom: 1px solid var(--ec-slate-200);
 }
 
 .user-management-card-header h2 {
@@ -203,13 +203,13 @@
     font-size: 18px;
     font-weight: 650;
 
-    color: #172033;
+    color: var(--ec-slate-900);
 }
 
 .user-management-card-header p {
     margin: 5px 0 0;
 
-    color: #667085;
+    color: var(--ec-slate-500);
 
     font-size: 13px;
 }
@@ -226,14 +226,14 @@
     align-items: center;
     gap: 9px;
 
-    border: 1px solid #d0d5dd;
+    border: 1px solid var(--ec-slate-300);
     border-radius: 8px;
 
     padding: 9px 12px;
 
-    background: #ffffff;
+    background: var(--ec-surface);
 
-    color: #667085;
+    color: var(--ec-slate-500);
 }
 
 .search-container:focus-within {
@@ -249,13 +249,13 @@
 
     font-size: 14px;
 
-    color: #172033;
+    color: var(--ec-slate-900);
 
     background: transparent;
 }
 
 .search-container input::placeholder {
-    color: #98a2b3;
+    color: var(--ec-slate-400);
 }
 
 
@@ -277,7 +277,7 @@
 }
 
 .users-table thead {
-    background: #f8f9fc;
+    background: var(--ec-slate-50);
 }
 
 .users-table th {
@@ -285,7 +285,7 @@
 
     text-align: left;
 
-    color: #667085;
+    color: var(--ec-slate-500);
 
     font-size: 11px;
     font-weight: 700;
@@ -293,21 +293,21 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
 
-    border-bottom: 1px solid #eaecf0;
+    border-bottom: 1px solid var(--ec-slate-200);
 }
 
 .users-table td {
     padding: 16px 22px;
 
-    border-bottom: 1px solid #eaecf0;
+    border-bottom: 1px solid var(--ec-slate-200);
 
-    color: #475467;
+    color: var(--ec-slate-600);
 
     font-size: 14px;
 }
 
 .users-table tbody tr:hover {
-    background: #fafbff;
+    background: var(--ec-slate-50);
 }
 
 .users-table tbody tr:last-child td {
@@ -324,7 +324,7 @@
 
     text-align: center;
 
-    color: #667085;
+    color: var(--ec-slate-500);
 
     vertical-align: middle;
 }
@@ -334,7 +334,7 @@
 
     margin: 0 auto 10px;
 
-    color: #98a2b3;
+    color: var(--ec-slate-400);
 }
 
 .empty-state strong {
@@ -342,7 +342,7 @@
 
     margin-bottom: 5px;
 
-    color: #344054;
+    color: var(--ec-slate-700);
 
     font-size: 14px;
 }
@@ -350,7 +350,7 @@
 .empty-state span {
     display: block;
 
-    color: #98a2b3;
+    color: var(--ec-slate-400);
 
     font-size: 13px;
 }
@@ -458,7 +458,7 @@
     max-height: 90vh;
     overflow-y: auto;
 
-    background: #ffffff;
+    background: var(--ec-surface);
 
     border-radius: 14px;
 
@@ -483,13 +483,13 @@
     font-size: 21px;
     font-weight: 700;
 
-    color: #172033;
+    color: var(--ec-slate-900);
 }
 
 .teacher-modal-header p {
     margin: 6px 0 0;
 
-    color: #667085;
+    color: var(--ec-slate-500);
 
     font-size: 13px;
     line-height: 1.5;
@@ -502,8 +502,8 @@
     border: none;
     border-radius: 8px;
 
-    background: #f2f4f7;
-    color: #667085;
+    background: var(--ec-slate-100);
+    color: var(--ec-slate-500);
 
     display: flex;
     align-items: center;
@@ -513,7 +513,7 @@
 }
 
 .teacher-modal-close:hover {
-    background: #eaecf0;
+    background: var(--ec-slate-200);
 }
 
 
@@ -530,14 +530,14 @@
 
     margin-bottom: 7px;
 
-    color: #344054;
+    color: var(--ec-slate-700);
 
     font-size: 13px;
     font-weight: 600;
 }
 
 .teacher-form-group label span {
-    color: #98a2b3;
+    color: var(--ec-slate-400);
     font-weight: 400;
 }
 
@@ -546,15 +546,15 @@
 
     box-sizing: border-box;
 
-    border: 1px solid #d0d5dd;
+    border: 1px solid var(--ec-slate-300);
     border-radius: 8px;
 
     padding: 11px 12px;
 
     outline: none;
 
-    color: #172033;
-    background: #ffffff;
+    color: var(--ec-slate-900);
+    background: var(--ec-surface);
 
     font-size: 14px;
 }
@@ -571,7 +571,7 @@
 
     margin-top: 5px;
 
-    color: #98a2b3;
+    color: var(--ec-slate-400);
 
     font-size: 12px;
 }
@@ -624,15 +624,15 @@
 }
 
 .cancel-button {
-    border: 1px solid #d0d5dd;
+    border: 1px solid var(--ec-slate-300);
 
-    background: #ffffff;
+    background: var(--ec-surface);
 
-    color: #344054;
+    color: var(--ec-slate-700);
 }
 
 .cancel-button:hover {
-    background: #f9fafb;
+    background: var(--ec-slate-50);
 }
 
 .save-teacher-button {

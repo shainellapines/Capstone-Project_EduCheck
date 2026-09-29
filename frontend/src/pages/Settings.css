@@ -1,0 +1,207 @@
+/* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
+   dashboard-header, dashboard-content, content-card, card-header,
+   error-banner, success-banner, loading-state, status-badge) for
+   everything generic — this file only covers what's specific to the
+   Settings page's three cards. */
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    align-items: start;
+    max-width: 1000px;
+}
+
+.settings-card-wide {
+    grid-column: 1 / -1;
+}
+
+.settings-header-icon {
+    color: var(--ec-primary-500);
+}
+
+/* ACCOUNT INFO */
+
+.settings-info-list {
+    padding: 0 24px 22px;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-top: 1px solid var(--ec-slate-100);
+}
+
+.settings-info-row:first-child {
+    border-top: none;
+}
+
+.settings-info-row span:first-child {
+    color: var(--ec-text-muted);
+    font-size: 13.5px;
+}
+
+.settings-info-row strong {
+    color: var(--ec-slate-900);
+    font-size: 14px;
+    text-align: right;
+}
+
+/* APPEARANCE */
+
+.settings-theme-body {
+    padding: 0 24px 24px;
+}
+
+.settings-theme-hint {
+    margin: 0 0 16px;
+    color: var(--ec-text-muted);
+    font-size: 13.5px;
+}
+
+.settings-theme-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.settings-theme-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 18px;
+    border: 1.5px solid var(--ec-slate-200);
+    border-radius: var(--ec-radius-md);
+    background: var(--ec-surface);
+    color: var(--ec-slate-700);
+    font-family: var(--ec-font-body);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.settings-theme-option:hover {
+    border-color: var(--ec-primary-400);
+    transform: translateY(-1px);
+}
+
+.settings-theme-option.active {
+    border-color: var(--ec-primary-500);
+    box-shadow: 0 0 0 3px var(--ec-primary-100);
+}
+
+.settings-theme-preview {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-theme-preview.light-preview {
+    background: #f1f5f9;
+    color: #b45309;
+    border: 1px solid #e2e8f0;
+}
+
+.settings-theme-preview.dark-preview {
+    background: #12151c;
+    color: #82a2f3;
+    border: 1px solid #2a3040;
+}
+
+/* CHANGE PASSWORD */
+
+.settings-password-form {
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.settings-field-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.settings-field label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ec-slate-700);
+}
+
+.settings-field input {
+    padding: 11px 13px;
+    border: 1.5px solid var(--ec-slate-300);
+    border-radius: var(--ec-radius-sm);
+    background: var(--ec-surface);
+    color: var(--ec-slate-900);
+    font-size: 14px;
+    font-family: var(--ec-font-body);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.settings-field input:focus {
+    outline: none;
+    border-color: var(--ec-primary-500);
+    box-shadow: 0 0 0 3px var(--ec-primary-100);
+}
+
+.settings-password-hint {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: -6px 0 0;
+    color: var(--ec-text-muted);
+    font-size: 12.5px;
+}
+
+.settings-submit-button {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border: none;
+    border-radius: var(--ec-radius-sm);
+    background: var(--ec-primary-500);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: var(--ec-font-body);
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.settings-submit-button:hover:not(:disabled) {
+    background: var(--ec-primary-600);
+    box-shadow: var(--ec-shadow-primary);
+}
+
+.settings-submit-button:disabled {
+    background: var(--ec-slate-300);
+    cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-field-row {
+        grid-template-columns: 1fr;
+    }
+}

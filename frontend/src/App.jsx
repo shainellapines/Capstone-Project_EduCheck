@@ -23,6 +23,7 @@ import Analytics from "./pages/Analytics";
 import AuditLog from "./pages/AuditLog";
 import RecordsRepository from "./pages/RecordsRepository";
 import Notifications from "./pages/Notifications";
+import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { isSessionValid, getStoredUser, clearSession } from "./utils/session";
 
@@ -168,6 +169,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["adviser", "admin", "subject", "principal"]}>
                             <Notifications />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "subject", "principal"]}>
+                            <Settings />
                         </ProtectedRoute>
                     }
                 />

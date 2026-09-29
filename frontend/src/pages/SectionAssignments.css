@@ -39,13 +39,13 @@
 }
 
 .sa-add-button:disabled {
-    background: #94a3b8;
+    background: var(--ec-slate-400);
     cursor: not-allowed;
 }
 
 .sa-hint {
     margin: 0 28px 20px;
-    color: #94a3b8;
+    color: var(--ec-slate-400);
     font-size: 14px;
 }
 
@@ -66,26 +66,26 @@
 .sa-field label {
     margin-bottom: 8px;
     font-weight: 600;
-    color: #334155;
+    color: var(--ec-slate-700);
     font-size: 14px;
 }
 
 .sa-field label span {
     font-weight: 400;
-    color: #94a3b8;
+    color: var(--ec-slate-400);
     font-size: 12px;
 }
 
 .sa-field input,
 .sa-field select {
     padding: 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--ec-slate-300);
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
-    color: #334155;
+    color: var(--ec-slate-700);
     box-sizing: border-box;
-    background: #ffffff;
+    background: var(--ec-surface);
 }
 
 .sa-field input:focus,
@@ -102,10 +102,10 @@
 
 .sa-cancel-button {
     padding: 12px 18px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--ec-slate-300);
     border-radius: 8px;
-    background: #ffffff;
-    color: #334155;
+    background: var(--ec-surface);
+    color: var(--ec-slate-700);
     font-weight: 600;
     font-size: 14px;
     font-family: inherit;
@@ -144,16 +144,16 @@
     text-align: left;
     padding: 14px 20px;
     font-size: 13px;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-    background: #f8fafc;
+    color: var(--ec-slate-500);
+    border-bottom: 1px solid var(--ec-slate-200);
+    background: var(--ec-slate-50);
 }
 
 .sa-table td {
     padding: 14px 20px;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid var(--ec-slate-100);
     font-size: 14px;
-    color: #334155;
+    color: var(--ec-slate-700);
     vertical-align: middle;
 }
 
@@ -164,7 +164,7 @@
 .sa-teacher-role {
     display: block;
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--ec-slate-400);
     margin-top: 2px;
 }
 
@@ -189,7 +189,7 @@
 }
 
 .sa-adviser-tag {
-    color: #94a3b8;
+    color: var(--ec-slate-400);
     font-size: 13px;
 }
 

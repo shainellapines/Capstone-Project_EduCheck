@@ -80,6 +80,24 @@
     --ec-text-muted: var(--ec-slate-500);
     --ec-border: var(--ec-slate-200);
 
+    /* Surface tokens — the actual light/dark switch. Everything that was
+       a literal `white`/`#ffffff` card background or `--ec-slate-50` page
+       background now reads one of these three instead, so dark mode is a
+       token redefinition, not a per-component rewrite. */
+    --ec-page-bg: var(--ec-slate-50);
+    --ec-surface: #ffffff;
+    --ec-surface-2: var(--ec-slate-50);
+
+    /* Fixed brand gradient for the sidebar specifically — deliberately
+       NOT redefined under [data-theme="dark"]. --ec-primary-600/700
+       themselves flip lighter in dark mode (so text/links stay readable
+       on a dark page), which would otherwise turn the sidebar's
+       background into a pale periwinkle. The sidebar is a fixed brand
+       element that looks the same in both themes, same as the login
+       page's gradient. */
+    --ec-sidebar-start: #2141bd;
+    --ec-sidebar-end: #1a3494;
+
     --ec-radius-xs: 6px;
     --ec-radius-sm: 8px;
     --ec-radius-md: 12px;
@@ -97,12 +115,82 @@
     box-sizing: border-box;
 }
 
+/* Dark mode. An explicit choice stamps data-theme on <html> (see
+   utils/theme.js) - there is no "follow system" mode here, so this is the
+   only selector that needs to exist (no prefers-color-scheme query). Same
+   token names as :root above, redefined - every component already reads
+   these names, so nothing outside this block needs to know dark mode
+   exists. Dark-mode neutrals are a genuinely separate ramp (not an
+   inversion formula) so each step still does its usual job: --ec-slate-50
+   is "the most subtle surface/border a component reaches for," which in
+   dark mode means "barely lighter than the page," not "near white." */
+:root[data-theme="dark"] {
+    --ec-page-bg: #0b0d12;
+    --ec-surface: #12151c;
+    --ec-surface-2: #171b24;
+
+    --ec-slate-50: #171b24;
+    --ec-slate-100: #1d2230;
+    --ec-slate-200: #2a3040;
+    --ec-slate-300: #3a4256;
+    --ec-slate-400: #5b6376;
+    --ec-slate-500: #8b93a7;
+    --ec-slate-600: #aab2c5;
+    --ec-slate-700: #c7cede;
+    --ec-slate-800: #e2e6f0;
+    --ec-slate-900: #f5f7fb;
+
+    --ec-primary-50: #16213f;
+    --ec-primary-100: #1d2c54;
+    --ec-primary-400: #6f92f0;
+    --ec-primary-500: #6087ef;
+    --ec-primary-600: #82a2f3;
+    --ec-primary-700: #aec0f7;
+
+    --ec-role-admin: #c99ee8;
+    --ec-role-admin-bg: #2c2140;
+    --ec-role-subject: #7fb1f0;
+    --ec-role-subject-bg: #1b2c42;
+    --ec-role-adviser: #5fd8ac;
+    --ec-role-adviser-bg: #133226;
+    --ec-role-principal: #e6b85c;
+    --ec-role-principal-bg: #3a2c12;
+
+    --ec-success: #4ade80;
+    --ec-success-bg: #14291d;
+    --ec-warning: #f0ad4e;
+    --ec-warning-bg: #362509;
+    --ec-danger: #f87171;
+    --ec-danger-bg: #3a1717;
+    --ec-revision: #a78bfa;
+    --ec-revision-bg: #281e42;
+
+    --ec-severity-warning: #f0ad4e;
+    --ec-severity-warning-bg: #3a2c0f;
+    --ec-severity-serious: #f0824e;
+    --ec-severity-serious-bg: #3a220f;
+    --ec-severity-critical: #f87171;
+    --ec-severity-critical-bg: #3a1717;
+
+    --ec-tier-1: #3a5f45;
+    --ec-tier-2: #3f7d52;
+    --ec-tier-3: #4a9f61;
+    --ec-tier-4: #5ec278;
+
+    --ec-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --ec-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+    --ec-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --ec-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+    --ec-shadow-primary: 0 10px 24px rgba(96, 135, 239, 0.35);
+}
+
 body {
     margin: 0;
     font-family: var(--ec-font-body);
-    background: var(--ec-slate-50);
+    background: var(--ec-page-bg);
     color: var(--ec-text);
     -webkit-font-smoothing: antialiased;
+    transition: background 0.15s ease, color 0.15s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -127,7 +215,7 @@ h1, h2, h3, h4, h5, h6 {
 .login-card {
     width: 100%;
     max-width: 520px;
-    background: white;
+    background: var(--ec-surface);
     border-radius: var(--ec-radius-lg);
     padding: 44px;
     box-shadow: var(--ec-shadow-lg);
@@ -195,7 +283,7 @@ h1, h2, h3, h4, h5, h6 {
     min-height: 72px;
     border: 1.5px solid var(--ec-border);
     border-radius: var(--ec-radius-sm);
-    background: white;
+    background: var(--ec-surface);
     color: var(--ec-text);
     cursor: pointer;
     display: flex;

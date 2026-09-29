@@ -27,7 +27,7 @@
 .sp-card-header h3 {
     margin: 0 0 6px;
     font-size: 16px;
-    color: #0f172a;
+    color: var(--ec-slate-900);
 }
 
 .sp-staffing-pill {
@@ -45,7 +45,7 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #64748b;
+    color: var(--ec-slate-500);
     white-space: nowrap;
 }
 
@@ -59,7 +59,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 13px;
-    color: #334155;
+    color: var(--ec-slate-700);
     font-weight: 600;
 }
 
@@ -67,7 +67,7 @@
     width: 100%;
     height: 8px;
     border-radius: 999px;
-    background: #f1f5f9;
+    background: var(--ec-slate-100);
     overflow: hidden;
 }
 
@@ -103,8 +103,8 @@
 }
 
 .sp-tag-pending {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--ec-slate-100);
+    color: var(--ec-slate-600);
 }
 
 .sp-submission-row {
@@ -112,7 +112,7 @@
     flex-wrap: wrap;
     gap: 8px;
     padding-top: 4px;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid var(--ec-slate-100);
     padding-top: 10px;
 }
 
@@ -124,8 +124,8 @@
 }
 
 .sp-submission-item.not-submitted {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--ec-slate-100);
+    color: var(--ec-slate-600);
 }
 
 .sp-submission-item.pending-approval {
@@ -171,7 +171,7 @@
 }
 
 .sp-view-button:disabled {
-    background: #94a3b8;
+    background: var(--ec-slate-400);
     cursor: not-allowed;
 }
 
