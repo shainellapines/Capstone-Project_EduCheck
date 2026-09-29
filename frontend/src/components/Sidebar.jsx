@@ -36,7 +36,6 @@ const POLL_INTERVAL_MS = 30000;
 const NAV_ITEMS_BY_ROLE = {
     adviser: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-        { key: "encode-grades", label: "Encode Grades", icon: FileText, path: null },
         // Only meaningful for a Self-Contained section's Adviser (see
         // SectionAssignments) - a Departmentalized Adviser can still open
         // it, but every subject will 403 until their section is
