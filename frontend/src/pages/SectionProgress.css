@@ -34,8 +34,8 @@
     display: inline-flex;
     padding: 3px 10px;
     border-radius: 999px;
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-600);
     font-size: 12px;
     font-weight: 600;
 }
@@ -73,7 +73,7 @@
 
 .sp-progress-fill {
     height: 100%;
-    background: #16a34a;
+    background: var(--ec-success);
     border-radius: 999px;
     transition: width 0.2s ease;
 }
@@ -93,13 +93,13 @@
 }
 
 .sp-tag-revision {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
 }
 
 .sp-tag-attention {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
 }
 
 .sp-tag-pending {
@@ -129,23 +129,23 @@
 }
 
 .sp-submission-item.pending-approval {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
 }
 
 .sp-submission-item.approved {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .sp-submission-item.rejected {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
 }
 
 .sp-submission-item.amendment-requested {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
 }
 
 .sp-view-button {
@@ -157,7 +157,7 @@
     padding: 10px 16px;
     border: none;
     border-radius: 8px;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
     font-weight: 600;
     font-size: 14px;
@@ -167,7 +167,7 @@
 }
 
 .sp-view-button:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .sp-view-button:disabled {

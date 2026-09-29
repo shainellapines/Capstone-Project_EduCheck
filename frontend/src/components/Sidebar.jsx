@@ -139,7 +139,7 @@ function Sidebar({ activeKey }) {
                 </div>
             </div>
 
-            <div className="role-badge">
+            <div className={`role-badge role-badge-${user.role}`}>
                 <Users size={16} />
                 {ROLE_BADGE_LABEL[user.role] || user.role}
             </div>

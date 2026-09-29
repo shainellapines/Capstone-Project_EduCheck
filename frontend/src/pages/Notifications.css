@@ -61,7 +61,7 @@
 }
 
 .notif-card.unread {
-    border-color: #bfdbfe;
+    border-color: var(--ec-primary-100);
 }
 
 .notif-icon {
@@ -75,18 +75,18 @@
 }
 
 .notif-icon.green {
-    background: #dcfce7;
-    color: #16a34a;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .notif-icon.red {
-    background: #fee2e2;
-    color: #dc2626;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
 }
 
 .notif-icon.blue {
-    background: #dbeafe;
-    color: #2563eb;
+    background: var(--ec-primary-100);
+    color: var(--ec-primary-500);
 }
 
 .notif-body {
@@ -120,5 +120,5 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #2563eb;
+    background: var(--ec-primary-500);
 }

@@ -41,7 +41,7 @@
 
 .rr-field input:focus {
     outline: none;
-    border-color: #2568ed;
+    border-color: var(--ec-primary-500);
     box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
 }
 
@@ -60,7 +60,7 @@
     padding: 12px 20px;
     border: none;
     border-radius: 8px;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
     font-weight: 600;
     font-size: 14px;
@@ -70,7 +70,7 @@
 }
 
 .rr-search-button:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .rr-search-button:disabled {
@@ -86,7 +86,7 @@
     border-radius: 8px;
     margin-bottom: 20px;
     background: #fffbeb;
-    color: #92400e;
+    color: var(--ec-warning);
 }
 
 .rr-result-count {
@@ -147,10 +147,10 @@
 
 .rr-year-chip {
     padding: 8px 14px;
-    border: 1px solid #bfdbfe;
+    border: 1px solid var(--ec-primary-100);
     border-radius: 999px;
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-600);
     font-weight: 600;
     font-size: 13px;
     font-family: inherit;
@@ -159,7 +159,7 @@
 }
 
 .rr-year-chip:hover {
-    background: #dbeafe;
+    background: var(--ec-primary-100);
     box-shadow: 0 2px 6px rgba(37, 99, 235, 0.18);
 }
 

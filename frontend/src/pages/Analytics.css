@@ -59,7 +59,7 @@
 
 .an-band-bar-fill {
     height: 100%;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     border-radius: 999px;
     transition: width 0.2s ease;
 }
@@ -110,8 +110,8 @@
     display: inline-flex;
     padding: 2px 9px;
     border-radius: 999px;
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
     font-size: 12px;
     font-weight: 700;
 }
@@ -129,8 +129,8 @@
     display: inline-flex;
     padding: 2px 9px;
     border-radius: 999px;
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;

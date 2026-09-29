@@ -4,8 +4,8 @@
    specific to the validation results page. */
 
 .vr-revision-banner {
-    background: #f5f3ff;
-    color: #6d28d9;
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
 }
 
 .vr-summary-card {
@@ -46,13 +46,13 @@
 }
 
 .vr-readiness-pill.ready {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .vr-readiness-pill.not-ready {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
 }
 
 .vr-category-grid {
@@ -85,20 +85,20 @@
     margin: 0;
 }
 
-.vr-category-card.tone-green .label { color: #16a34a; }
-.vr-category-card.tone-green .count { color: #16a34a; }
+.vr-category-card.tone-green .label { color: var(--ec-success); }
+.vr-category-card.tone-green .count { color: var(--ec-success); }
 
-.vr-category-card.tone-amber .label { color: #b45309; }
-.vr-category-card.tone-amber .count { color: #b45309; }
+.vr-category-card.tone-amber .label { color: var(--ec-warning); }
+.vr-category-card.tone-amber .count { color: var(--ec-warning); }
 
-.vr-category-card.tone-red .label { color: #dc2626; }
-.vr-category-card.tone-red .count { color: #dc2626; }
+.vr-category-card.tone-red .label { color: var(--ec-danger); }
+.vr-category-card.tone-red .count { color: var(--ec-danger); }
 
-.vr-category-card.tone-orange .label { color: #c2410c; }
-.vr-category-card.tone-orange .count { color: #c2410c; }
+.vr-category-card.tone-orange .label { color: var(--ec-warning); }
+.vr-category-card.tone-orange .count { color: var(--ec-warning); }
 
-.vr-category-card.tone-purple .label { color: #7c3aed; }
-.vr-category-card.tone-purple .count { color: #7c3aed; }
+.vr-category-card.tone-purple .label { color: var(--ec-revision); }
+.vr-category-card.tone-purple .count { color: var(--ec-revision); }
 
 .vr-revise-bar {
     display: flex;
@@ -125,7 +125,7 @@
     padding: 10px 18px;
     border: none;
     border-radius: 8px;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
     font-weight: 600;
     font-size: 14px;
@@ -135,7 +135,7 @@
 }
 
 .vr-revise-button:hover {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .vr-clean-banner {
@@ -155,12 +155,12 @@
 
 .vr-issue-row .issue-header {
     font-weight: 600;
-    color: #991b1b;
+    color: var(--ec-danger);
     font-size: 14px;
 }
 
 .vr-issue-row.severity-warning .issue-header {
-    color: #92400e;
+    color: var(--ec-warning);
 }
 
 .vr-issue-row p {

@@ -23,8 +23,8 @@
     width: 48px;
     height: 48px;
     border-radius: 10px;
-    background: #edf4ff;
-    color: #1769ed;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-500);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -49,7 +49,7 @@
     gap: 8px;
     border: none;
     border-radius: 7px;
-    background: #2447b8;
+    background: var(--ec-primary-500);
     color: white;
     padding: 12px 18px;
     font-size: 14px;
@@ -58,7 +58,7 @@
 }
 
 .add-user-button:hover {
-    background: #1d3d9e;
+    background: var(--ec-primary-600);
 }
 
 /* FEEDBACK */
@@ -75,14 +75,14 @@
 }
 
 .success-message {
-    color: #087b42;
-    background: #edfff4;
+    color: var(--ec-success);
+    background: var(--ec-success-bg);
     border: 1px solid #bcebcf;
 }
 
 .error-message {
-    color: #c62828;
-    background: #fff1f1;
+    color: var(--ec-danger);
+    background: var(--ec-danger-bg);
     border: 1px solid #f2c2c2;
 }
 
@@ -128,13 +128,13 @@
 }
 
 .summary-icon.blue {
-    background: #edf4ff;
-    color: #1769ed;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-500);
 }
 
 .summary-icon.green {
-    background: #edfff4;
-    color: #009c49;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .summary-icon.gray {
@@ -143,8 +143,8 @@
 }
 
 .summary-icon.purple {
-    background: #f4edff;
-    color: #7d35c9;
+    background: var(--ec-role-admin-bg);
+    color: var(--ec-role-admin);
 }
 
 /* TABLE CARD */
@@ -242,7 +242,7 @@
 }
 
 .users-table tbody tr:hover {
-    background: #fafcff;
+    background: var(--ec-primary-50);
 }
 
 .user-cell {
@@ -255,8 +255,8 @@
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: #edf4ff;
-    color: #1769ed;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-500);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -292,34 +292,34 @@
 }
 
 .role-admin {
-    color: #7134b4;
-    background: #f1e6ff;
+    color: var(--ec-role-admin);
+    background: var(--ec-role-admin-bg);
 }
 
 .role-adviser {
-    color: #1769ed;
-    background: #edf4ff;
+    color: var(--ec-primary-500);
+    background: var(--ec-primary-50);
 }
 
 .role-teacher,
 .role-subject {
-    color: #008849;
-    background: #eafff1;
+    color: var(--ec-success);
+    background: var(--ec-success-bg);
 }
 
 .role-principal {
-    color: #b45309;
-    background: #fef3c7;
+    color: var(--ec-warning);
+    background: var(--ec-warning-bg);
 }
 
 .status-pill.active {
-    color: #008849;
-    background: #eafff1;
+    color: var(--ec-success);
+    background: var(--ec-success-bg);
 }
 
 .status-pill.inactive {
-    color: #a26c00;
-    background: #fff4d3;
+    color: var(--ec-warning);
+    background: var(--ec-warning-bg);
 }
 
 /* ACTIONS */
@@ -341,14 +341,14 @@
 }
 
 .icon-button.edit {
-    color: #1769ed;
-    background: #edf4ff;
-    border-color: #c9dcff;
+    color: var(--ec-primary-500);
+    background: var(--ec-primary-50);
+    border-color: var(--ec-primary-100);
 }
 
 .icon-button.delete {
-    color: #d92d2d;
-    background: #fff0f0;
+    color: var(--ec-danger);
+    background: var(--ec-danger-bg);
     border-color: #f4caca;
 }
 
@@ -472,7 +472,7 @@
 
 .form-group input:focus,
 .form-group select:focus {
-    border-color: #1769ed;
+    border-color: var(--ec-primary-500);
     box-shadow: 0 0 0 3px rgba(23, 105, 237, 0.1);
 }
 
@@ -486,8 +486,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #c62828;
-    background: #fff1f1;
+    color: var(--ec-danger);
+    background: var(--ec-danger-bg);
     border: 1px solid #f2c2c2;
     border-radius: 6px;
     padding: 10px 12px;
@@ -520,12 +520,12 @@
 
 .save-user-button {
     border: none;
-    background: #2447b8;
+    background: var(--ec-primary-500);
     color: white;
 }
 
 .save-user-button:hover {
-    background: #1d3d9e;
+    background: var(--ec-primary-600);
 }
 
 /* RESPONSIVE */

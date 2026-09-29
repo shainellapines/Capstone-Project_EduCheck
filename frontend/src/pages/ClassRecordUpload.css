@@ -24,8 +24,8 @@
     width: 46px;
     height: 46px;
     border-radius: 10px;
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-500);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -70,7 +70,7 @@
 
 .cru-field select:focus {
     outline: none;
-    border-color: #2568ed;
+    border-color: var(--ec-primary-500);
     box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
 }
 
@@ -82,7 +82,7 @@
 .cru-no-assignments {
     display: block;
     margin-top: 8px;
-    color: #b47a00;
+    color: var(--ec-warning);
     font-size: 13px;
 }
 
@@ -97,8 +97,8 @@
 }
 
 .cru-dropzone.drag-active {
-    border-color: #2563eb;
-    background: #eff6ff;
+    border-color: var(--ec-primary-500);
+    background: var(--ec-primary-50);
 }
 
 .cru-dropzone h3 {
@@ -123,7 +123,7 @@
     gap: 8px;
     padding: 10px 20px;
     border-radius: 8px;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
     font-weight: 600;
     font-size: 14px;
@@ -132,7 +132,7 @@
 }
 
 .cru-browse-button:hover {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .cru-browse-button.disabled {
@@ -167,7 +167,7 @@
     padding: 13px;
     border: none;
     border-radius: 8px;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
     font-size: 15px;
     font-weight: 600;
@@ -177,7 +177,7 @@
 }
 
 .cru-submit-button:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .cru-submit-button:disabled {
@@ -222,7 +222,7 @@
     border: none;
     border-radius: 8px;
     padding: 10px 16px;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
     font-weight: 600;
     font-size: 14px;
@@ -233,7 +233,7 @@
 }
 
 .cru-view-results-button:hover {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .cru-result-title {

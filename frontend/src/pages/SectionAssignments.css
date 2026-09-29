@@ -6,15 +6,15 @@
 .sa-header-icon {
     vertical-align: -3px;
     margin-right: 8px;
-    color: #2568ed;
+    color: var(--ec-primary-500);
 }
 
 .sa-success-banner {
     padding: 14px 16px;
     border-radius: 8px;
     margin-bottom: 20px;
-    background: #edfff4;
-    color: #009c49;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
     font-weight: 600;
 }
 
@@ -25,7 +25,7 @@
     padding: 10px 16px;
     border: none;
     border-radius: 8px;
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
     font-weight: 600;
     font-size: 14px;
@@ -35,7 +35,7 @@
 }
 
 .sa-add-button:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .sa-add-button:disabled {
@@ -91,7 +91,7 @@
 .sa-field input:focus,
 .sa-field select:focus {
     outline: none;
-    border-color: #2568ed;
+    border-color: var(--ec-primary-500);
     box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
 }
 
@@ -116,7 +116,7 @@
     padding: 12px 18px;
     border: none;
     border-radius: 8px;
-    background: #009c49;
+    background: var(--ec-success);
     color: #ffffff;
     font-weight: 600;
     font-size: 14px;
@@ -126,7 +126,7 @@
 }
 
 .sa-save-button:hover:not(:disabled) {
-    background: #00803c;
+    background: var(--ec-success);
 }
 
 .sa-save-button:disabled,
@@ -179,13 +179,13 @@
 }
 
 .sa-mode-self-contained {
-    background: #edfff4;
-    color: #009c49;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .sa-mode-departmentalized {
-    background: #edf4ff;
-    color: #1769ed;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-500);
 }
 
 .sa-adviser-tag {
@@ -200,8 +200,8 @@
     padding: 8px 12px;
     border: 1px solid #fecaca;
     border-radius: 6px;
-    background: #fff5f5;
-    color: #d92929;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
     font-size: 13px;
     font-family: inherit;
     cursor: pointer;

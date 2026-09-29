@@ -10,8 +10,8 @@
     gap: 12px;
     padding: 12px 16px;
     margin-bottom: 16px;
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-600);
     border-radius: 8px;
     font-size: 14px;
 }
@@ -43,34 +43,34 @@
 }
 
 .cr-btn-primary {
-    background: #2563eb;
+    background: var(--ec-primary-500);
     color: #ffffff;
 }
 
 .cr-btn-primary:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--ec-primary-600);
 }
 
 .cr-btn-approve {
-    background: #16a34a;
+    background: var(--ec-success);
     color: #ffffff;
     padding: 8px 14px;
     font-size: 13px;
 }
 
 .cr-btn-approve:hover:not(:disabled) {
-    background: #15803d;
+    background: var(--ec-success);
 }
 
 .cr-btn-reject {
-    background: #dc2626;
+    background: var(--ec-danger);
     color: #ffffff;
     padding: 8px 14px;
     font-size: 13px;
 }
 
 .cr-btn-reject:hover:not(:disabled) {
-    background: #b91c1c;
+    background: var(--ec-danger);
 }
 
 .cr-btn-cancel {
@@ -116,7 +116,7 @@
 }
 
 .cr-student-row.highlighted {
-    background: #eff6ff;
+    background: var(--ec-primary-50);
 }
 
 .cr-row-summary {
@@ -174,13 +174,13 @@
 }
 
 .pill-badge.complete {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .pill-badge.incomplete {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
 }
 
 .submission-badge {
@@ -196,23 +196,23 @@
 }
 
 .submission-badge.pending-approval {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
 }
 
 .submission-badge.approved {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .submission-badge.rejected {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
 }
 
 .submission-badge.amendment-requested {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
 }
 
 .cr-reject-panel {
@@ -235,15 +235,15 @@
 
 .cr-reject-textarea:focus {
     outline: none;
-    border-color: #2568ed;
+    border-color: var(--ec-primary-500);
     box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
 }
 
 .cr-rejection-reason {
     margin: 0 20px 16px 50px;
     padding: 10px 12px;
-    background: #fef2f2;
-    color: #991b1b;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
     border-radius: 8px;
     font-size: 13px;
 }
@@ -251,8 +251,8 @@
 .cr-amendment-note {
     margin: 0 20px 16px 50px;
     padding: 10px 12px;
-    background: #ede9fe;
-    color: #5b21b6;
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
     border-radius: 8px;
     font-size: 13px;
 }
@@ -308,34 +308,34 @@
 }
 
 .subject-status-badge.subject-validated {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--ec-success-bg);
+    color: var(--ec-success);
 }
 
 .subject-status-badge.subject-needs-attention {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
 }
 
 .subject-status-badge.subject-needs-revision {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
 }
 
 .cr-btn-revision {
-    background: #7c3aed;
+    background: var(--ec-revision);
     color: #ffffff;
     padding: 6px 10px;
     font-size: 12px;
 }
 
 .cr-btn-revision:hover:not(:disabled) {
-    background: #6d28d9;
+    background: var(--ec-revision);
 }
 
 .cr-revision-remarks-cell {
-    background: #f5f3ff;
-    color: #6d28d9;
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
     font-size: 13px;
     font-style: italic;
 }
