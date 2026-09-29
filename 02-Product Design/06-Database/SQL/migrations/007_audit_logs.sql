@@ -1,3 +1,8 @@
+-- Status: folded into educheck_schema.sql (2026-09-29) - a database
+-- provisioned from that file already has this. Kept here for historical
+-- record only; do not re-run against a database created from the current
+-- educheck_schema.sql.
+--
 -- SPMP v1.0 Risk Management §11: an audit trail for section and teacher-
 -- assignment changes. Nothing in the codebase logged who changed a
 -- `sections` or `teacher_assignments` row, or when — this closes that gap

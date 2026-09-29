@@ -1,4 +1,13 @@
 -- ============================================
+-- EduCheck Database Schema
+-- ============================================
+-- Folded up to date with migrations/001 through migrations/007 as of
+-- 2026-09-29 - this file alone is enough to provision a fresh database.
+-- The migrations/ directory is kept for historical record (each file
+-- documents the reasoning behind its change) but does not need to be
+-- re-run against a database created from this file.
+
+-- ============================================
 -- 1. USER
 -- ============================================
 
@@ -39,7 +48,14 @@ CREATE TABLE teachers (
 CREATE TABLE sections (
     section_id SERIAL PRIMARY KEY,
     section_name VARCHAR(100) NOT NULL,
-    grade_level VARCHAR(20) NOT NULL
+    grade_level VARCHAR(20) NOT NULL,
+
+    -- Admin-configured, not derived from grade level. 'Self-Contained'
+    -- means one Adviser teaches every subject for the section;
+    -- 'Departmentalized' means each subject has its own Subject Teacher.
+    staffing_mode VARCHAR(20) NOT NULL DEFAULT 'Departmentalized'
+        CONSTRAINT sections_staffing_mode_check
+        CHECK (staffing_mode IN ('Self-Contained', 'Departmentalized'))
 );
 
 
@@ -61,8 +77,113 @@ CREATE TABLE school_years (
 CREATE TABLE subjects (
     subject_id SERIAL PRIMARY KEY,
     subject_name VARCHAR(100) NOT NULL,
-    grade_level VARCHAR(20) NOT NULL
+    grade_level VARCHAR(20) NOT NULL,
+
+    CONSTRAINT subjects_name_grade_level_key
+        UNIQUE (subject_name, grade_level)
 );
+
+-- Official DepEd curriculum data, fixed per grade level - not something
+-- any role edits through the app (the SPMP defines no "manage subjects"
+-- responsibility for Admin or any other role), so it's seeded here as
+-- static reference data rather than built as an admin-managed feature.
+INSERT INTO subjects (subject_name, grade_level) VALUES
+    -- Grade 1 (5 subjects)
+    ('Reading and Literacy', '1'),
+    ('Language', '1'),
+    ('Mathematics', '1'),
+    ('Makabansa', '1'),
+    ('GMRC', '1'),
+    -- Grade 2 (5 subjects)
+    ('Filipino', '2'),
+    ('English', '2'),
+    ('Mathematics', '2'),
+    ('Makabansa', '2'),
+    ('GMRC', '2'),
+    -- Grade 3 (6 subjects)
+    ('Filipino', '3'),
+    ('English', '3'),
+    ('Mathematics', '3'),
+    ('Science', '3'),
+    ('Makabansa', '3'),
+    ('GMRC', '3'),
+    -- Grade 4 (8 subjects)
+    ('Filipino', '4'),
+    ('English', '4'),
+    ('Mathematics', '4'),
+    ('Science', '4'),
+    ('Araling Panlipunan', '4'),
+    ('EPP', '4'),
+    ('MAPEH', '4'),
+    ('GMRC', '4'),
+    -- Grade 5 (8 subjects)
+    ('Filipino', '5'),
+    ('English', '5'),
+    ('Mathematics', '5'),
+    ('Science', '5'),
+    ('Araling Panlipunan', '5'),
+    ('EPP', '5'),
+    ('MAPEH', '5'),
+    ('GMRC', '5'),
+    -- Grade 6 (8 subjects)
+    ('Filipino', '6'),
+    ('English', '6'),
+    ('Mathematics', '6'),
+    ('Science', '6'),
+    ('Araling Panlipunan', '6'),
+    ('TLE', '6'),
+    ('MAPEH', '6'),
+    ('ESP', '6')
+ON CONFLICT (subject_name, grade_level) DO NOTHING;
+
+
+-- ============================================
+-- 5B. TEACHER ASSIGNMENT
+-- ============================================
+-- One row = one teacher's responsibility over one section, for one school
+-- year. subject_id NULL means "Class Adviser for this whole section"
+-- (full visibility, upload access only if the section is Self-Contained).
+-- subject_id NOT NULL means "Subject Teacher for this one subject in this
+-- section" - valid regardless of the section's staffing mode, so a
+-- specialist (e.g. MAPEH) can still be assigned inside an otherwise
+-- Self-Contained section (SPMP's "partial departmentalization").
+
+CREATE TABLE teacher_assignments (
+    assignment_id SERIAL PRIMARY KEY,
+    teacher_id INTEGER NOT NULL,
+    section_id INTEGER NOT NULL,
+    subject_id INTEGER,
+    school_year_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_assignment_teacher
+        FOREIGN KEY (teacher_id)
+        REFERENCES teachers(teacher_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_assignment_section
+        FOREIGN KEY (section_id)
+        REFERENCES sections(section_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_assignment_subject
+        FOREIGN KEY (subject_id)
+        REFERENCES subjects(subject_id),
+
+    CONSTRAINT fk_assignment_school_year
+        FOREIGN KEY (school_year_id)
+        REFERENCES school_years(school_year_id)
+);
+
+-- One Adviser per section per school year (subject_id IS NULL rows).
+CREATE UNIQUE INDEX uq_assignment_one_adviser_per_section
+    ON teacher_assignments (section_id, school_year_id)
+    WHERE subject_id IS NULL;
+
+-- One Subject Teacher per (subject, section) per school year.
+CREATE UNIQUE INDEX uq_assignment_one_teacher_per_subject_section
+    ON teacher_assignments (section_id, subject_id, school_year_id)
+    WHERE subject_id IS NOT NULL;
 
 
 -- ============================================
@@ -113,6 +234,20 @@ CREATE TABLE class_records (
     validation_warning_count INTEGER NOT NULL DEFAULT 0,
     ready_for_submission BOOLEAN NOT NULL DEFAULT false,
 
+    -- Which section this upload is for - lets assignment-based access
+    -- control (isUploadAuthorized, getAdviserSectionIds) check an upload
+    -- against the uploader's teacher_assignments row. Nullable: rows from
+    -- before this column existed are left alone; new uploads set it.
+    section_id INTEGER,
+
+    -- Set by consolidationController.requestRevision (Class Adviser
+    -- sending a subject back to its Subject Teacher for correction). No
+    -- separate status enum - "Needs Revision" is just written into the
+    -- unconstrained `status` column above like any other status string.
+    revision_remarks TEXT,
+    revision_requested_by INTEGER,
+    revision_requested_at TIMESTAMP,
+
     CONSTRAINT fk_class_record_teacher
         FOREIGN KEY (teacher_id)
         REFERENCES teachers(teacher_id),
@@ -123,7 +258,15 @@ CREATE TABLE class_records (
 
     CONSTRAINT fk_class_record_school_year
         FOREIGN KEY (school_year_id)
-        REFERENCES school_years(school_year_id)
+        REFERENCES school_years(school_year_id),
+
+    CONSTRAINT fk_class_record_section
+        FOREIGN KEY (section_id)
+        REFERENCES sections(section_id),
+
+    CONSTRAINT fk_class_record_revision_requested_by
+        FOREIGN KEY (revision_requested_by)
+        REFERENCES users(user_id)
 );
 
 
@@ -338,3 +481,35 @@ CREATE TABLE record_submissions (
         FOREIGN KEY (approved_by)
         REFERENCES users(user_id)
 );
+
+
+-- ============================================
+-- 15. AUDIT LOG
+-- ============================================
+-- SPMP v1.0 Risk Management §11: an audit trail for the two admin-only
+-- mutation surfaces that risk analysis flagged (sectionController,
+-- assignmentController) - who changed a `sections` or `teacher_assignments`
+-- row, and when. Deliberately generic (entity_type/entity_id/before_data/
+-- after_data) rather than one column per table, so a future entity (e.g.
+-- `users`) can write into the same table without another migration.
+-- before_data is NULL on a create, after_data is NULL on a delete, both
+-- populated on an update.
+
+CREATE TABLE audit_logs (
+    audit_log_id SERIAL PRIMARY KEY,
+    actor_user_id INTEGER NOT NULL,
+    -- 'create' | 'update' | 'delete'
+    action VARCHAR(20) NOT NULL,
+    -- 'section' | 'teacher_assignment'
+    entity_type VARCHAR(30) NOT NULL,
+    entity_id INTEGER NOT NULL,
+    before_data JSONB,
+    after_data JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_audit_log_actor
+        FOREIGN KEY (actor_user_id)
+        REFERENCES users(user_id)
+);
+
+CREATE INDEX idx_audit_logs_entity ON audit_logs (entity_type, entity_id);

@@ -1,3 +1,8 @@
+-- Status: folded into educheck_schema.sql (2026-09-29) - a database
+-- provisioned from that file already has this. Kept here for historical
+-- record only; do not re-run against a database created from the current
+-- educheck_schema.sql.
+--
 -- Implements SPMP v1.0 US-009 / US-011: per-section staffing mode
 -- (Self-Contained vs Departmentalized, admin-configured, not derived from
 -- grade level) and admin-driven teacher-to-(subject, section) assignment.

@@ -1,6 +1,10 @@
 -- ============================================
 -- Migration 004: Seed Full DepEd Subject List
 -- ============================================
+-- Status: folded into educheck_schema.sql (2026-09-29) - a database
+-- provisioned from that file already has this. Kept here for historical
+-- record only; do not re-run against a database created from the current
+-- educheck_schema.sql.
 -- `subjects` was never seeded beyond a single manually-inserted row
 -- ("Mathematics", grade_level '6') added during early testing. That left
 -- the Upload e-Class Record dropdown (ClassRecordUpload.jsx) able to

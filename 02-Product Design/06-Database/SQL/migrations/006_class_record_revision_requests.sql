@@ -1,3 +1,8 @@
+-- Status: folded into educheck_schema.sql (2026-09-29) - a database
+-- provisioned from that file already has this. Kept here for historical
+-- record only; do not re-run against a database created from the current
+-- educheck_schema.sql.
+--
 -- SPMP v1.0 US-006 (Must, Sprint 7): Adviser return-to-subject-teacher
 -- correction. Adds the fields a revision request needs on the class_record
 -- it targets. No new status enum to maintain — class_records.status is an
