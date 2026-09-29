@@ -39,6 +39,27 @@
     --ec-revision: #6d28d9;
     --ec-revision-bg: #ede9fe;
 
+    /* Severity scale for intervention/at-risk grades — three fixed steps,
+       reserved meaning, never reused as a 4th categorical color. Distinct
+       from --ec-warning/--ec-danger above (those are generic form/banner
+       states) so a grade's urgency and an unrelated error message never
+       compete for the same visual weight. */
+    --ec-severity-warning: #b45309;
+    --ec-severity-warning-bg: #fef3c7;
+    --ec-severity-serious: #c2410c;
+    --ec-severity-serious-bg: #ffedd5;
+    --ec-severity-critical: #b91c1c;
+    --ec-severity-critical-bg: #fee2e2;
+
+    /* Ordinal ramp for the four PASSING grade-distribution tiers — one
+       hue, light->dark = lower->higher achievement. "Below 75" breaks the
+       ramp entirely into --ec-danger above; it's a different state
+       (failing), not one more step down. */
+    --ec-tier-1: #86efac;
+    --ec-tier-2: #4ade80;
+    --ec-tier-3: #22c55e;
+    --ec-tier-4: #15803d;
+
     /* Neutrals */
     --ec-slate-50: #f8fafc;
     --ec-slate-100: #f1f5f9;

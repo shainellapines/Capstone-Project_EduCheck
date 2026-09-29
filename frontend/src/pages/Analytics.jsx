@@ -15,6 +15,28 @@ import { getToken } from "../utils/session";
 
 const API_URL = "http://localhost:5000/api";
 
+// Grade bands are ORDINAL (position in a performance sequence), not
+// categorical — color encodes "which tier," bar length encodes "how many
+// students." The four passing tiers share one green ramp (light->dark =
+// lower->higher achievement); "Below 75" breaks the ramp entirely into the
+// reserved danger/status color, since it isn't "one tier lower," it's a
+// different state (failing) that needs to read as distinct at a glance.
+const BAND_TONE = {
+    "90-100": "outstanding",
+    "85-89": "very-satisfactory",
+    "80-84": "satisfactory",
+    "75-79": "fairly-satisfactory",
+    "Below 75": "below-passing",
+};
+
+// Same status scale, three fixed steps by how far below passing — not a
+// generated gradient, so "48" and "74" never read as equally urgent.
+function severityClass(grade) {
+    if (grade < 60) return "severity-critical";
+    if (grade < 70) return "severity-serious";
+    return "severity-warning";
+}
+
 // Shared "Academic Analytics" (Admin/Principal label) / "Performance
 // Analytics" (Adviser label) page — one page and one endpoint behind both
 // nav entries, same pattern as Consolidated Records/Section Progress
@@ -231,9 +253,12 @@ function Analytics() {
 
                             </div>
 
-                            <div className="content-card an-panel">
+                            <div className="content-card an-panel an-intervention-panel">
                                 <div className="card-header">
-                                    <h3>Intervention Flag List</h3>
+                                    <h3>
+                                        <AlertTriangle size={17} className="an-header-icon" />
+                                        Intervention Flag List
+                                    </h3>
                                 </div>
 
                                 {analytics.intervention_flags.length === 0 ? (
@@ -255,7 +280,10 @@ function Analytics() {
 
                                             <tbody>
                                                 {analytics.intervention_flags.map((student) => (
-                                                    <tr key={student.lrn}>
+                                                    <tr
+                                                        key={student.lrn}
+                                                        className={`an-flag-row ${severityClass(student.lowest_grade)}`}
+                                                    >
                                                         <td className="an-cell-strong">
                                                             {student.last_name}, {student.first_name}
                                                         </td>
@@ -278,7 +306,9 @@ function Analytics() {
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            <span className="an-at-risk-pill">
+                                                            <span
+                                                                className={`an-severity-pill ${severityClass(student.lowest_grade)}`}
+                                                            >
                                                                 {student.lowest_grade}
                                                             </span>
                                                         </td>
@@ -299,9 +329,10 @@ function Analytics() {
                                     {analytics.grade_distribution.map((band) => {
                                         const barPercent =
                                             maxBandCount > 0 ? (band.count / maxBandCount) * 100 : 0;
+                                        const tone = BAND_TONE[band.band] || "outstanding";
 
                                         return (
-                                            <div className="an-band-row" key={band.band}>
+                                            <div className={`an-band-row tone-${tone}`} key={band.band}>
                                                 <div className="an-band-label">
                                                     <span className="an-band-range">{band.band}</span>
                                                     <span className="an-band-descriptor">
@@ -310,10 +341,14 @@ function Analytics() {
                                                 </div>
 
                                                 <div className="an-band-bar-track">
-                                                    <div
-                                                        className="an-band-bar-fill"
-                                                        style={{ width: `${barPercent}%` }}
-                                                    />
+                                                    {band.count > 0 ? (
+                                                        <div
+                                                            className="an-band-bar-fill"
+                                                            style={{ width: `${Math.max(barPercent, 2)}%` }}
+                                                        />
+                                                    ) : (
+                                                        <div className="an-band-bar-empty" />
+                                                    )}
                                                 </div>
 
                                                 <span className="an-band-count">{band.count}</span>
@@ -348,7 +383,10 @@ function Analytics() {
 
                                             <tbody>
                                                 {analytics.section_performance.map((section) => (
-                                                    <tr key={section.section_id}>
+                                                    <tr
+                                                        key={section.section_id}
+                                                        className={section.at_risk_count > 0 ? "an-row-flagged" : undefined}
+                                                    >
                                                         <td>{section.section_name}</td>
                                                         <td>Grade {section.grade_level}</td>
                                                         <td>{section.graded_entries}</td>
@@ -393,7 +431,10 @@ function Analytics() {
 
                                         <tbody>
                                             {analytics.subject_performance.map((subject) => (
-                                                <tr key={subject.subject_id}>
+                                                <tr
+                                                    key={subject.subject_id}
+                                                    className={subject.at_risk_count > 0 ? "an-row-flagged" : undefined}
+                                                >
                                                     <td>{subject.subject_name}</td>
                                                     <td>Grade {subject.grade_level}</td>
                                                     <td>{subject.graded_entries}</td>

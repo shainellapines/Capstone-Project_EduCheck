@@ -51,24 +51,43 @@
 
 .an-band-bar-track {
     width: 100%;
-    height: 12px;
+    height: 14px;
     border-radius: 999px;
-    background: #f1f5f9;
+    background: var(--ec-slate-100);
     overflow: hidden;
 }
 
 .an-band-bar-fill {
     height: 100%;
-    background: var(--ec-primary-500);
     border-radius: 999px;
     transition: width 0.2s ease;
+    background: var(--ec-primary-500);
+}
+
+/* Ordinal ramp for the four passing tiers — color IDs the tier, bar
+   length still carries the count. "Below 75" breaks the ramp into the
+   reserved danger color instead of one more green step: it's a different
+   state, not a lower rung on the same ladder. */
+.tone-fairly-satisfactory .an-band-bar-fill { background: var(--ec-tier-1); }
+.tone-satisfactory .an-band-bar-fill { background: var(--ec-tier-2); }
+.tone-very-satisfactory .an-band-bar-fill { background: var(--ec-tier-3); }
+.tone-outstanding .an-band-bar-fill { background: var(--ec-tier-4); }
+.tone-below-passing .an-band-bar-fill { background: var(--ec-danger); }
+.tone-below-passing .an-band-range { color: var(--ec-danger); }
+
+.an-band-bar-empty {
+    height: 100%;
+    width: 6px;
+    border-radius: 999px;
+    background: var(--ec-slate-300);
 }
 
 .an-band-count {
     text-align: right;
     font-size: 14px;
     font-weight: 700;
-    color: #334155;
+    font-family: var(--ec-font-heading);
+    color: var(--ec-slate-700);
 }
 
 /* SECTION / SUBJECT TABLES */
@@ -116,7 +135,42 @@
     font-weight: 700;
 }
 
+/* A row with any at-risk students doesn't just carry a red pill in one
+   cell — the whole row gets a faint tint so it's visible at a glance
+   scanning a long table, instead of blending in until you read the last
+   column. */
+.an-row-flagged {
+    background: var(--ec-severity-critical-bg);
+}
+
+.an-row-flagged:hover {
+    background: #fecaca;
+}
+
 /* INTERVENTION FLAG LIST */
+
+.an-intervention-panel {
+    border-left: 4px solid var(--ec-danger);
+}
+
+.an-intervention-panel .card-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.an-header-icon {
+    color: var(--ec-danger);
+    flex-shrink: 0;
+}
+
+.an-flag-row td:first-child {
+    border-left: 3px solid transparent;
+}
+
+.an-flag-row.severity-warning td:first-child { border-left-color: var(--ec-severity-warning); }
+.an-flag-row.severity-serious td:first-child { border-left-color: var(--ec-severity-serious); }
+.an-flag-row.severity-critical td:first-child { border-left-color: var(--ec-severity-critical); }
 
 .an-flag-subjects {
     display: flex;
@@ -134,6 +188,32 @@
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
+}
+
+/* Fixed three-step severity scale — reserved meaning, not a generated
+   gradient — so a 48 and a 74 never carry the same visual weight even
+   though both are technically "below 75." */
+.an-severity-pill {
+    display: inline-flex;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.an-severity-pill.severity-warning {
+    background: var(--ec-severity-warning-bg);
+    color: var(--ec-severity-warning);
+}
+
+.an-severity-pill.severity-serious {
+    background: var(--ec-severity-serious-bg);
+    color: var(--ec-severity-serious);
+}
+
+.an-severity-pill.severity-critical {
+    background: var(--ec-severity-critical-bg);
+    color: var(--ec-severity-critical);
 }
 
 @media (max-width: 700px) {
