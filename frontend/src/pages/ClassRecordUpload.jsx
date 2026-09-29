@@ -7,6 +7,10 @@ import {
     CheckCircle,
     AlertTriangle,
     Loader2,
+    ChevronDown,
+    ListChecks,
+    ShieldCheck,
+    FileCheck2,
 } from "lucide-react";
 
 import "./Dashboard.css";
@@ -187,6 +191,8 @@ function ClassRecordUpload() {
 
                 <section className="dashboard-content">
 
+                    <div className="cru-layout">
+
                     <div className="cru-card">
 
                         <div className="cru-card-header">
@@ -203,23 +209,29 @@ function ClassRecordUpload() {
                         <div className="cru-field">
                             <label htmlFor="assignment">Subject &amp; Section</label>
 
-                            <select
-                                id="assignment"
-                                value={selectedOptionKey}
-                                onChange={(e) => setSelectedOptionKey(e.target.value)}
-                                disabled={loadingOptions || uploading || options.length === 0}
-                            >
-                                <option value="">
-                                    {loadingOptions ? "Loading your assignments..." : "Select a subject and section"}
-                                </option>
-
-                                {options.map((option) => (
-                                    <option key={optionKey(option)} value={optionKey(option)}>
-                                        {option.subject_name} — {option.section_name} (Grade {option.grade_level}) ·{" "}
-                                        {option.school_year}
+                            <div className="cru-select-wrap">
+                                <select
+                                    id="assignment"
+                                    value={selectedOptionKey}
+                                    onChange={(e) => setSelectedOptionKey(e.target.value)}
+                                    disabled={loadingOptions || uploading || options.length === 0}
+                                >
+                                    <option value="">
+                                        {loadingOptions
+                                            ? "Loading your assignments..."
+                                            : "Select a subject and section"}
                                     </option>
-                                ))}
-                            </select>
+
+                                    {options.map((option) => (
+                                        <option key={optionKey(option)} value={optionKey(option)}>
+                                            {option.subject_name} — {option.section_name} (Grade{" "}
+                                            {option.grade_level}) · {option.school_year}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <ChevronDown size={18} className="cru-select-chevron" />
+                            </div>
 
                             {!loadingOptions && options.length === 0 && (
                                 <small className="cru-no-assignments">
@@ -238,10 +250,13 @@ function ClassRecordUpload() {
                             onDragLeave={() => setIsDragActive(false)}
                             onDrop={handleDrop}
                         >
-                            <Upload size={40} color="#2563eb" />
+                            <div className="cru-dropzone-icon">
+                                <Upload size={26} />
+                            </div>
 
                             <h3>Choose an Excel file</h3>
                             <p>Drag and drop the e-Class Record here, or browse your files.</p>
+                            <span className="cru-dropzone-hint">.XLSX or .XLS — official DepEd template</span>
 
                             <input
                                 id="class_record_file"
@@ -305,6 +320,64 @@ function ClassRecordUpload() {
                                 </>
                             )}
                         </button>
+
+                    </div>
+
+                    <aside className="cru-guide">
+
+                        <div className="cru-guide-card">
+                            <h3>How it works</h3>
+
+                            <ol className="cru-steps">
+                                <li>
+                                    <span className="cru-step-number">1</span>
+                                    <div>
+                                        <strong>Select your assignment</strong>
+                                        <p>Only subjects and sections you're actually assigned to appear here.</p>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <span className="cru-step-number">2</span>
+                                    <div>
+                                        <strong>Upload the file</strong>
+                                        <p>Your grades are parsed and checked automatically on upload.</p>
+                                    </div>
+                                </li>
+
+                                <li>
+                                    <span className="cru-step-number">3</span>
+                                    <div>
+                                        <strong>Review the results</strong>
+                                        <p>Fix anything flagged, then it's ready for your Adviser to consolidate.</p>
+                                    </div>
+                                </li>
+                            </ol>
+                        </div>
+
+                        <div className="cru-guide-card">
+                            <h3>
+                                <ListChecks size={17} />
+                                Before you upload
+                            </h3>
+
+                            <ul className="cru-checklist">
+                                <li>
+                                    <FileCheck2 size={16} />
+                                    Official DepEd E-Class Record template, unmodified in structure
+                                </li>
+                                <li>
+                                    <ShieldCheck size={16} />
+                                    Correct subject and section selected for this file
+                                </li>
+                                <li>
+                                    <CheckCircle size={16} />
+                                    Saved as .xlsx or .xls
+                                </li>
+                            </ul>
+                        </div>
+
+                    </aside>
 
                     </div>
 
