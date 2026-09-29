@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Bell,
     CheckCircle,
@@ -6,6 +6,8 @@ import {
     Loader2,
     AlertTriangle,
     CheckCheck,
+    Undo2,
+    RefreshCcw,
 } from "lucide-react";
 
 import "./Dashboard.css";
@@ -14,22 +16,33 @@ import Sidebar from "../components/Sidebar";
 
 const API_URL = "http://localhost:5000/api";
 
-// Icon/tone per notification title. The backend only ever creates two
-// kinds of notification today — "Submission Approved" and "Submission
-// Rejected" (see submissionController.js's decideSubmission) — so those
-// are the only ones mapped by name. Anything else (a future notification
-// type) falls through to a neutral bell rather than guessing at a look
-// for content that doesn't exist yet.
+// Icon/tone/category per notification title. Four titles actually exist
+// across the backend (grep-confirmed against submissionController.js and
+// consolidationController.js's requestRevision) — "Submission Approved"
+// and "Submission Rejected" aren't the only two. Anything not in this map
+// (a future notification type) falls through to a neutral bell/"other"
+// category rather than guessing at a look for content that doesn't exist
+// yet.
 const NOTIFICATION_VISUALS = {
-    "Submission Approved": { icon: CheckCircle, tone: "green" },
-    "Submission Rejected": { icon: XCircle, tone: "red" },
+    "Submission Approved": { icon: CheckCircle, tone: "green", category: "approved" },
+    "Submission Rejected": { icon: XCircle, tone: "red", category: "rejected" },
+    "Revision Requested": { icon: Undo2, tone: "purple", category: "revisions" },
+    "Approved Record Needs Amendment": { icon: RefreshCcw, tone: "purple", category: "revisions" },
 };
 
-const DEFAULT_VISUAL = { icon: Bell, tone: "blue" };
+const DEFAULT_VISUAL = { icon: Bell, tone: "blue", category: "other" };
 
 function getNotificationVisual(title) {
     return NOTIFICATION_VISUALS[title] || DEFAULT_VISUAL;
 }
+
+const FILTERS = [
+    { key: "all", label: "All" },
+    { key: "unread", label: "Unread" },
+    { key: "approved", label: "Approved" },
+    { key: "rejected", label: "Rejected" },
+    { key: "revisions", label: "Revisions" },
+];
 
 function formatTimestamp(isoString) {
     return new Date(isoString).toLocaleString(undefined, {
@@ -43,6 +56,7 @@ function Notifications() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [activeFilter, setActiveFilter] = useState("all");
 
     const authHeaders = () => {
         const token = localStorage.getItem("educheck_token");
@@ -116,6 +130,28 @@ function Notifications() {
         }
     };
 
+    const filterCounts = useMemo(() => {
+        const counts = { all: 0, unread: 0, approved: 0, rejected: 0, revisions: 0 };
+
+        (notifications || []).forEach((notification) => {
+            counts.all += 1;
+            if (notification.status === "Unread") counts.unread += 1;
+
+            const { category } = getNotificationVisual(notification.title);
+            if (category in counts) counts[category] += 1;
+        });
+
+        return counts;
+    }, [notifications]);
+
+    const visibleNotifications = useMemo(() => {
+        if (!notifications) return [];
+        if (activeFilter === "all") return notifications;
+        if (activeFilter === "unread") return notifications.filter((n) => n.status === "Unread");
+
+        return notifications.filter((n) => getNotificationVisual(n.title).category === activeFilter);
+    }, [notifications, activeFilter]);
+
     return (
         <div className="dashboard-layout">
 
@@ -153,6 +189,26 @@ function Notifications() {
 
                     {!loading && notifications && notifications.length > 0 && (
                         <div className="notif-toolbar">
+                            <div className="notif-filters">
+                                {FILTERS.map((filter) => (
+                                    <button
+                                        type="button"
+                                        key={filter.key}
+                                        className={
+                                            activeFilter === filter.key
+                                                ? "notif-filter-pill active"
+                                                : "notif-filter-pill"
+                                        }
+                                        onClick={() => setActiveFilter(filter.key)}
+                                    >
+                                        {filter.label}
+                                        <span className="notif-filter-count">
+                                            {filterCounts[filter.key]}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+
                             <button
                                 type="button"
                                 className="notif-mark-all"
@@ -173,9 +229,16 @@ function Notifications() {
                         </div>
                     )}
 
+                    {!loading && notifications && notifications.length > 0 && visibleNotifications.length === 0 && (
+                        <div className="content-card empty-state-card">
+                            <Bell size={20} />
+                            No notifications in this category.
+                        </div>
+                    )}
+
                     {!loading &&
                         notifications &&
-                        notifications.map((notification) => {
+                        visibleNotifications.map((notification) => {
                             const { icon: Icon, tone } = getNotificationVisual(notification.title);
                             const isUnread = notification.status === "Unread";
 

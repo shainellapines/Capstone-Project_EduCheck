@@ -13,8 +13,63 @@
 
 .notif-toolbar {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
     margin-bottom: 16px;
+}
+
+.notif-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.notif-filter-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border: 1.5px solid var(--ec-slate-200);
+    border-radius: var(--ec-radius-pill);
+    background: white;
+    color: var(--ec-slate-600);
+    font-weight: 600;
+    font-size: 13px;
+    font-family: var(--ec-font-body);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.notif-filter-pill:hover {
+    border-color: var(--ec-slate-300);
+    background: var(--ec-slate-50);
+}
+
+.notif-filter-pill.active {
+    border-color: var(--ec-primary-500);
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-600);
+}
+
+.notif-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: var(--ec-radius-pill);
+    background: var(--ec-slate-100);
+    color: var(--ec-slate-600);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.notif-filter-pill.active .notif-filter-count {
+    background: var(--ec-primary-500);
+    color: white;
 }
 
 .notif-mark-all {
@@ -87,6 +142,11 @@
 .notif-icon.blue {
     background: var(--ec-primary-100);
     color: var(--ec-primary-500);
+}
+
+.notif-icon.purple {
+    background: var(--ec-revision-bg);
+    color: var(--ec-revision);
 }
 
 .notif-body {
