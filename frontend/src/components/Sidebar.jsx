@@ -8,9 +8,7 @@ import {
     FileText,
     Upload,
     BarChart3,
-    CheckCircle,
     ClipboardCheck,
-    Send,
     Database,
     Bell,
     Settings,
@@ -45,8 +43,6 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "records-repository", label: "Records Repository", icon: Database, path: "/records-repository" },
         { key: "analytics", label: "Performance Analytics", icon: BarChart3, path: "/analytics" },
-        { key: "validation-results", label: "Validation Results", icon: CheckCircle, path: null },
-        { key: "submission-workflow", label: "Submission Workflow", icon: Send, path: null },
     ],
     admin: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
@@ -62,8 +58,6 @@ const NAV_ITEMS_BY_ROLE = {
     subject: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         { key: "upload-record", label: "Upload e-Class Record", icon: Upload, path: "/class-record-upload" },
-        { key: "validation-results", label: "Validation Results", icon: CheckCircle, path: null },
-        { key: "submission-status", label: "Submission Status", icon: Send, path: null },
     ],
     // SPMP v1.0 US-008: view-only. Every path below lands on a page that
     // is already read-only for any role but adviser/admin (ConsolidatedRecords'

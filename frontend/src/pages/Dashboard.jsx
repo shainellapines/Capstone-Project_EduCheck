@@ -377,7 +377,7 @@ function Dashboard() {
                                 {recentUploads.map((upload) => (
                                     <div className="record-row" key={upload.class_record_id}>
 
-                                        <div>
+                                        <div className="record-details">
                                             <strong>
                                                 {upload.subject_name}
                                             </strong>
@@ -388,9 +388,23 @@ function Dashboard() {
                                             </span>
                                         </div>
 
-                                        <span className={getStatusBadgeClass(upload.status)}>
-                                            {upload.status}
-                                        </span>
+                                        <div className="record-status">
+                                            <span className={getStatusBadgeClass(upload.status)}>
+                                                {upload.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="record-actions">
+                                            <button
+                                                type="button"
+                                                className="view-results-button"
+                                                onClick={() =>
+                                                    navigate(`/validation-results/${upload.class_record_id}`)
+                                                }
+                                            >
+                                                View Results
+                                            </button>
+                                        </div>
 
                                     </div>
                                 ))}
