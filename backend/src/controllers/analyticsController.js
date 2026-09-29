@@ -131,6 +131,62 @@ const getAnalyticsForSchoolYear = async (req, res) => {
             }))
             .filter((section) => section.graded_entries > 0);
 
+        // ---- Intervention flag list (SPMP v1.0 EPIC-08) ----
+        // The SPMP names this feature ("Intervention flag list") but defines
+        // no threshold of its own — reuses PASSING_GRADE (DepEd's 75) above,
+        // the same line every other at_risk_count in this file already
+        // draws. One entry per student who has at least one subject below
+        // that mark, not one entry per failing grade — a reviewer needs to
+        // know WHICH students need intervention, not just how many
+        // subject-entries are low. Sorted so the students needing the most
+        // attention (most failing subjects, then lowest grade) surface
+        // first, unlike the per-section/per-subject tables above which sort
+        // by grade level/name for lookup, not by severity.
+        const sectionNameById = new Map(
+            sectionsLookup.rows.map((section) => [section.section_id, section.section_name])
+        );
+
+        const failingSubjectsByLrn = new Map();
+
+        gradedRows.forEach((row) => {
+            if (row.final_grade >= PASSING_GRADE) return;
+
+            if (!failingSubjectsByLrn.has(row.lrn)) {
+                failingSubjectsByLrn.set(row.lrn, {
+                    lrn: row.lrn,
+                    first_name: row.first_name,
+                    last_name: row.last_name,
+                    grade_level: row.grade_level,
+                    section_id: row.section_id,
+                    section_name: row.section_id !== null ? sectionNameById.get(row.section_id) ?? null : null,
+                    failing_subjects: [],
+                });
+            }
+
+            failingSubjectsByLrn.get(row.lrn).failing_subjects.push({
+                subject_id: row.subject_id,
+                subject_name: row.subject_name,
+                final_grade: row.final_grade,
+            });
+        });
+
+        const interventionFlags = Array.from(failingSubjectsByLrn.values())
+            .map((student) => ({
+                ...student,
+                lowest_grade: Math.min(...student.failing_subjects.map((subject) => subject.final_grade)),
+            }))
+            .sort((a, b) => {
+                if (b.failing_subjects.length !== a.failing_subjects.length) {
+                    return b.failing_subjects.length - a.failing_subjects.length;
+                }
+
+                if (a.lowest_grade !== b.lowest_grade) {
+                    return a.lowest_grade - b.lowest_grade;
+                }
+
+                return a.last_name.localeCompare(b.last_name);
+            });
+
         // ---- Per subject ----
         // subject_name repeats across grade levels (e.g. "Mathematics" for
         // both Grade 1 and Grade 3), so subject_id is the real grouping key
@@ -172,6 +228,7 @@ const getAnalyticsForSchoolYear = async (req, res) => {
             grade_distribution: gradeDistribution,
             section_performance: sectionPerformance,
             subject_performance: subjectPerformance,
+            intervention_flags: interventionFlags,
         });
     } catch (error) {
         console.error("Get analytics error:", error);

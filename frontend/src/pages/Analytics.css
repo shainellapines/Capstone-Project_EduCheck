@@ -116,6 +116,26 @@
     font-weight: 700;
 }
 
+/* INTERVENTION FLAG LIST */
+
+.an-flag-subjects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    white-space: normal;
+}
+
+.an-flag-subject-pill {
+    display: inline-flex;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 @media (max-width: 700px) {
     .an-band-row {
         grid-template-columns: 110px 1fr 30px;

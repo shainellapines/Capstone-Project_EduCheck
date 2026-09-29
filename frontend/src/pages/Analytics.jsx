@@ -121,8 +121,9 @@ function Analytics() {
                     <div>
                         <h1>Academic Analytics</h1>
                         <p>
-                            School-wide grade performance — distribution, sections, and
-                            subjects, for the selected school year.
+                            School-wide grade performance and the intervention flag list —
+                            distribution, sections, subjects, and at-risk students, for the
+                            selected school year.
                         </p>
                     </div>
 
@@ -228,6 +229,65 @@ function Analytics() {
                                     </div>
                                 </div>
 
+                            </div>
+
+                            <div className="content-card an-panel">
+                                <div className="card-header">
+                                    <h3>Intervention Flag List</h3>
+                                </div>
+
+                                {analytics.intervention_flags.length === 0 ? (
+                                    <p className="an-empty-note">
+                                        No students are currently below the passing grade (
+                                        {analytics.passing_grade}) for this school year.
+                                    </p>
+                                ) : (
+                                    <div className="an-table-wrap">
+                                        <table className="an-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Student</th>
+                                                    <th>Section</th>
+                                                    <th>Failing Subjects</th>
+                                                    <th>Lowest Grade</th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody>
+                                                {analytics.intervention_flags.map((student) => (
+                                                    <tr key={student.lrn}>
+                                                        <td className="an-cell-strong">
+                                                            {student.last_name}, {student.first_name}
+                                                        </td>
+                                                        <td>
+                                                            {student.section_name
+                                                                ? `${student.section_name} (Grade ${student.grade_level})`
+                                                                : "Unassigned"}
+                                                        </td>
+                                                        <td>
+                                                            <div className="an-flag-subjects">
+                                                                {student.failing_subjects.map((subject) => (
+                                                                    <span
+                                                                        className="an-flag-subject-pill"
+                                                                        key={subject.subject_id}
+                                                                    >
+                                                                        {subject.subject_name} (
+                                                                        {subject.final_grade})
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <span className="an-at-risk-pill">
+                                                                {student.lowest_grade}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="content-card an-panel">
