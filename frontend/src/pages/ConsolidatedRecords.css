@@ -92,6 +92,20 @@
     font-weight: 600;
 }
 
+.cr-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 18px 20px;
+}
+
+.cr-pagination-status {
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+}
+
 .cr-student-row {
     border-bottom: 1px solid #f1f5f9;
     transition: background 0.15s ease;

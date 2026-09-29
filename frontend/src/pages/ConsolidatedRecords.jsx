@@ -18,6 +18,7 @@ import "./ConsolidatedRecords.css";
 import Sidebar from "../components/Sidebar";
 
 const API_URL = "http://localhost:5000/api";
+const PAGE_SIZE = 20;
 
 const SUBMISSION_BADGE_CLASS = {
     "Not Submitted": "not-submitted",
@@ -72,6 +73,7 @@ function ConsolidatedRecords() {
 
     const [students, setStudents] = useState(null);
     const [loadingStudents, setLoadingStudents] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const [expandedLrns, setExpandedLrns] = useState(new Set());
     const [error, setError] = useState("");
@@ -176,6 +178,7 @@ function ConsolidatedRecords() {
     useEffect(() => {
         fetchStudents();
         setExpandedLrns(new Set());
+        setCurrentPage(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSchoolYearId, sectionFilterId]);
 
@@ -190,7 +193,17 @@ function ConsolidatedRecords() {
 
         hasAutoExpandedRef.current = true;
         setExpandedLrns((previous) => new Set(previous).add(highlightedLrn));
-        highlightedRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        const highlightedIndex = students.findIndex((student) => student.lrn === highlightedLrn);
+        if (highlightedIndex !== -1) {
+            setCurrentPage(Math.floor(highlightedIndex / PAGE_SIZE) + 1);
+        }
+
+        // Deferred: the page-jump above only takes effect on the next render,
+        // so the highlighted row's ref isn't attached to the DOM yet this tick.
+        setTimeout(() => {
+            highlightedRowRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
     }, [students, highlightedLrn]);
 
     const toggleExpanded = (lrn) => {
@@ -346,6 +359,12 @@ function ConsolidatedRecords() {
         }
     };
 
+    const totalPages = students ? Math.max(1, Math.ceil(students.length / PAGE_SIZE)) : 1;
+    const pagedStudents = students
+        ? students.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+        : [];
+    const pageStartIndex = (currentPage - 1) * PAGE_SIZE;
+
     const eligibleForBulkSubmit =
         students?.filter(
             (student) =>
@@ -455,10 +474,11 @@ function ConsolidatedRecords() {
                         <div className="content-card">
 
                             <div className="cr-list-count">
-                                {students.length} student{students.length === 1 ? "" : "s"}
+                                Showing {pageStartIndex + 1}–{Math.min(pageStartIndex + PAGE_SIZE, students.length)}{" "}
+                                of {students.length} student{students.length === 1 ? "" : "s"}
                             </div>
 
-                            {students.map((student) => {
+                            {pagedStudents.map((student) => {
                                 const isExpanded = expandedLrns.has(student.lrn);
                                 const isPending = pendingLrns.has(student.lrn);
                                 const submissionStatus = student.submission.status;
@@ -758,6 +778,32 @@ function ConsolidatedRecords() {
                                     </div>
                                 );
                             })}
+
+                            {totalPages > 1 && (
+                                <div className="cr-pagination">
+                                    <button
+                                        type="button"
+                                        className="cr-btn cr-btn-cancel"
+                                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Previous
+                                    </button>
+
+                                    <span className="cr-pagination-status">
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        className="cr-btn cr-btn-cancel"
+                                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 
