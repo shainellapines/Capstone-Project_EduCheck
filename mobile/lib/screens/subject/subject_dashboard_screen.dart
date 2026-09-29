@@ -898,24 +898,6 @@ class _SubjectDashboardScreenState extends State<SubjectDashboardScreen> {
             ),
             const SizedBox(height: 10),
             _buildDrawerItem(
-              icon: Icons.home_outlined,
-              title: 'Home',
-              onTap: () {
-                Navigator.pop(context);
-                setState(() {
-                  selectedIndex = 0;
-                });
-              },
-            ),
-            _buildDrawerItem(
-              icon: Icons.description_outlined,
-              title: 'Records',
-              onTap: () {
-                Navigator.pop(context);
-                openRecords();
-              },
-            ),
-            _buildDrawerItem(
               icon: Icons.notifications_none_rounded,
               title: 'Notification History',
               onTap: () {
