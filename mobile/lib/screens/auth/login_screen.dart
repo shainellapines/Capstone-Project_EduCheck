@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../adviser/adviser_dashboard_screen.dart';
+import '../subject/subject_dashboard_screen.dart';
+import '../admin/admin_dashboard_screen.dart';
+import '../principal/principal_dashboard_screen.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -40,11 +45,99 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Backend login will be connected next.',
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter your username and password.',
+          ),
         ),
+      );
+      return;
+    }
+
+    bool validCredentials = false;
+
+    switch (_selectedRole) {
+      case 'adviser':
+        validCredentials =
+            username == 'adviser.grade6a' &&
+            password == 'adviser123';
+        break;
+
+      case 'subject':
+        validCredentials =
+            (username == 'math.g6a' && password == 'math123') ||
+            (username == 'english.g6a' && password == 'eng123') ||
+            (username == 'science.g6a' && password == 'sci123') ||
+            (username == 'filipino.g6a' && password == 'fil123');
+        break;
+
+      case 'admin':
+        validCredentials =
+            username == 'admin.educheck' &&
+            password == 'admin123';
+        break;
+
+      case 'principal':
+        validCredentials =
+            username == 'principal.educheck' &&
+            password == 'principal123';
+        break;
+    }
+
+    if (!validCredentials) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Invalid username or password.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_selectedRole == 'adviser') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              const AdviserDashboardScreen(),
+        ),
+      );
+      return;
+    }
+
+    if (_selectedRole == 'subject') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              const SubjectDashboardScreen(),
+        ),
+      );
+      return;
+    }
+
+    if (_selectedRole == 'admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              const AdminDashboardScreen(),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const PrincipalDashboardScreen(),
       ),
     );
   }
@@ -53,10 +146,14 @@ class _LoginScreenState extends State<LoginScreen> {
     switch (_selectedRole) {
       case 'adviser':
         return 'adviser.grade6a';
+      case 'subject':
+        return 'math.g6a, english.g6a, etc.';
       case 'admin':
         return 'admin.educheck';
+      case 'principal':
+        return 'principal.educheck';
       default:
-        return 'math.g6a, english.g6a, etc.';
+        return '';
     }
   }
 
@@ -64,6 +161,8 @@ class _LoginScreenState extends State<LoginScreen> {
     switch (_selectedRole) {
       case 'admin':
         return 'Login to Admin Dashboard';
+      case 'principal':
+        return 'Login to Principal Dashboard';
       default:
         return 'Login to Dashboard';
     }
@@ -214,6 +313,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   role: 'admin',
                   icon: Icons.admin_panel_settings_outlined,
                   label: 'Admin',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _roleButton(
+                  role: 'principal',
+                  icon: Icons.account_balance_outlined,
+                  label: 'Principal',
                 ),
               ),
             ],
@@ -390,6 +497,14 @@ class _LoginScreenState extends State<LoginScreen> {
           SizedBox(height: 3),
           Text(
             'Admin: admin.educheck / admin123',
+            style: TextStyle(
+              fontSize: 10,
+              color: secondaryTextColor,
+            ),
+          ),
+          SizedBox(height: 3),
+          Text(
+            'Principal: principal.educheck / principal123',
             style: TextStyle(
               fontSize: 10,
               color: secondaryTextColor,
