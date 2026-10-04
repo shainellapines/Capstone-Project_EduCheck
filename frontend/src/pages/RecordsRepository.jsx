@@ -14,7 +14,9 @@ import Sidebar from "../components/Sidebar";
 
 const API_URL = "http://localhost:5000/api";
 
-function RecordsRepository() {
+// sf10Mode: the same search, opened from the "SF10 Permanent Records" nav
+// item - each result's main action opens that learner's permanent record.
+function RecordsRepository({ sf10Mode = false }) {
     const navigate = useNavigate();
 
     const [query, setQuery] = useState("");
@@ -111,16 +113,17 @@ function RecordsRepository() {
     return (
         <div className="dashboard-layout">
 
-            <Sidebar activeKey="records-repository" />
+            <Sidebar activeKey={sf10Mode ? "permanent-records" : "records-repository"} />
 
             <main className="dashboard-main">
 
                 <header className="dashboard-header">
                     <div>
-                        <h1>Records Repository</h1>
+                        <h1>{sf10Mode ? "SF10 Permanent Records" : "Records Repository"}</h1>
                         <p>
-                            Look up any learner by LRN or name, across every school
-                            year, without picking a year first.
+                            {sf10Mode
+                                ? "Find a learner by LRN, name or grade level, then open their Grade 1-6 permanent record to review, complete and generate the SF10."
+                                : "Look up any learner by LRN or name, across every school year, without picking a year first."}
                         </p>
                     </div>
                 </header>
@@ -217,13 +220,21 @@ function RecordsRepository() {
                                     </div>
 
                                     <div className="rr-year-chips">
-                                        {student.school_years.length === 0 && (
+                                        <button
+                                            type="button"
+                                            className="rr-year-chip rr-permanent-chip"
+                                            onClick={() => navigate(`/permanent-record/${student.lrn}`)}
+                                        >
+                                            Permanent Record (SF10)
+                                        </button>
+
+                                        {!sf10Mode && student.school_years.length === 0 && (
                                             <span className="rr-empty-years">
                                                 No recorded grades yet
                                             </span>
                                         )}
 
-                                        {student.school_years.map(({ school_year_id, grade_level }) => (
+                                        {!sf10Mode && student.school_years.map(({ school_year_id, grade_level }) => (
                                             <button
                                                 key={school_year_id}
                                                 type="button"

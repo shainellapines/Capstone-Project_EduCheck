@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 const {
     parseClassRecord,
@@ -8,6 +9,7 @@ const {
 
 const {
     authenticateToken,
+    authorizeRoles,
 } = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -19,14 +21,14 @@ const upload = multer({
     ),
 });
 
-// Dev diagnostic route (parse an Excel file without persisting anything) —
-// was mounted with no auth at all, so anyone who found the URL could POST
-// arbitrary files to it. Not scoped to a specific role since it doesn't
-// touch the database or any user's data, but it does need to require
-// being logged in like every other route in this API.
+// Dev diagnostic route (parse an Excel file without persisting anything).
+// Admin only: it writes an uploaded file to disk, so it must not be open to
+// every logged-in role (SEC-07). The temp file is always deleted after the
+// parse, success or failure.
 router.post(
     "/",
     authenticateToken,
+    authorizeRoles("admin"),
     upload.single("file"),
     (req, res) => {
 
@@ -63,6 +65,10 @@ router.post(
                     error.message ||
                     "Failed to parse class record.",
             });
+        } finally {
+            if (req.file?.path && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
         }
     }
 );

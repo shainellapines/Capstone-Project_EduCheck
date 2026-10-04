@@ -182,8 +182,9 @@ function SectionProgress() {
                     {!loadingSchoolYears && !loadingSections && sections && sections.length === 0 && (
                         <div className="content-card empty-state-card">
                             <Users size={20} />
-                            No sections have been configured yet. Set them up in Section &amp;
-                            Teacher Assignments.
+                            No sections to show. Administrators set sections up in Section &amp;
+                            Teacher Assignments; an Adviser only sees the section they are
+                            assigned to as Class Adviser.
                         </div>
                     )}
 

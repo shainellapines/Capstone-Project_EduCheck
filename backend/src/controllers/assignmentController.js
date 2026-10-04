@@ -1,5 +1,6 @@
 const pool = require("../db");
 const { recordAuditLog } = require("../utils/auditLog");
+const { checkGradeLevel } = require("./rosterCheck");
 
 // GET all assignments (admin view - joined with readable names)
 const getAssignments = async (req, res) => {
@@ -100,6 +101,29 @@ const createAssignment = async (req, res) => {
             return res.status(400).json({
                 message: "teacher_id, section_id, and school_year_id are required."
             });
+        }
+
+        // A subject belongs to one grade level; it can only be assigned to
+        // a section of that same grade level.
+        if (subject_id) {
+            const levels = await pool.query(
+                `
+                SELECT sub.subject_name, sub.grade_level AS subject_grade,
+                       sec.section_name, sec.grade_level AS section_grade
+                FROM subjects sub, sections sec
+                WHERE sub.subject_id = $1 AND sec.section_id = $2
+                `,
+                [subject_id, section_id]
+            );
+
+            const mismatch = levels.rows[0] ? checkGradeLevel({
+                subject: { subject_name: levels.rows[0].subject_name, grade_level: levels.rows[0].subject_grade },
+                section: { section_name: levels.rows[0].section_name, grade_level: levels.rows[0].section_grade },
+            }) : null;
+
+            if (mismatch) {
+                return res.status(mismatch.status).json({ message: mismatch.message });
+            }
         }
 
         const result = await pool.query(

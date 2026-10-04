@@ -1,5 +1,6 @@
 const pool = require("../db");
 const { buildRankedGradesQuery } = require("./consolidationController");
+const { getVisibleSectionIds, isSectionVisible } = require("../utils/sectionScope");
 
 // ==========================================
 // ACADEMIC / PERFORMANCE ANALYTICS
@@ -83,7 +84,12 @@ const getAnalyticsForSchoolYear = async (req, res) => {
             });
         }
 
-        const rows = (await pool.query(buildRankedGradesQuery(""), [schoolYearId])).rows;
+        // Advisers only see their own section's data (SPMP §6.2).
+        const visibleSectionIds = await getVisibleSectionIds(req, schoolYearId);
+
+        const rows = (await pool.query(buildRankedGradesQuery(""), [schoolYearId])).rows.filter((row) =>
+            isSectionVisible(visibleSectionIds, row.section_id)
+        );
 
         // final_grade is NUMERIC over the wire — comes back as a string.
         // Every row here already has one (grade_records.final_grade is

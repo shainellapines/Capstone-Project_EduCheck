@@ -434,6 +434,18 @@ function ClassRecordUpload() {
                                 </div>
                             )}
 
+                            {result.integrity_warnings?.length > 0 && (
+                                <div className="cru-result-block cru-integrity-warnings">
+                                    <h3>Please double-check</h3>
+
+                                    {result.integrity_warnings.map((warning) => (
+                                        <div className="cru-info-row" key={warning.code}>
+                                            {warning.message}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {result.workbook && (
                                 <div className="cru-result-block">
                                     <h3>Workbook</h3>

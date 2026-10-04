@@ -1,4 +1,5 @@
 const pool = require("../db");
+const { getAdviserSectionIds, getVisibleSectionIds, isSectionVisible } = require("../utils/sectionScope");
 
 // ==========================================
 // SHARED QUERY: latest grade_records row per
@@ -64,33 +65,10 @@ const buildRankedGradesQuery = (extraWhere) => `
     ORDER BY s.last_name, s.first_name, subj.subject_name
 `;
 
-// ==========================================
-// ADVISER SECTION OWNERSHIP
-// ==========================================
-// Per SPMP v1.0: an Adviser's write actions on consolidated records
-// (request-revision, submit-for-approval, submit-all) are scoped to
-// "own section only" - full visibility elsewhere, but not the ability to
-// act on another Adviser's section. Ownership is the same teacher_assignments
-// row uploadController's isUploadAuthorized already treats as "Class
-// Adviser for this section" (subject_id IS NULL), for the given school
-// year. Returns the set of section_ids this user (by user_id, not
-// teacher_id) is the Adviser of - an Adviser with no assignment yet gets
-// an empty set, not an error.
-const getAdviserSectionIds = async ({ userId, schoolYearId }) => {
-    const result = await pool.query(
-        `
-        SELECT ta.section_id
-        FROM teacher_assignments ta
-        INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
-        WHERE t.user_id = $1
-          AND ta.school_year_id = $2
-          AND ta.subject_id IS NULL
-        `,
-        [userId, schoolYearId]
-    );
-
-    return new Set(result.rows.map((row) => row.section_id));
-};
+// Adviser section ownership/visibility lives in utils/sectionScope.js so
+// analytics and the repository share the exact same rule. Writes
+// (request-revision, submit) check ownership with getAdviserSectionIds;
+// reads are narrowed with getVisibleSectionIds.
 
 // Groups the flat per-(student, subject) rows above into one entry per
 // student, each carrying its list of per-subject grades.
@@ -262,15 +240,16 @@ const getSchoolYears = async (req, res) => {
 // Raw upload counts by status for this school year — every class_records
 // row, not deduped to "latest per subject" like the grades above, since
 // this is about upload activity, not which grade currently counts.
-const getUploadSummary = async (schoolYearId) => {
+const getUploadSummary = async (schoolYearId, visibleSectionIds) => {
     const result = await pool.query(
         `
         SELECT status, COUNT(*) AS upload_count
         FROM class_records
         WHERE school_year_id = $1
+          AND ($2::int[] IS NULL OR section_id = ANY($2::int[]))
         GROUP BY status
         `,
-        [schoolYearId]
+        [schoolYearId, visibleSectionIds === null ? null : [...visibleSectionIds]]
     );
 
     const countsByStatus = Object.fromEntries(
@@ -318,15 +297,24 @@ const getConsolidatedRecordsForSchoolYear = async (req, res) => {
             });
         }
 
-        let students = await fetchConsolidatedStudents(schoolYearId);
-
+        const visibleSectionIds = await getVisibleSectionIds(req, schoolYearId);
         const sectionIdFilter = req.query.section_id ? Number(req.query.section_id) : null;
+
+        if (sectionIdFilter && !isSectionVisible(visibleSectionIds, sectionIdFilter)) {
+            return res.status(403).json({
+                message: "You can only view a section you are the Adviser of.",
+            });
+        }
+
+        let students = (await fetchConsolidatedStudents(schoolYearId)).filter((student) =>
+            isSectionVisible(visibleSectionIds, student.section_id)
+        );
 
         if (sectionIdFilter) {
             students = students.filter((student) => student.section_id === sectionIdFilter);
         }
 
-        const uploadSummary = await getUploadSummary(schoolYearId);
+        const uploadSummary = await getUploadSummary(schoolYearId, visibleSectionIds);
 
         return res.json({
             school_year: schoolYearResult.rows[0],
@@ -354,12 +342,8 @@ const getConsolidatedRecordsForSchoolYear = async (req, res) => {
 // still need attention" at a glance, before drilling into individual
 // students.
 //
-// student_count and submission_status_counts are read straight off
-// students.section_id, which is not itself scoped to school_year_id
-// (students only carries one section_id/grade_level, last-write-wins —
-// the same pre-existing modeling limitation gradeRecordPersistence
-// already has). Fine for a single-active-school-year deployment; would
-// need real per-year enrollment to hold up across multiple years at once.
+// student_count and submission_status_counts come from section_enrollments
+// (migration 008), so they are correct per school year.
 
 const getSectionProgressForSchoolYear = async (req, res) => {
     try {
@@ -382,9 +366,16 @@ const getSectionProgressForSchoolYear = async (req, res) => {
             });
         }
 
-        const sectionsResult = await pool.query(
+        const visibleSectionIds = await getVisibleSectionIds(req, schoolYearId);
+
+        const allSectionsResult = await pool.query(
             "SELECT section_id, section_name, grade_level, staffing_mode FROM sections ORDER BY grade_level, section_name"
         );
+        const sectionsResult = {
+            rows: allSectionsResult.rows.filter((section) =>
+                isSectionVisible(visibleSectionIds, section.section_id)
+            ),
+        };
 
         if (sectionsResult.rows.length === 0) {
             return res.json({ school_year: schoolYearResult.rows[0], sections: [] });
@@ -436,10 +427,11 @@ const getSectionProgressForSchoolYear = async (req, res) => {
         const studentCountsResult = await pool.query(
             `
             SELECT section_id, COUNT(DISTINCT lrn) AS student_count
-            FROM students
-            WHERE section_id IS NOT NULL
+            FROM section_enrollments
+            WHERE school_year_id = $1
             GROUP BY section_id
-            `
+            `,
+            [schoolYearId]
         );
 
         const studentCountBySection = new Map(
@@ -459,14 +451,14 @@ const getSectionProgressForSchoolYear = async (req, res) => {
         const submissionCountsResult = await pool.query(
             `
             SELECT
-                s.section_id,
+                e.section_id,
                 COALESCE(rs.status, 'Not Submitted') AS submission_status,
                 COUNT(*) AS student_count
-            FROM students s
+            FROM section_enrollments e
             LEFT JOIN record_submissions rs
-                ON rs.lrn = s.lrn AND rs.school_year_id = $1
-            WHERE s.section_id IS NOT NULL
-            GROUP BY s.section_id, COALESCE(rs.status, 'Not Submitted')
+                ON rs.lrn = e.lrn AND rs.school_year_id = e.school_year_id
+            WHERE e.school_year_id = $1
+            GROUP BY e.section_id, COALESCE(rs.status, 'Not Submitted')
             `,
             [schoolYearId]
         );
@@ -540,6 +532,14 @@ const getConsolidatedRecordForStudent = async (req, res) => {
         if (!student) {
             return res.status(404).json({
                 message: "No consolidated record found for this LRN in this school year.",
+            });
+        }
+
+        const visibleSectionIds = await getVisibleSectionIds(req, schoolYearId);
+
+        if (!isSectionVisible(visibleSectionIds, student.section_id)) {
+            return res.status(403).json({
+                message: "You can only view records for a section you are the Adviser of.",
             });
         }
 

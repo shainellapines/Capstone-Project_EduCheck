@@ -466,7 +466,7 @@ function ConsolidatedRecords() {
                     {!loadingSchoolYears && !loadingStudents && students && students.length === 0 && (
                         <div className="content-card empty-state-card">
                             <Users size={20} />
-                            No students have a recorded grade for this school year yet.
+                            No students to show for this school year yet. Advisers only see learners in the section they are assigned to as Class Adviser.
                         </div>
                     )}
 

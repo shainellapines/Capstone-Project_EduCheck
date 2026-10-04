@@ -12,6 +12,7 @@ const repositoryRoutes = require("./routes/repositoryRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const parserTestRoutes = require("./routes/parserTestRoutes");
+const sf10Routes = require("./routes/sf10Routes");
 
 const {
     authenticateToken,
@@ -43,6 +44,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/repository", repositoryRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/audit-logs", auditLogRoutes);
+app.use("/api/sf10", sf10Routes);
 
 app.use(
     "/api/parser-test",

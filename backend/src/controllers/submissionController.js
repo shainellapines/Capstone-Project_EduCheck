@@ -93,6 +93,7 @@ const submitForApproval = async (req, res) => {
                 approved_by = NULL,
                 approved_at = NULL,
                 remarks = NULL,
+                snapshot = NULL,
                 updated_at = NOW()
             RETURNING *
             `,
@@ -159,6 +160,7 @@ const submitAllEligible = async (req, res) => {
                     approved_by = NULL,
                     approved_at = NULL,
                     remarks = NULL,
+                    snapshot = NULL,
                     updated_at = NOW()
                 `,
                 [student.lrn, schoolYearId, req.user.user_id]
@@ -221,14 +223,58 @@ const decideSubmission = (targetStatus) => async (req, res) => {
         const { reviewed_by: reviewedBy, first_name: firstName, last_name: lastName } = existing.rows[0];
         const studentName = `${lastName}, ${firstName}`;
 
+        // On approval, freeze the consolidated record as it stands now so
+        // later re-uploads or reassignments cannot rewrite approved history.
+        const approvedStudent = await fetchConsolidatedStudent(schoolYearId, lrn);
+        let snapshot = null;
+
+        if (targetStatus === "Approved" && approvedStudent) {
+            const adviserResult = await pool.query(
+                `
+                SELECT t.first_name, t.last_name
+                FROM teacher_assignments ta
+                INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+                WHERE ta.section_id = $1 AND ta.school_year_id = $2 AND ta.subject_id IS NULL
+                `,
+                [approvedStudent.section_id, schoolYearId]
+            );
+            const adviser = adviserResult.rows[0];
+
+            snapshot = {
+                captured_at: new Date().toISOString(),
+                lrn: approvedStudent.lrn,
+                name: `${approvedStudent.last_name}, ${approvedStudent.first_name}`,
+                grade_level: approvedStudent.grade_level,
+                section_id: approvedStudent.section_id,
+                adviser: adviser ? `${adviser.first_name} ${adviser.last_name}` : null,
+                subjects: approvedStudent.subjects.map((subject) => ({
+                    subject_name: subject.subject_name,
+                    teacher_name: subject.teacher_name,
+                    term_1: subject.term_1,
+                    term_2: subject.term_2,
+                    term_3: subject.term_3,
+                    final_grade: subject.final_grade,
+                    class_record_id: subject.class_record_id,
+                })),
+            };
+        }
+
         const result = await pool.query(
             `
             UPDATE record_submissions
-            SET status = $1, approved_by = $2, approved_at = NOW(), remarks = $3, updated_at = NOW()
+            SET status = $1, approved_by = $2, approved_at = NOW(), remarks = $3,
+                snapshot = $6, updated_at = NOW()
             WHERE lrn = $4 AND school_year_id = $5
             RETURNING *
             `,
-            [targetStatus, req.user.user_id, remarks || null, lrn, schoolYearId]
+            [
+                targetStatus,
+                req.user.user_id,
+                remarks || null,
+                lrn,
+                schoolYearId,
+                snapshot ? JSON.stringify(snapshot) : null,
+            ]
         );
 
         if (reviewedBy) {

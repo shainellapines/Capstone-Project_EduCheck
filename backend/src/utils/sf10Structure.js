@@ -24,15 +24,13 @@
 //     grade block's merge list directly and cross-checking the pattern
 //     repeats identically across all 6 blocks (it does, aside from the
 //     expected subject-list differences below).
-//   - gradeBlocks[].header (School/District/Division/Region/Classified
-//     Grade/Section/School Year/Adviser/Signature): UNVERIFIED. Several
-//     labels and blank fields share rows in a way that makes the exact
-//     value cell ambiguous from merge data alone - do NOT trust these
-//     null placeholders as real coordinates. Fastest way to fill them in:
-//     open the template in Excel, click each blank field once, and read
-//     its address from the Name Box, or write a small script that puts a
-//     distinct marker string in each guessed cell and open the result to
-//     see where each one landed.
+//   - gradeBlocks[].header: VERIFIED 2026-10-04. Front blocks were mapped
+//     by taking, for each label, the first cell after the label's merged
+//     range whose style has a bottom border (the printed blank line), then
+//     cross-checked by hand. The Back sheet prints its blanks INLINE in the
+//     label text ("School: ______"), so Back headers are "inline" fields:
+//     the generator replaces the underscore runs in that label cell, in
+//     order, instead of writing to a separate value cell.
 //   - eligibility: partially verified (label-adjacent blank fields only,
 //     see comments). Checkbox cells for "Credential Presented for Grade
 //     1" not identified.
@@ -44,6 +42,11 @@
 // mis-scan of the "Back" sheet's second, genuinely-blank SPARE block,
 // which sits below Grades 5-6 and is unrelated to any specific grade -
 // see grade: "spare" below.)
+//
+// STATUS (2026-10-04): generation is live for QUARTER_4 years only - see
+// services/sf10/generator.js (template adapter registry). Years graded in
+// 3 terms are kept as-is and reported as unsupported, never converted.
+// The original reasoning is preserved below.
 //
 // BLOCKED: SF10 GENERATION CANNOT GO LIVE AGAINST THIS TEMPLATE YET.
 // This form grades in "Quarter 1-4" - it is DepEd's OLDER, 4-quarter-per-
@@ -112,7 +115,18 @@ const sf10Structure = {
         {
             grade: 1,
             sheet: "front",
-            header: null, // see UNVERIFIED note above; approx rows 23-27
+            header: {
+                mode: "cells",
+                school: "D23",
+                schoolId: "S23",
+                district: "D24",
+                division: "I24",
+                region: "T24",
+                classifiedGrade: "F25",
+                section: "J25",
+                schoolYear: "S25",
+                adviser: "H26",
+            },
             columns: { label: "B", quarters: ["K", "L", "N", "O"], final: "P", remarks: "S" },
             subjectRows: {
                 language: 30,
@@ -129,7 +143,18 @@ const sf10Structure = {
         {
             grade: 2,
             sheet: "front",
-            header: null, // approx rows 23-27, columns V onward
+            header: {
+                mode: "cells",
+                school: "X23",
+                schoolId: "AW23",
+                district: "X24",
+                division: "AD24",
+                region: "AX24",
+                classifiedGrade: "Z25",
+                section: "AE25",
+                schoolYear: "AU25",
+                adviser: "AC26",
+            },
             columns: { label: "V", quarters: ["AJ", "AM", "AO", "AR"], final: "AT", remarks: "AW" },
             subjectRows: {
                 filipino: 30,
@@ -146,7 +171,18 @@ const sf10Structure = {
         {
             grade: 3,
             sheet: "front",
-            header: null, // approx rows 52-56
+            header: {
+                mode: "cells",
+                school: "D52",
+                schoolId: "S52",
+                district: "D53",
+                division: "I53",
+                region: "T53",
+                classifiedGrade: "F54",
+                section: "J54",
+                schoolYear: "S54",
+                adviser: "H55",
+            },
             columns: { label: "B", quarters: ["K", "L", "N", "O"], final: "P", remarks: "S" },
             subjectRows: {
                 filipino: 60,
@@ -164,7 +200,18 @@ const sf10Structure = {
         {
             grade: 4,
             sheet: "front",
-            header: null, // approx rows 52-56, columns V onward
+            header: {
+                mode: "cells",
+                school: "X52",
+                schoolId: "AW52",
+                district: "X53",
+                division: "AD53",
+                region: "AX53",
+                classifiedGrade: "Z54",
+                section: "AE54",
+                schoolYear: "AU54",
+                adviser: "AC55",
+            },
             columns: { label: "V", quarters: ["AJ", "AM", "AO", "AR"], final: "AT", remarks: "AW" },
             subjectRows: {
                 filipino: 60,
@@ -172,7 +219,7 @@ const sf10Structure = {
                 mathematics: 62,
                 science: 63,
                 gmrc: 64,
-                araingPanlipunan: 65,
+                aralingPanlipunan: 65,
                 epp: 66,
                 mapeh: 67, // group header row only - not itself scored, see musicAndArts / physicalEducationAndHealth
                 musicAndArts: 68,
@@ -186,7 +233,19 @@ const sf10Structure = {
         {
             grade: 5,
             sheet: "back",
-            header: null, // approx rows 3-6
+            header: {
+                mode: "inline",
+                // Each entry: label cell + the fields its underscore runs hold, in order.
+                inline: [
+                    { cell: "B3", fields: ["school"] },
+                    { cell: "B4", fields: ["district", "division"] },
+                    { cell: "B5", fields: ["classifiedGrade", "section"] },
+                    { cell: "B6", fields: ["adviser"] },
+                ],
+                schoolId: "O3",
+                region: "P4",
+                schoolYear: "O5",
+            },
             columns: { label: "B", quarters: ["H", "I", "J", "K"], final: "L", remarks: "O" },
             subjectRows: {
                 filipino: 10,
@@ -194,7 +253,7 @@ const sf10Structure = {
                 mathematics: 12,
                 science: 13,
                 gmrc: 14,
-                araingPanlipunan: 15,
+                aralingPanlipunan: 15,
                 epp: 16,
                 mapeh: 17, // group header row only
                 musicAndArts: 18,
@@ -208,7 +267,18 @@ const sf10Structure = {
         {
             grade: 6,
             sheet: "back",
-            header: null, // approx rows 3-6, columns S onward
+            header: {
+                mode: "inline",
+                inline: [
+                    { cell: "S3", fields: ["school"] },
+                    { cell: "S4", fields: ["district", "division"] },
+                    { cell: "S5", fields: ["classifiedGrade", "section"] },
+                    { cell: "S6", fields: ["adviser"] },
+                ],
+                schoolId: "AG3",
+                region: "AH4",
+                schoolYear: "AG5",
+            },
             columns: { label: "S", quarters: ["AB", "AD", "AE", "AF"], final: "AG", remarks: "AH" },
             subjectRows: {
                 filipino: 10,
@@ -216,7 +286,7 @@ const sf10Structure = {
                 mathematics: 12,
                 science: 13,
                 gmrc: 14,
-                araingPanlipunan: 15,
+                aralingPanlipunan: 15,
                 tle: 16, // "TLE", not "EPP" - the only subject-list difference vs Grade 5
                 mapeh: 17, // group header row only
                 musicAndArts: 18,

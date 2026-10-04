@@ -3,6 +3,7 @@ const path = require("path");
 const { parseClassRecord } = require("./classRecordParser");
 const { validateClassRecord } = require("./classRecordValidator");
 const { persistLearnerGradeRecords } = require("./gradeRecordPersistence");
+const { compareHeader, checkGradeLevel, checkRoster, checkApprovedLearners } = require("./rosterCheck");
 const pool = require("../db");
 
 const removeUploadedFile = (filePath) => {
@@ -608,6 +609,14 @@ const uploadClassRecord = async (req, res) => {
             });
         }
 
+        const gradeLevelError = checkGradeLevel({ subject, section });
+
+        if (gradeLevelError) {
+            removeUploadedFile(file.path);
+
+            return res.status(gradeLevelError.status).json({ message: gradeLevelError.message });
+        }
+
         let parsedRecord;
         let validationResult;
 
@@ -622,6 +631,34 @@ const uploadClassRecord = async (req, res) => {
                 detail: error.message,
             });
         }
+
+        const approvedError = await checkApprovedLearners({
+            parsedRecord,
+            schoolYearId: schoolYear.school_year_id,
+        });
+
+        if (approvedError) {
+            removeUploadedFile(file.path);
+
+            return res.status(approvedError.status).json(approvedError);
+        }
+
+        const rosterCheck = await checkRoster({
+            parsedRecord,
+            sectionId: section.section_id,
+            schoolYearId: schoolYear.school_year_id,
+        });
+
+        if (rosterCheck.error) {
+            removeUploadedFile(file.path);
+
+            return res.status(rosterCheck.error.status).json(rosterCheck.error);
+        }
+
+        const integrityWarnings = [
+            ...compareHeader({ header: parsedRecord.header, section, subject, schoolYear }),
+            ...rosterCheck.warnings,
+        ];
 
         const recordStatus = validationResult.ready_for_submission
             ? "Validated"
@@ -773,6 +810,8 @@ const uploadClassRecord = async (req, res) => {
                 persisted_count: gradeRecordSummary.persisted_count,
                 skipped_no_lrn_count: gradeRecordSummary.skipped_no_lrn_count,
             },
+
+            integrity_warnings: integrityWarnings,
 
             validation: {
                 ready_for_submission: validationResult.ready_for_submission,

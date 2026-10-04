@@ -169,3 +169,9 @@
         align-items: stretch;
     }
 }
+
+.rr-permanent-chip {
+    background: var(--ec-primary-500);
+    border-color: var(--ec-primary-500);
+    color: #ffffff;
+}

@@ -79,6 +79,20 @@ const persistLearnerGradeRecords = async (dbClient, { classRecordId, parsedRecor
             [learner.lrn, first_name, last_name, learner.gender, subject.grade_level, sectionId ?? null, schoolYear.school_year_id]
         );
 
+        // Authoritative per-year roster (migration 008). Keeps the first
+        // section a learner was enrolled in for this year - checkRoster has
+        // already rejected an upload that would have moved them.
+        if (sectionId) {
+            await dbClient.query(
+                `
+                INSERT INTO section_enrollments (lrn, school_year_id, section_id)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (lrn, school_year_id) DO NOTHING
+                `,
+                [learner.lrn, schoolYear.school_year_id, sectionId]
+            );
+        }
+
         const finalGrade = computeFinalGrade(term1, term2, term3);
 
         await dbClient.query(

@@ -40,6 +40,11 @@ const searchStudents = async (req, res) => {
 
         const likeQuery = `%${rawQuery}%`;
 
+        // Advisers see only learners enrolled in a section they advise
+        // (in the school year of that enrollment) - SPMP §6.2. Admin and
+        // Principal are unrestricted.
+        const adviserUserId = req.user.role === "adviser" ? req.user.user_id : null;
+
         const result = await pool.query(
             `
             SELECT
@@ -68,11 +73,24 @@ const searchStudents = async (req, res) => {
                     OR (s.first_name || ' ' || s.last_name) ILIKE $2
                 )
                 AND ($3::varchar IS NULL OR s.grade_level = $3)
+                AND (
+                    $4::int IS NULL
+                    OR EXISTS (
+                        SELECT 1
+                        FROM section_enrollments e
+                        INNER JOIN teacher_assignments ta
+                            ON ta.section_id = e.section_id
+                           AND ta.school_year_id = e.school_year_id
+                           AND ta.subject_id IS NULL
+                        INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+                        WHERE e.lrn = s.lrn AND t.user_id = $4
+                    )
+                )
             GROUP BY s.lrn, s.first_name, s.last_name, s.grade_level
             ORDER BY s.last_name, s.first_name
             LIMIT 50
             `,
-            [rawQuery, likeQuery, gradeLevel]
+            [rawQuery, likeQuery, gradeLevel, adviserUserId]
         );
 
         const students = result.rows;

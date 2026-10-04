@@ -22,6 +22,7 @@ import SectionProgress from "./pages/SectionProgress";
 import Analytics from "./pages/Analytics";
 import AuditLog from "./pages/AuditLog";
 import RecordsRepository from "./pages/RecordsRepository";
+import PermanentRecord from "./pages/PermanentRecord";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -160,6 +161,24 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
                             <RecordsRepository />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/permanent-record"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
+                            <RecordsRepository sf10Mode />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/permanent-record/:lrn"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
+                            <PermanentRecord />
                         </ProtectedRoute>
                     }
                 />

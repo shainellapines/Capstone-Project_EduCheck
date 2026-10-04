@@ -15,6 +15,16 @@ const workbookStructure = {
         lrn: "LRN",
     },
 
+    // Descriptive cells on the INPUT sheet (grade & section, teacher,
+    // subject, school year). Informational only - the teacher's form
+    // selection stays authoritative - but a mismatch is worth a warning.
+    header: {
+        gradeSection: "J7",
+        teacher: "Q7",
+        subject: "Y7",
+        schoolYear: "Y5",
+    },
+
     learner: {
         numberColumn: "A",
         nameColumn: "B",

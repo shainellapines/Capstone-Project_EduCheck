@@ -1,8 +1,8 @@
 -- ============================================
 -- EduCheck Database Schema
 -- ============================================
--- Folded up to date with migrations/001 through migrations/007 as of
--- 2026-09-29 - this file alone is enough to provision a fresh database.
+-- Folded up to date with migrations/001 through migrations/009 as of
+-- 2026-10-04 - this file alone is enough to provision a fresh database.
 -- The migrations/ directory is kept for historical record (each file
 -- documents the reasoning behind its change) but does not need to be
 -- re-run against a database created from this file.
@@ -197,6 +197,8 @@ CREATE TABLE students (
     last_name VARCHAR(100) NOT NULL,
     sex VARCHAR(20),
     birth_date DATE,
+    -- SF10 personal info (migration 009); the e-Class Record never supplies it.
+    name_extension VARCHAR(20),
     grade_level VARCHAR(20) NOT NULL,
     section_id INTEGER,
     school_year_id INTEGER,
@@ -459,6 +461,9 @@ CREATE TABLE record_submissions (
     approved_by INTEGER,
     approved_at TIMESTAMP,
     remarks TEXT,
+    -- Frozen copy of the consolidated record, written at approval time
+    -- (migration 008).
+    snapshot JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -513,3 +518,101 @@ CREATE TABLE audit_logs (
 );
 
 CREATE INDEX idx_audit_logs_entity ON audit_logs (entity_type, entity_id);
+
+
+-- ============================================
+-- 16. SECTION ENROLLMENT
+-- ============================================
+-- Authoritative class roster: one row per learner per school year
+-- (migration 008). students.section_id remains as a "latest" mirror.
+
+CREATE TABLE section_enrollments (
+    lrn VARCHAR(20) NOT NULL,
+    school_year_id INTEGER NOT NULL,
+    section_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT section_enrollments_pkey
+        PRIMARY KEY (lrn, school_year_id),
+
+    CONSTRAINT fk_enrollment_student
+        FOREIGN KEY (lrn) REFERENCES students(lrn),
+
+    CONSTRAINT fk_enrollment_school_year
+        FOREIGN KEY (school_year_id) REFERENCES school_years(school_year_id),
+
+    CONSTRAINT fk_enrollment_section
+        FOREIGN KEY (section_id) REFERENCES sections(section_id)
+);
+
+CREATE INDEX idx_enrollments_section_year
+    ON section_enrollments (section_id, school_year_id);
+
+
+-- ============================================
+-- 17. SF10 FOUNDATION (migration 009)
+-- ============================================
+-- Hand-entered earlier years / transferee records, and the school's own
+-- SF10 header values. See migrations/009_sf10_foundation.sql.
+
+CREATE TABLE historical_academic_records (
+    historical_record_id SERIAL PRIMARY KEY,
+    lrn VARCHAR(20) NOT NULL,
+    school_year VARCHAR(20) NOT NULL,
+    grade_level VARCHAR(20) NOT NULL,
+    grading_scheme VARCHAR(20) NOT NULL
+        CONSTRAINT historical_grading_scheme_check
+        CHECK (grading_scheme IN ('QUARTER_4', 'TERM_3')),
+    record_status VARCHAR(20) NOT NULL DEFAULT 'Complete'
+        CONSTRAINT historical_record_status_check
+        CHECK (record_status IN ('Complete', 'Partial', 'Unavailable')),
+    school_name VARCHAR(150),
+    school_id VARCHAR(30),
+    district VARCHAR(100),
+    division VARCHAR(100),
+    region VARCHAR(100),
+    section_name VARCHAR(100),
+    adviser_name VARCHAR(150),
+    general_average NUMERIC(5,2),
+    remarks TEXT,
+    entered_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT historical_records_lrn_school_year_key UNIQUE (lrn, school_year),
+
+    CONSTRAINT fk_historical_student
+        FOREIGN KEY (lrn) REFERENCES students(lrn),
+
+    CONSTRAINT fk_historical_entered_by
+        FOREIGN KEY (entered_by) REFERENCES users(user_id)
+);
+
+CREATE TABLE historical_subject_grades (
+    historical_grade_id SERIAL PRIMARY KEY,
+    historical_record_id INTEGER NOT NULL,
+    -- Canonical SF10 learning-area key (see services/sf10/subjects.js),
+    -- e.g. 'filipino', 'musicAndArts' - not free text, so it maps to a row.
+    subject_key VARCHAR(50) NOT NULL,
+    -- rating_1..rating_4 are Quarters 1-4 for QUARTER_4 years, or Terms
+    -- 1-3 (rating_4 NULL) for TERM_3 years.
+    rating_1 NUMERIC(5,2),
+    rating_2 NUMERIC(5,2),
+    rating_3 NUMERIC(5,2),
+    rating_4 NUMERIC(5,2),
+    final_rating NUMERIC(5,2),
+    remarks VARCHAR(50),
+
+    CONSTRAINT historical_grades_record_subject_key UNIQUE (historical_record_id, subject_key),
+
+    CONSTRAINT fk_historical_grade_record
+        FOREIGN KEY (historical_record_id)
+        REFERENCES historical_academic_records(historical_record_id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE school_settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

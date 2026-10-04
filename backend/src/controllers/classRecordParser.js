@@ -214,6 +214,21 @@ const extractTermData = (workbook, sheetName) => {
     return termRecords;
 };
 
+const extractHeader = (workbook) => {
+    const sheet = workbook.Sheets[workbookStructure.sheets.input];
+    const read = (address) => {
+        const value = sheet?.[address]?.v;
+        return typeof value === "string" ? value.trim() || null : value ?? null;
+    };
+
+    return {
+        grade_section: read(workbookStructure.header.gradeSection),
+        teacher: read(workbookStructure.header.teacher),
+        subject: read(workbookStructure.header.subject),
+        school_year: read(workbookStructure.header.schoolYear),
+    };
+};
+
 const extractSummary = (workbook) => {
     const sheet = workbook.Sheets[workbookStructure.sheets.summary];
     if (!sheet) return [];
@@ -270,6 +285,7 @@ const parseClassRecord = (filePath) => {
     const lrnWarnings = checkLrnIssues(learners, hasLrnSheet);
 
     return {
+        header: extractHeader(workbook),
         workbook: {
             sheet_count: workbook.SheetNames.length,
             sheet_names: workbook.SheetNames,
@@ -292,6 +308,7 @@ module.exports = {
     extractLrnRoster,
     extractTermData,
     extractSummary,
+    extractHeader,
     crossCheckLearners,
     checkLrnIssues,
     isValidLrn,
