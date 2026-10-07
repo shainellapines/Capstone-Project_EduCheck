@@ -1,6 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Talks to the EduCheck backend; phone alerts for new notifications (M-02). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- usesCleartextTraffic: the capstone backend runs over plain http on
+         the school/LAN network. Switch to https before any public deployment. -->
     <application
-        android:label="mobile"
+        android:label="EduCheck"
+        android:usesCleartextTraffic="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

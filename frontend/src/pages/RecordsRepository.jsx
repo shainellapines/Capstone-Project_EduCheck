@@ -21,6 +21,7 @@ function RecordsRepository({ sf10Mode = false }) {
 
     const [query, setQuery] = useState("");
     const [gradeLevel, setGradeLevel] = useState("");
+    const [schoolYearFilter, setSchoolYearFilter] = useState("");
 
     const [schoolYears, setSchoolYears] = useState([]);
     const [results, setResults] = useState(null);
@@ -72,8 +73,8 @@ function RecordsRepository({ sf10Mode = false }) {
         const trimmedQuery = query.trim();
         const trimmedGrade = gradeLevel.trim();
 
-        if (trimmedQuery.length === 0 && trimmedGrade.length === 0) {
-            setError("Enter an LRN, a name, or a grade level to search.");
+        if (trimmedQuery.length === 0 && trimmedGrade.length === 0 && !schoolYearFilter) {
+            setError("Enter an LRN, a name, a grade level, or pick a school year to search.");
             return;
         }
 
@@ -85,6 +86,7 @@ function RecordsRepository({ sf10Mode = false }) {
             const params = new URLSearchParams();
             if (trimmedQuery) params.set("q", trimmedQuery);
             if (trimmedGrade) params.set("grade_level", trimmedGrade);
+            if (schoolYearFilter) params.set("school_year_id", schoolYearFilter);
 
             const response = await fetch(`${API_URL}/repository/search?${params.toString()}`, {
                 headers: authHeaders(),
@@ -122,8 +124,8 @@ function RecordsRepository({ sf10Mode = false }) {
                         <h1>{sf10Mode ? "SF10 Permanent Records" : "Records Repository"}</h1>
                         <p>
                             {sf10Mode
-                                ? "Find a learner by LRN, name or grade level, then open their Grade 1-6 permanent record to review, complete and generate the SF10."
-                                : "Look up any learner by LRN or name, across every school year, without picking a year first."}
+                                ? "Find a learner by LRN, name, grade level or school year, then open their Grade 1-6 permanent record to review, complete and generate the SF10."
+                                : "Look up any learner by LRN, name, grade level or school year. Leave the school year on \"All\" to search every year."}
                         </p>
                     </div>
                 </header>
@@ -153,6 +155,23 @@ function RecordsRepository({ sf10Mode = false }) {
                                 onChange={(e) => setGradeLevel(e.target.value)}
                                 placeholder="e.g. 6"
                             />
+                        </div>
+
+                        <div className="rr-field rr-field-year">
+                            <label htmlFor="repository_school_year">School Year</label>
+
+                            <select
+                                id="repository_school_year"
+                                value={schoolYearFilter}
+                                onChange={(e) => setSchoolYearFilter(e.target.value)}
+                            >
+                                <option value="">All school years</option>
+                                {schoolYears.map((year) => (
+                                    <option key={year.school_year_id} value={year.school_year_id}>
+                                        {year.school_year}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <button type="submit" className="rr-search-button" disabled={loading}>

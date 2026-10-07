@@ -4,7 +4,7 @@ const pool = require("../db");
 // SEARCH STUDENTS (Searchable Digital Repository)
 // ==========================================
 // Lets an adviser/admin look up a specific learner by LRN or name,
-// optionally narrowed by grade level, WITHOUT first having to know which
+// optionally narrowed by grade level and/or school year, WITHOUT first having to know which
 // school year to pick — unlike /api/consolidation, which requires a
 // school year up front and only shows that one year's students. Returns
 // basic identity info plus, per school year that learner has at least one
@@ -32,9 +32,21 @@ const searchStudents = async (req, res) => {
                 ? req.query.grade_level.trim()
                 : null;
 
-        if (rawQuery.length === 0 && !gradeLevel) {
+        // Optional school year filter (SPMP EPIC-07: search by LRN, name,
+        // grade level and school year). A learner belongs to a year if they
+        // have a grade or a section enrollment in it.
+        let schoolYearId = null;
+        if (req.query.school_year_id !== undefined && req.query.school_year_id !== "") {
+            schoolYearId = Number(req.query.school_year_id);
+
+            if (!Number.isInteger(schoolYearId) || schoolYearId <= 0) {
+                return res.status(400).json({ message: "A valid school year ID is required." });
+            }
+        }
+
+        if (rawQuery.length === 0 && !gradeLevel && !schoolYearId) {
             return res.status(400).json({
-                message: "Provide a search term (LRN or name) or a grade level filter.",
+                message: "Provide a search term (LRN or name), a grade level or a school year.",
             });
         }
 
@@ -86,11 +98,24 @@ const searchStudents = async (req, res) => {
                         WHERE e.lrn = s.lrn AND t.user_id = $4
                     )
                 )
+                AND (
+                    $5::int IS NULL
+                    OR EXISTS (
+                        SELECT 1
+                        FROM grade_records gr5
+                        INNER JOIN class_records cr5 ON cr5.class_record_id = gr5.class_record_id
+                        WHERE gr5.lrn = s.lrn AND cr5.school_year_id = $5
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM section_enrollments e5
+                        WHERE e5.lrn = s.lrn AND e5.school_year_id = $5
+                    )
+                )
             GROUP BY s.lrn, s.first_name, s.last_name, s.grade_level
             ORDER BY s.last_name, s.first_name
             LIMIT 50
             `,
-            [rawQuery, likeQuery, gradeLevel, adviserUserId]
+            [rawQuery, likeQuery, gradeLevel, adviserUserId, schoolYearId]
         );
 
         const students = result.rows;

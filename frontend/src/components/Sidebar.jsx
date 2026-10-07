@@ -22,6 +22,7 @@ import {
 
 import "../pages/Dashboard.css";
 import { getStoredUser, getToken, clearSession } from "../utils/session";
+import { useCanUpload } from "../utils/uploadAccess";
 
 const API_URL = "http://localhost:5000/api";
 const POLL_INTERVAL_MS = 30000;
@@ -36,10 +37,9 @@ const NAV_ITEMS_BY_ROLE = {
     adviser: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         // Only meaningful for a Self-Contained section's Adviser (see
-        // SectionAssignments) - a Departmentalized Adviser can still open
-        // it, but every subject will 403 until their section is
-        // reconfigured, matching uploadController's enforcement.
-        { key: "upload-files", label: "Upload Files", icon: Upload, path: "/class-record-upload" },
+        // SectionAssignments). Hidden by useCanUpload when the Adviser has
+        // no upload options, i.e. their section is Departmentalized.
+        { key: "upload-files", label: "Upload Files", icon: Upload, path: "/class-record-upload", uploadOnly: true },
         { key: "consolidated-records", label: "Consolidated Records", icon: FileText, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "records-repository", label: "Records Repository", icon: Database, path: "/records-repository" },
@@ -92,7 +92,10 @@ function Sidebar({ activeKey }) {
     const navigate = useNavigate();
     const user = getStoredUser() || { username: "", role: "adviser" };
 
-    const navItems = NAV_ITEMS_BY_ROLE[user.role] || [];
+    const canUpload = useCanUpload();
+    const navItems = (NAV_ITEMS_BY_ROLE[user.role] || []).filter(
+        (item) => !item.uploadOnly || canUpload
+    );
 
     const [unreadCount, setUnreadCount] = useState(0);
 

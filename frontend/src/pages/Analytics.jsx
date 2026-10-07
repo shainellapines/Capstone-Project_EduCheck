@@ -11,7 +11,7 @@ import {
 import "./Dashboard.css";
 import "./Analytics.css";
 import Sidebar from "../components/Sidebar";
-import { getToken } from "../utils/session";
+import { getToken, getStoredUser } from "../utils/session";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -125,6 +125,9 @@ function Analytics() {
         fetchAnalytics();
     }, [selectedSchoolYearId]);
 
+    // The backend already scopes an Adviser to their own section
+    // (utils/sectionScope.js); the header just has to say so.
+    const isAdviser = getStoredUser()?.role === "adviser";
     const isLoading = loadingSchoolYears || loadingAnalytics;
     const overview = analytics?.overview;
     const hasData = overview && overview.graded_entries > 0;
@@ -141,9 +144,9 @@ function Analytics() {
 
                 <header className="dashboard-header">
                     <div>
-                        <h1>Academic Analytics</h1>
+                        <h1>{isAdviser ? "Performance Analytics" : "Academic Analytics"}</h1>
                         <p>
-                            School-wide grade performance and the intervention flag list —
+                            {isAdviser ? "Your section's" : "School-wide"} grade performance and the intervention flag list —
                             distribution, sections, subjects, and at-risk students, for the
                             selected school year.
                         </p>

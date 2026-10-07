@@ -141,4 +141,30 @@ describe("Adviser read scoping (CON-06, ANA-02)", () => {
         const admin = await t.request("GET", `/api/repository/search?q=${rizalLrn}`, { token: t.tokens.admin });
         assert.equal(admin.body.result_count, 1);
     });
+
+    it("repository search filters by school year (EPIC-07)", async () => {
+        const inYear = await t.request("GET", `/api/repository/search?q=${rizalLrn}&school_year_id=${sy}`, {
+            token: t.tokens.admin,
+        });
+        assert.equal(inYear.body.result_count, 1);
+
+        const otherYear = await t.request(
+            "GET",
+            `/api/repository/search?q=${rizalLrn}&school_year_id=${sy + 9999}`,
+            { token: t.tokens.admin }
+        );
+        assert.equal(otherYear.body.result_count, 0);
+
+        // A school year alone is enough to search, and stays scoped for an Adviser.
+        const yearOnly = await t.request("GET", `/api/repository/search?school_year_id=${sy}`, {
+            token: t.tokens.adviser_a,
+        });
+        assert.equal(yearOnly.status, 200);
+        assert.ok(yearOnly.body.students.every((s) => s.lrn.startsWith("1111")));
+
+        const invalid = await t.request("GET", "/api/repository/search?school_year_id=abc", {
+            token: t.tokens.admin,
+        });
+        assert.equal(invalid.status, 400);
+    });
 });

@@ -28,7 +28,8 @@
     font-size: 14px;
 }
 
-.rr-field input {
+.rr-field input,
+.rr-field select {
     padding: 12px;
     border: 1px solid var(--ec-slate-300);
     border-radius: 8px;
@@ -39,7 +40,8 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.rr-field input:focus {
+.rr-field input:focus,
+.rr-field select:focus {
     outline: none;
     border-color: var(--ec-primary-500);
     box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
@@ -51,6 +53,14 @@
 
 .rr-field-grade {
     flex: 0 1 160px;
+}
+
+.rr-field-year {
+    flex: 0 1 200px;
+}
+
+.rr-field select {
+    background: var(--ec-surface);
 }
 
 .rr-search-button {

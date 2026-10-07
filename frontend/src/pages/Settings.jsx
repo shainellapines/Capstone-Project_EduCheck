@@ -8,12 +8,13 @@ import {
     CheckCircle,
     Loader2,
     ShieldCheck,
+    ListChecks,
 } from "lucide-react";
 
 import "./Dashboard.css";
 import "./Settings.css";
 import Sidebar from "../components/Sidebar";
-import { getToken } from "../utils/session";
+import { getToken, getStoredUser } from "../utils/session";
 import { getStoredTheme, setTheme } from "../utils/theme";
 
 const API_URL = "http://localhost:5000/api";
@@ -25,7 +26,78 @@ const ROLE_LABEL = {
     principal: "Principal",
 };
 
+// What EduCheck checks on every e-Class Record upload, shown read-only to
+// the Administrator. These follow DepEd's official template and grading
+// rules, so they are fixed by design (SPMP §6.2, §6.3: modifying the DepEd
+// grading formula is out of scope). Keep in step with
+// classRecordParser.js, classRecordValidator.js and rosterCheck.js.
+const OUTCOME_LABEL = {
+    block: "Upload rejected",
+    error: "Record flagged",
+    warning: "Warning only",
+};
+
+const VALIDATION_RULES = [
+    {
+        name: "Official template structure",
+        detail: "The workbook has the INPUT, TERM1, TERM2, TERM3 and Summary of Grades sheets of the DepEd e-Class Record.",
+        outcome: "block",
+    },
+    {
+        name: "Subject and section match",
+        detail: "The subject's grade level matches the section's, and the teacher is assigned to that (subject, section).",
+        outcome: "block",
+    },
+    {
+        name: "Class roster",
+        detail: "A learner already enrolled in another section this school year, or a file with no overlap with the section's class list, is refused.",
+        outcome: "block",
+    },
+    {
+        name: "Score range",
+        detail: "Every score is between 0 and the highest possible score for that assessment.",
+        outcome: "error",
+    },
+    {
+        name: "Complete terms",
+        detail: "Each learner has a record and every required score for all three terms, and each completed term has a term grade.",
+        outcome: "error",
+    },
+    {
+        name: "Summary of Grades matches",
+        detail: "Each term grade in the Summary of Grades equals the term sheet's grade.",
+        outcome: "error",
+    },
+    {
+        name: "Final grade",
+        detail: "The final grade equals the rounded average of the three term grades.",
+        outcome: "error",
+    },
+    {
+        name: "Unique learner numbers",
+        detail: "No list number is used by two learners in the INPUT sheet.",
+        outcome: "error",
+    },
+    {
+        name: "Learners detected",
+        detail: "Learners were read from the INPUT sheet, every term sheet and the Summary of Grades.",
+        outcome: "error",
+    },
+    {
+        name: "LRN",
+        detail: "Each learner has a unique 12-digit LRN on the LRN sheet, so grades can be matched across subjects.",
+        outcome: "warning",
+    },
+    {
+        name: "Header agrees with selection",
+        detail: "The grade, section, subject and school year written in the file's header match what the teacher selected.",
+        outcome: "warning",
+    },
+];
+
 function Settings() {
+    const isAdmin = getStoredUser()?.role === "admin";
+
     const [account, setAccount] = useState(null);
     const [loadingAccount, setLoadingAccount] = useState(true);
     const [accountError, setAccountError] = useState("");
@@ -319,6 +391,41 @@ function Settings() {
                                 </button>
                             </form>
                         </div>
+
+                        {/* VALIDATION RULES (Administrator, read-only) */}
+                        {isAdmin && (
+                            <div className="content-card settings-card settings-card-wide">
+                                <div className="card-header">
+                                    <h3>
+                                        <ListChecks size={18} className="settings-header-icon" />
+                                        Validation Rules
+                                    </h3>
+                                </div>
+
+                                <div className="settings-rules-body">
+                                    <p className="settings-theme-hint">
+                                        Checks run on every e-Class Record upload. They follow DepEd's official
+                                        e-Class Record template and grading rules (passing mark 75, DepEd Order
+                                        No. 8, s. 2015), so they are fixed and cannot be edited.
+                                    </p>
+
+                                    <ul className="settings-rules-list">
+                                        {VALIDATION_RULES.map((rule) => (
+                                            <li key={rule.name} className="settings-rule">
+                                                <div>
+                                                    <strong>{rule.name}</strong>
+                                                    <span>{rule.detail}</span>
+                                                </div>
+
+                                                <span className={`settings-rule-outcome outcome-${rule.outcome}`}>
+                                                    {OUTCOME_LABEL[rule.outcome]}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
 
                     </div>
 

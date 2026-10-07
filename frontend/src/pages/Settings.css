@@ -205,3 +205,77 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* VALIDATION RULES (Administrator, read-only) */
+
+.settings-rules-body {
+    padding: 0 24px 22px;
+}
+
+.settings-rules-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.settings-rule {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--ec-slate-100);
+}
+
+.settings-rule:first-child {
+    border-top: none;
+}
+
+.settings-rule > div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.settings-rule strong {
+    color: var(--ec-slate-900);
+    font-size: 14px;
+}
+
+.settings-rule > div > span {
+    color: var(--ec-text-muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.settings-rule-outcome {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.settings-rule-outcome.outcome-block {
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
+}
+
+.settings-rule-outcome.outcome-error {
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
+}
+
+.settings-rule-outcome.outcome-warning {
+    background: var(--ec-slate-100);
+    color: var(--ec-slate-700);
+}
+
+@media (max-width: 640px) {
+    .settings-rule {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

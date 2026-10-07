@@ -1,190 +1,101 @@
 import 'package:flutter/material.dart';
 
-import '../adviser/adviser_dashboard_screen.dart';
-import '../subject/subject_dashboard_screen.dart';
-import '../admin/admin_dashboard_screen.dart';
-import '../principal/principal_dashboard_screen.dart';
+import '../../app.dart';
+import '../../core/api/educheck_api.dart';
+import '../../core/session/session_store.dart';
+import '../../core/theme/app_theme.dart';
 
+/// SPMP M-01: the same accounts and JWT login as the web platform. The
+/// dashboard shown afterwards follows the role the backend returns.
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.sessionExpired = false});
+
+  final bool sessionExpired;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const Color primaryBlue = Color(0xFF1554D1);
-  static const Color backgroundColor = Color(0xFFF7F9FC);
-  static const Color textColor = Color(0xFF1F2937);
-  static const Color secondaryTextColor = Color(0xFF64748B);
-  static const Color borderColor = Color(0xFFE2E8F0);
+  static const Color _borderColor = AppTheme.border;
 
-  final TextEditingController _usernameController =
-      TextEditingController();
-
-  final TextEditingController _passwordController =
-      TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _serverController = TextEditingController(text: SessionStore.instance.baseUrl);
 
   bool _obscurePassword = true;
+  bool _loading = false;
+  bool _showServer = false;
+  String? _error;
 
-  String _selectedRole = 'adviser';
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sessionExpired) _error = 'Your session has expired. Please log in again.';
+  }
 
   @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _serverController.dispose();
     super.dispose();
   }
 
-  void _selectRole(String role) {
-    setState(() {
-      _selectedRole = role;
-      _usernameController.clear();
-      _passwordController.clear();
-    });
-  }
-
-  void _login() {
+  Future<void> _login() async {
     final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
+    final password = _passwordController.text;
 
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please enter your username and password.',
-          ),
-        ),
-      );
+      setState(() => _error = 'Please enter your username and password.');
       return;
     }
 
-    bool validCredentials = false;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
-    switch (_selectedRole) {
-      case 'adviser':
-        validCredentials =
-            username == 'adviser.grade6a' &&
-            password == 'adviser123';
-        break;
-
-      case 'subject':
-        validCredentials =
-            (username == 'math.g6a' && password == 'math123') ||
-            (username == 'english.g6a' && password == 'eng123') ||
-            (username == 'science.g6a' && password == 'sci123') ||
-            (username == 'filipino.g6a' && password == 'fil123');
-        break;
-
-      case 'admin':
-        validCredentials =
-            username == 'admin.educheck' &&
-            password == 'admin123';
-        break;
-
-      case 'principal':
-        validCredentials =
-            username == 'principal.educheck' &&
-            password == 'principal123';
-        break;
-    }
-
-    if (!validCredentials) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Invalid username or password.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (_selectedRole == 'adviser') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              const AdviserDashboardScreen(),
-        ),
-      );
-      return;
-    }
-
-    if (_selectedRole == 'subject') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              const SubjectDashboardScreen(),
-        ),
-      );
-      return;
-    }
-
-    if (_selectedRole == 'admin') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              const AdminDashboardScreen(),
-        ),
-      );
-      return;
-    }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const PrincipalDashboardScreen(),
-      ),
-    );
-  }
-
-  String get _usernameHint {
-    switch (_selectedRole) {
-      case 'adviser':
-        return 'adviser.grade6a';
-      case 'subject':
-        return 'math.g6a, english.g6a, etc.';
-      case 'admin':
-        return 'admin.educheck';
-      case 'principal':
-        return 'principal.educheck';
-      default:
-        return '';
-    }
-  }
-
-  String get _buttonText {
-    switch (_selectedRole) {
-      case 'admin':
-        return 'Login to Admin Dashboard';
-      case 'principal':
-        return 'Login to Principal Dashboard';
-      default:
-        return 'Login to Dashboard';
+    try {
+      final server = _serverController.text.trim();
+      if (server.isNotEmpty && server != SessionStore.instance.baseUrl) {
+        await SessionStore.instance.setBaseUrl(server);
+      }
+      await EduCheckApi.instance.login(username, password);
+      if (!mounted) return;
+      enterApp(context);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: AppTheme.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 440,
-              ),
+              constraints: const BoxConstraints(maxWidth: 440),
               child: Column(
                 children: [
                   _buildLogo(),
                   const SizedBox(height: 16),
-                  _buildBranding(),
+                  const Text(
+                    'EduCheck',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppTheme.primaryBlue),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    'Academic Record Management - Mobile Companion',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: AppTheme.textGray),
+                  ),
                   const SizedBox(height: 28),
                   _buildLoginCard(),
                 ],
@@ -201,45 +112,17 @@ class _LoginScreenState extends State<LoginScreen> {
       width: 68,
       height: 68,
       decoration: BoxDecoration(
-        color: primaryBlue,
+        color: AppTheme.primaryBlue,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: primaryBlue.withOpacity(0.16),
+            color: AppTheme.primaryBlue.withValues(alpha: 0.16),
             blurRadius: 16,
             offset: const Offset(0, 7),
           ),
         ],
       ),
-      child: const Icon(
-        Icons.school_outlined,
-        size: 34,
-        color: Colors.white,
-      ),
-    );
-  }
-
-  Widget _buildBranding() {
-    return const Column(
-      children: [
-        Text(
-          'EduCheck',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: primaryBlue,
-          ),
-        ),
-        SizedBox(height: 5),
-        Text(
-          'Academic Record Validation System',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 11,
-            color: secondaryTextColor,
-          ),
-        ),
-      ],
+      child: const Icon(Icons.school_outlined, size: 34, color: Colors.white),
     );
   }
 
@@ -250,320 +133,152 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: borderColor,
-        ),
+        border: Border.all(color: _borderColor),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 18, offset: const Offset(0, 6)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Welcome back',
-            style: TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              color: textColor,
+      child: AutofillGroup(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Welcome back',
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, color: AppTheme.textDark),
             ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Sign in to continue to EduCheck.',
-            style: TextStyle(
-              fontSize: 11,
-              color: secondaryTextColor,
+            const SizedBox(height: 4),
+            const Text(
+              'Sign in with your EduCheck account.',
+              style: TextStyle(fontSize: 12, color: AppTheme.textGray),
             ),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'Login as',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-            ),
-          ),
-          const SizedBox(height: 9),
-          Row(
-            children: [
-              Expanded(
-                child: _roleButton(
-                  role: 'adviser',
-                  icon: Icons.person_outline_rounded,
-                  label: 'Adviser',
+            const SizedBox(height: 22),
+            if (_error != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(11),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.error_outline_rounded, size: 18, color: AppTheme.danger),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.35),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _roleButton(
-                  role: 'subject',
-                  icon: Icons.menu_book_outlined,
-                  label: 'Subject',
+              const SizedBox(height: 16),
+            ],
+            _label('Username'),
+            const SizedBox(height: 7),
+            TextField(
+              controller: _usernameController,
+              autofillHints: const [AutofillHints.username],
+              textInputAction: TextInputAction.next,
+              decoration: _inputDecoration(hintText: 'e.g. adviser.grade6a'),
+            ),
+            const SizedBox(height: 17),
+            _label('Password'),
+            const SizedBox(height: 7),
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) => _login(),
+              decoration: _inputDecoration(
+                hintText: 'Enter your password',
+                suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    size: 20,
+                    color: AppTheme.textGray,
+                  ),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _roleButton(
-                  role: 'admin',
-                  icon: Icons.admin_panel_settings_outlined,
-                  label: 'Admin',
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
                 ),
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                      )
+                    : const Text('Log In', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _roleButton(
-                  role: 'principal',
-                  icon: Icons.account_balance_outlined,
-                  label: 'Principal',
-                ),
+            ),
+            const SizedBox(height: 14),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => setState(() => _showServer = !_showServer),
+                icon: const Icon(Icons.dns_outlined, size: 16),
+                label: Text(_showServer ? 'Hide server address' : 'Server address'),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
+              ),
+            ),
+            if (_showServer) ...[
+              const SizedBox(height: 4),
+              TextField(
+                controller: _serverController,
+                keyboardType: TextInputType.url,
+                decoration: _inputDecoration(hintText: 'http://192.168.1.10:5000'),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Emulator: http://10.0.2.2:5000. On a phone, use your PC\'s Wi-Fi address '
+                '(same network) with port 5000.',
+                style: TextStyle(fontSize: 11, color: AppTheme.textGray, height: 1.4),
               ),
             ],
-          ),
-          const SizedBox(height: 20),
-          _buildFieldLabel('Username'),
-          const SizedBox(height: 7),
-          TextField(
-            controller: _usernameController,
-            decoration: _inputDecoration(
-              hintText: _usernameHint,
-            ),
-          ),
-          const SizedBox(height: 17),
-          _buildFieldLabel('Password'),
-          const SizedBox(height: 7),
-          TextField(
-            controller: _passwordController,
-            obscureText: _obscurePassword,
-            decoration: _inputDecoration(
-              hintText: 'Enter your password',
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  size: 20,
-                  color: secondaryTextColor,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: _login,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryBlue,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(11),
-                ),
-              ),
-              child: Text(
-                _buttonText,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
-          _buildDemoCredentials(),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFieldLabel(String label) {
+  Widget _label(String label) {
     return Text(
       label,
-      style: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: textColor,
-      ),
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textDark),
     );
   }
 
-  InputDecoration _inputDecoration({
-    required String hintText,
-    Widget? suffixIcon,
-  }) {
+  InputDecoration _inputDecoration({required String hintText, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(
-        fontSize: 11,
-        color: Color(0xFF94A3B8),
-      ),
+      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: const Color(0xFFFAFBFC),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 13,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(11),
-        borderSide: const BorderSide(
-          color: borderColor,
-        ),
+        borderSide: const BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(11),
-        borderSide: const BorderSide(
-          color: primaryBlue,
-          width: 1.4,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDemoCredentials() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(
-          color: borderColor,
-        ),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Demo Credentials',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: textColor,
-            ),
-          ),
-          SizedBox(height: 7),
-          Text(
-            'Adviser: adviser.grade6a / adviser123',
-            style: TextStyle(
-              fontSize: 10,
-              color: secondaryTextColor,
-            ),
-          ),
-          SizedBox(height: 3),
-          Text(
-            'Math Teacher: math.g6a / math123',
-            style: TextStyle(
-              fontSize: 10,
-              color: secondaryTextColor,
-            ),
-          ),
-          SizedBox(height: 3),
-          Text(
-            'English Teacher: english.g6a / eng123',
-            style: TextStyle(
-              fontSize: 10,
-              color: secondaryTextColor,
-            ),
-          ),
-          SizedBox(height: 3),
-          Text(
-            'Science Teacher: science.g6a / sci123',
-            style: TextStyle(
-              fontSize: 10,
-              color: secondaryTextColor,
-            ),
-          ),
-          SizedBox(height: 3),
-          Text(
-            'Filipino Teacher: filipino.g6a / fil123',
-            style: TextStyle(
-              fontSize: 10,
-              color: secondaryTextColor,
-            ),
-          ),
-          SizedBox(height: 3),
-          Text(
-            'Admin: admin.educheck / admin123',
-            style: TextStyle(
-              fontSize: 10,
-              color: secondaryTextColor,
-            ),
-          ),
-          SizedBox(height: 3),
-          Text(
-            'Principal: principal.educheck / principal123',
-            style: TextStyle(
-              fontSize: 10,
-              color: secondaryTextColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _roleButton({
-    required String role,
-    required IconData icon,
-    required String label,
-  }) {
-    final bool selected = _selectedRole == role;
-
-    return GestureDetector(
-      onTap: () => _selectRole(role),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        height: 62,
-        decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFFEFF6FF)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(
-            color: selected
-                ? primaryBlue
-                : borderColor,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: selected
-                  ? primaryBlue
-                  : secondaryTextColor,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: selected
-                    ? FontWeight.w700
-                    : FontWeight.w500,
-                color: selected
-                    ? primaryBlue
-                    : textColor,
-              ),
-            ),
-          ],
-        ),
+        borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 1.4),
       ),
     );
   }

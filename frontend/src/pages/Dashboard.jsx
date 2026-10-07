@@ -12,6 +12,7 @@ import {
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
 import { getToken, getStoredUser } from "../utils/session";
+import { useCanUpload } from "../utils/uploadAccess";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -35,6 +36,7 @@ const classifyStudent = (student) => {
 
 function Dashboard() {
     const navigate = useNavigate();
+    const canUpload = useCanUpload();
     const user = getStoredUser() || { username: "adviser", role: "adviser" };
 
     const [schoolYears, setSchoolYears] = useState([]);
@@ -422,16 +424,18 @@ function Dashboard() {
 
                         <div className="quick-actions">
 
-                            <button
-                                className="quick-action purple-action"
-                                onClick={() => navigate("/class-record-upload")}
-                            >
-                                <Upload size={24} />
-                                <strong>Upload Files</strong>
-                                <span>
-                                    Import subject grade files
-                                </span>
-                            </button>
+                            {canUpload && (
+                                <button
+                                    className="quick-action purple-action"
+                                    onClick={() => navigate("/class-record-upload")}
+                                >
+                                    <Upload size={24} />
+                                    <strong>Upload Files</strong>
+                                    <span>
+                                        Import subject grade files
+                                    </span>
+                                </button>
+                            )}
 
                             <button
                                 className="quick-action green-action"

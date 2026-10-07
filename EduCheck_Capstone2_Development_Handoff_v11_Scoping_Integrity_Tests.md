@@ -34,3 +34,24 @@
 - **Frontend:** new page `/permanent-record/:lrn` (readiness, learner details, school details for admin, Grade 1-6 cards, earlier-year entry grid, Generate button), linked from each Records Repository result.
 - **Tests:** 91 total, `sf10.test.js` adds SF-01 to SF-13.
 - **Not verified by eye:** I could not open the generated workbook in Excel here (no Excel/LibreOffice on this machine). Values were checked by reading the file back. Open one generated SF10 in Excel before demoing.
+
+---
+
+## Addendum (2026-10-05): Mobile app connected to the backend
+
+**What was there:** a UI prototype with hard-coded logins (passwords that did not match the real accounts), mock data organised around "quarters", and no networking. Several screens offered actions the SPMP keeps on the web (user management, report exports) or that the backend forbids (Principal approve/return, Subject Teacher SF10).
+
+**What it is now (`mobile/`, see `mobile/README.md`):**
+- `lib/core/`: API client (JWT, 401 to login, 15 s timeout), endpoint layer, persisted session, offline cache (M-10), notification poller with local phone alerts (M-02), shared widgets.
+- One dashboard per role built from shared screens. Admin: Home, Approvals, Repository, Analytics, Account. Adviser: Home, Records, Analytics, Repository, Account. Principal: same as Admin but view-only. Subject Teacher: Home, My Uploads (status + validation issues), Account.
+- 19 mock-up screens removed (git history keeps them).
+- Decisions confirmed with the user: Principal is view-only (SPMP M-06 edited to "Administrator"); alerts by polling, not Firebase.
+- Android: Gradle 9.3.1, AGP 9.1.0, Kotlin 2.4.0, Java 17, desugaring for notifications, INTERNET + POST_NOTIFICATIONS, cleartext http allowed (LAN backend; use https before any public deployment), app label "EduCheck".
+
+**Verified:** `flutter analyze` clean, 5 widget tests pass; a web build was driven in headless Edge against the live dev backend for all four roles (login form, dashboards, records, analytics, uploads/validation, notifications, repository, SF10 preview, account).
+
+**Not verified:** on a real phone or emulator (APK build status in the session summary). Approve/return and submit were not pressed against dev data (same endpoints are covered by backend tests WF-01 to WF-13).
+
+**Dev-data finding:** the 100 Rizal learners also carry a Grade 1 GMRC upload and a Grade 3 Filipino upload (sample file reused before the integrity checks), so records show "10/8 subjects" and duplicate school-year chips. Cleanup is a data decision, not a code bug.
+
+**Machine setup done this session:** Flutter SDK at `%USERPROFILE%\flutter` (added to user PATH), `flutter config --jdk-dir` = Android Studio JBR, missing `AndroidStudio2025.3.4\.home` file created. Windows Developer Mode is still off (only needed for Windows desktop builds).

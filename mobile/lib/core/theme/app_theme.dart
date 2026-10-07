@@ -6,21 +6,17 @@ class AppTheme {
   static const Color background = Color(0xFFF7F9FC);
   static const Color textDark = Color(0xFF1E293B);
   static const Color textGray = Color(0xFF64748B);
+  static const Color border = Color(0xFFE2E8F0);
   static const Color success = Color(0xFF16A34A);
   static const Color danger = Color(0xFFDC2626);
-  static const Color warning = Color(0xFFD18A00);
+  static const Color warning = Color(0xFFD97706);
   static const Color purple = Color(0xFF7C3AED);
-
-  static var backgroundColor;
 
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       scaffoldBackgroundColor: background,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryBlue,
-        primary: primaryBlue,
-      ),
+      colorScheme: ColorScheme.fromSeed(seedColor: primaryBlue, primary: primaryBlue),
       appBarTheme: const AppBarTheme(
         backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
@@ -39,10 +35,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: primaryBlue,
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: primaryBlue, width: 1.5),
         ),
       ),
     );
