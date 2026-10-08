@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { getStoredUser, getToken } from "./session";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // Whether the signed-in user has any (subject, section) they may upload to.
 // Subject Teachers always see the upload page. An Adviser only uploads for a

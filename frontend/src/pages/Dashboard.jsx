@@ -14,8 +14,8 @@ import Sidebar from "../components/Sidebar";
 import StatusBadge from "../components/StatusBadge";
 import { getToken, getStoredUser } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // Standard DepEd K-12 grade descriptor bands, used here to flag students
 // whose weakest recorded subject grade suggests they need attention.

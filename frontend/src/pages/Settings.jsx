@@ -17,8 +17,8 @@ import Sidebar from "../components/Sidebar";
 import "../components/StatusBadge.css";
 import { getToken, getStoredUser } from "../utils/session";
 import { getStoredTheme, setTheme } from "../utils/theme";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 const ROLE_LABEL = {
     admin: "School Administrator",

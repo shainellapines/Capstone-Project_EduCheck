@@ -15,8 +15,8 @@ import {
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
 import StatusBadge from "../components/StatusBadge";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 function AdminDashboard() {
     const navigate = useNavigate();

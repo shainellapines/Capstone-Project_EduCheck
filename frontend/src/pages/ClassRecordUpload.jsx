@@ -17,8 +17,8 @@ import "./Dashboard.css";
 import "./ClassRecordUpload.css";
 import Sidebar from "../components/Sidebar";
 import { getToken } from "../utils/session";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // One option = one (subject, section, school year) combination this
 // user is actually assigned/authorized to upload for - see

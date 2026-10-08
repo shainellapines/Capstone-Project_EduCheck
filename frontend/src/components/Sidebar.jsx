@@ -23,8 +23,8 @@ import {
 import "../pages/Dashboard.css";
 import { getStoredUser, getToken, clearSession } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 const POLL_INTERVAL_MS = 30000;
 
 // Single source of truth for sidebar navigation, keyed by role. All three

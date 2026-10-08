@@ -17,8 +17,8 @@ import "./Dashboard.css";
 import "./ConsolidatedRecords.css";
 import Sidebar from "../components/Sidebar";
 import StatusBadge, { GradeCell } from "../components/StatusBadge";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 const PAGE_SIZE = 20;
 
 function ConsolidatedRecords() {

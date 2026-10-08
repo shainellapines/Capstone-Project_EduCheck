@@ -11,9 +11,9 @@ import {
 
 import "./TeacherManagement.css";
 import Sidebar from "../components/Sidebar";
+import { API_URL } from "../config";
 
 function TeacherManagement() {
-    const API_URL = "http://localhost:5000/api";
 
     // ==========================================
     // TEACHER DATA

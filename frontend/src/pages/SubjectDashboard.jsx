@@ -14,8 +14,8 @@ import {
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
 import StatusBadge from "../components/StatusBadge";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // Statuses class_records can carry that mean the record can't move
 // forward yet — mirrors the FILTER clause getMyClassRecordSummary uses

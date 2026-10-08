@@ -28,8 +28,17 @@ const pool = require("./db");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Which web origins may call the API. Set CORS_ORIGIN in backend/.env to a
+// comma-separated list (e.g. http://192.168.1.20:5173) once the frontend is
+// opened from other computers. Unset = any origin (local development).
+// The mobile app sends no Origin header, so this never blocks it.
+const allowedOrigins = (process.env.CORS_ORIGIN || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+
 // Middleware
-app.use(cors());
+app.use(cors(allowedOrigins.length > 0 ? { origin: allowedOrigins } : undefined));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);

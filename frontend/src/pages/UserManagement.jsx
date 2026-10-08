@@ -16,8 +16,8 @@ import {
 
 import "./UserManagement.css";
 import Sidebar from "../components/Sidebar";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 function UserManagement() {
     const [users, setUsers] = useState([]);

@@ -11,8 +11,8 @@ import {
 import "./Dashboard.css";
 import "./RecordsRepository.css";
 import Sidebar from "../components/Sidebar";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // sf10Mode: the same search, opened from the "SF10 Permanent Records" nav
 // item - each result's main action opens that learner's permanent record.

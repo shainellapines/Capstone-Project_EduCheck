@@ -17,8 +17,8 @@ import "./Dashboard.css";
 import "./ValidationResults.css";
 import Sidebar from "../components/Sidebar";
 import { SeverityBadge } from "../components/StatusBadge";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // Groups the validator's real issue codes (classRecordValidator.js) into
 // the categories shown on this page. Every code the validator can

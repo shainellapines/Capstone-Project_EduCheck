@@ -12,8 +12,8 @@ import "./Dashboard.css";
 import "./Analytics.css";
 import Sidebar from "../components/Sidebar";
 import { getToken, getStoredUser } from "../utils/session";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // Grade bands are ORDINAL (position in a performance sequence), not
 // categorical — color encodes "which tier," bar length encodes "how many

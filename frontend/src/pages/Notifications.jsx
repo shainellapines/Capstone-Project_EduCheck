@@ -13,8 +13,8 @@ import {
 import "./Dashboard.css";
 import "./Notifications.css";
 import Sidebar from "../components/Sidebar";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // Icon/tone/category per notification title. Four titles actually exist
 // across the backend (grep-confirmed against submissionController.js and

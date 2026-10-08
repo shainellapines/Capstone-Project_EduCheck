@@ -12,8 +12,8 @@ import "./Dashboard.css";
 import "./SectionProgress.css";
 import Sidebar from "../components/Sidebar";
 import { getToken } from "../utils/session";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 const EMPTY_SUBMISSION_COUNTS = {
     "Not Submitted": 0,

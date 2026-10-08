@@ -21,8 +21,8 @@ import "./Dashboard.css";
 import "./PermanentRecord.css";
 import Sidebar from "../components/Sidebar";
 import { getStoredUser } from "../utils/session";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 const GRADES = ["1", "2", "3", "4", "5", "6"];
 

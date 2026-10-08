@@ -15,8 +15,8 @@ import {
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
 import { getToken, getStoredUser } from "../utils/session";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // SPMP v1.0 US-008 (Should, Sprint 8): a School Principal is view-only —
 // no upload, no approve/reject, no user/section management. This mirrors

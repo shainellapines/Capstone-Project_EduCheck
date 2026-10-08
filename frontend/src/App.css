@@ -296,9 +296,13 @@ h1, h2, h3, h4, h5, h6 {
     --login-pad: clamp(48px, 5vw, 88px);          /* space beside the form */
     /* form side grows with the screen so the form sits nearer the middle */
     --login-panel: min(max(calc(var(--login-form-w) + 2 * var(--login-pad)), 45vw), 860px);
-    --login-fade: clamp(240px, 28vw, 520px);      /* length of the blend */
-    /* the faint tail of the blend may run into the empty space beside the form */
-    --login-overlap: max(0px, calc((var(--login-panel) - var(--login-form-w)) / 2 - 24px));
+    /* the photo panel spans 65% of the page; it is fully opaque up to the
+       halfway point and then dissolves into the page background */
+    --login-photo-w: 65vw;
+    /* form states */
+    --login-focus: #1f6b75;
+    --login-error: #99231a;
+    --login-note: #5c574d;
 
     min-height: 100vh;
     display: grid;
@@ -317,7 +321,8 @@ h1, h2, h3, h4, h5, h6 {
     /* branding sits in the quieter left part of the photo,
        leaving the teacher visible toward the centre */
     justify-content: flex-start;
-    padding: 64px calc(var(--login-fade) - var(--login-overlap) + 16px) 64px clamp(40px, 5vw, 88px);
+    /* keep the branding in the opaque first half of the photo panel */
+    padding: 64px calc(100% - var(--login-photo-w) / 2 + 16px) 64px clamp(40px, 5vw, 88px);
     color: #ffffff;
 }
 
@@ -327,52 +332,40 @@ h1, h2, h3, h4, h5, h6 {
     top: 0;
     bottom: 0;
     left: 0;
-    right: calc(-1 * var(--login-overlap));
+    width: var(--login-photo-w);
     z-index: -1;
+    /* one even teal overlay over the photo */
     background:
-        /* quieter area behind the branding: a soft teal falloff, no box */
-        radial-gradient(
-            ellipse 46% 62% at 18% 50%,
-            rgba(20, 84, 94, 0.42) 0%,
-            rgba(20, 84, 94, 0.24) 45%,
-            rgba(20, 84, 94, 0) 100%
-        ),
-        /* depth toward the bottom softens the papers and keyboard */
-        linear-gradient(180deg, rgba(8, 36, 41, 0) 40%, rgba(8, 36, 41, 0.34) 100%),
-        /* teal treatment: light tint -> gradually stronger -> deep #14545E,
-           reaching full strength only where the blend is already half done */
-        linear-gradient(
-            90deg,
-            rgba(20, 84, 94, 0.46) 0%,
-            rgba(20, 84, 94, 0.58) 30%,
-            rgba(20, 84, 94, 0.7) calc(100% - var(--login-fade)),
-            rgba(20, 84, 94, 0.86) calc(100% - var(--login-fade) * 0.7),
-            rgba(20, 84, 94, 0.96) calc(100% - var(--login-fade) * 0.5),
-            #14545e calc(100% - var(--login-fade) * 0.35),
-            #14545e 100%
-        ),
+        linear-gradient(rgba(14, 64, 74, 0.75), rgba(14, 64, 74, 0.75)),
         /* photo is pre-toned (less saturation and contrast) in the asset;
            shifted so the teacher stays clear of the branding */
-        var(--login-photo) var(--login-photo-x, 30%) center / cover no-repeat,
-        #14545e;
-    /* teal -> transparent teal -> page color along a smootherstep curve,
-       so neither end of the blend has a visible edge */
+        var(--login-photo) var(--login-photo-x, 55%) center / cover no-repeat,
+        #0e404a;
+    /* photo + overlay dissolve to transparent along a smootherstep curve,
+       so the page background shows through with no stripe or edge */
     -webkit-mask-image: var(--login-mask);
     mask-image: var(--login-mask);
     --login-mask: linear-gradient(
-        90deg,
-        #000 calc(100% - var(--login-fade)),
-        rgba(0, 0, 0, 0.991) calc(100% - var(--login-fade) * 0.9),
-        rgba(0, 0, 0, 0.942) calc(100% - var(--login-fade) * 0.8),
-        rgba(0, 0, 0, 0.837) calc(100% - var(--login-fade) * 0.7),
-        rgba(0, 0, 0, 0.683) calc(100% - var(--login-fade) * 0.6),
-        rgba(0, 0, 0, 0.5) calc(100% - var(--login-fade) * 0.5),
-        rgba(0, 0, 0, 0.317) calc(100% - var(--login-fade) * 0.4),
-        rgba(0, 0, 0, 0.163) calc(100% - var(--login-fade) * 0.3),
-        rgba(0, 0, 0, 0.058) calc(100% - var(--login-fade) * 0.2),
-        rgba(0, 0, 0, 0.009) calc(100% - var(--login-fade) * 0.1),
+        to right,
+        #000 50%,
+        rgba(0, 0, 0, 0.991) 55%,
+        rgba(0, 0, 0, 0.942) 60%,
+        rgba(0, 0, 0, 0.837) 65%,
+        rgba(0, 0, 0, 0.683) 70%,
+        rgba(0, 0, 0, 0.5) 75%,
+        rgba(0, 0, 0, 0.317) 80%,
+        rgba(0, 0, 0, 0.163) 85%,
+        rgba(0, 0, 0, 0.058) 90%,
+        rgba(0, 0, 0, 0.009) 95%,
         transparent 100%
     );
+}
+
+:root[data-theme="dark"] .login-page {
+    /* the light-mode form colours are too dark to read on the dark page */
+    --login-focus: var(--ec-focus);
+    --login-error: var(--ec-status-danger-fg);
+    --login-note: var(--ec-text-muted);
 }
 
 .login-brand-inner {
@@ -384,34 +377,36 @@ h1, h2, h3, h4, h5, h6 {
 
 .login-brand-logo {
     display: block;
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: auto;
     margin-bottom: 24px;
 }
 
 .login-brand-name {
     margin: 0;
-    font-size: 36px;
-    line-height: 44px;
-    font-weight: 700;
+    font-size: 42px;
+    line-height: 50px;
+    font-weight: 600;
     letter-spacing: -0.02em;
+    color: #ffffff;
 }
 
 .login-brand-system {
-    margin: 6px 0 0;
+    margin: 8px 0 0;
     font-size: 16px;
     line-height: 24px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.88);
+    color: #ffffff;
     text-wrap: balance; /* if it wraps, no lone "System" on the second line */
 }
 
 .login-brand-tagline {
     margin: 20px 0 0;
     max-width: 380px; /* keep the supporting line compact */
-    font-size: 15px;
-    line-height: 24px;
-    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    line-height: 22px;
+    font-weight: 400;
+    color: #d6e7e8;
 }
 
 .login-brand-school {
@@ -469,8 +464,7 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
 }
 
-.login-form-wrap label,
-.login-form-wrap legend {
+.login-form-wrap label {
     display: block;
     margin: 0 0 8px;
     padding: 0;
@@ -480,53 +474,8 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--ec-text);
 }
 
-.login-field {
+.login-field + .login-field {
     margin-top: 20px;
-}
-
-/* Role choice: one segmented control, selected = #14545E */
-.login-roles {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    min-width: 0;
-}
-
-.role-selector {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-    padding: 3px;
-    background: var(--ec-surface-sunken);
-    border: 1px solid var(--ec-border);
-    border-radius: 8px;
-}
-
-.role {
-    height: 34px;
-    padding: 0 6px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--ec-text-muted);
-    font-family: var(--login-font);
-    font-size: 13px;
-    line-height: 18px;
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background var(--ec-duration) ease-out, color var(--ec-duration) ease-out;
-}
-
-.role:hover {
-    color: var(--ec-text);
-}
-
-.role[aria-pressed="true"] {
-    background: var(--ec-action);
-    color: var(--ec-on-action);
-    font-weight: 600;
-    box-shadow: 0 1px 2px rgba(20, 84, 94, 0.18);
 }
 
 /* Inputs: white surface, restrained warm border, leading icon */
@@ -554,7 +503,7 @@ h1, h2, h3, h4, h5, h6 {
     font-family: var(--login-font);
     font-size: 15px;
     line-height: 20px;
-    transition: border-color var(--ec-duration) ease-out, box-shadow var(--ec-duration) ease-out;
+    transition: border-color var(--ec-duration) ease-out;
 }
 
 :root:not([data-theme="dark"]) .login-form-wrap input {
@@ -573,10 +522,17 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--ec-text-muted);
 }
 
-.login-form-wrap input:focus {
-    outline: none;
-    border-color: var(--ec-action);
-    box-shadow: 0 0 0 3px var(--ec-primary-100);
+.login-form-wrap input:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* one focus ring for every input and button */
+.login-form-wrap input:focus,
+.login-reveal:focus-visible,
+.login-button:focus-visible {
+    outline: 2px solid var(--login-focus);
+    outline-offset: 2px;
 }
 
 .login-reveal {
@@ -601,11 +557,24 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--ec-text);
 }
 
-.role:focus-visible,
-.login-reveal:focus-visible,
-.login-button:focus-visible {
-    outline: 2px solid var(--ec-focus);
-    outline-offset: 2px;
+/* Field errors: red border plus a short message under the field */
+.login-form-wrap input[aria-invalid="true"] {
+    border-color: var(--login-error);
+}
+
+.login-field-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 6px 0 0;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--login-error);
+}
+
+.login-field-error svg {
+    flex: none;
+    margin-top: 2px;
 }
 
 .login-button {
@@ -631,12 +600,29 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--ec-action-hover);
 }
 
+/* Disabled only while signing in: keep the action colour, show progress */
 .login-button:disabled {
-    cursor: not-allowed;
-    background: var(--ec-surface-sunken);
-    color: var(--ec-text-muted);
+    cursor: progress;
+    background: var(--ec-action);
+    opacity: 0.85;
 }
 
+.login-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: login-spin 0.7s linear infinite;
+}
+
+@keyframes login-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Errors that aren't about one field (server unreachable, inactive account) */
 .login-error {
     margin-top: 20px;
     padding: 10px 12px;
@@ -658,18 +644,22 @@ h1, h2, h3, h4, h5, h6 {
 
 .login-note {
     margin: 16px 0 0;
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 18px;
-    color: var(--ec-text-muted);
+    color: var(--login-note);
 }
 
-/* ---------- Tablet: smaller photo side, shorter blend ---------- */
+/* Logo + name above the form; only used when the photo panel is hidden */
+.login-compact-brand {
+    display: none;
+}
+
+/* ---------- Tablet: smaller photo side ---------- */
 
 @media (max-width: 1100px) {
     .login-page {
         --login-pad: 36px;
-        --login-fade: 160px;
-        --login-photo-x: 48%;
+        --login-photo-x: 50%;
     }
 
     .login-brand {
@@ -697,67 +687,51 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
-/* ---------- Mobile: compact branding header above the form ---------- */
+/* ---------- Below 900px: no photo, logo and name above the form ---------- */
 
-@media (max-width: 760px) {
+@media (max-width: 899.98px) {
     .login-page {
-        --login-overlap: 0px;
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
     }
 
     .login-brand {
-        justify-content: flex-start;
-        padding: 28px 20px 44px;
-    }
-
-    .login-brand::before {
-        background:
-            linear-gradient(180deg, rgba(20, 84, 94, 0.62) 0%, #14545e 70%),
-            var(--login-photo) center / cover no-repeat,
-            #14545e;
-        -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
-        mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
-    }
-
-    .login-brand-inner {
-        top: 0;
-        display: grid;
-        grid-template-columns: auto 1fr;
-        column-gap: 14px;
-        align-items: center;
-    }
-
-    .login-brand-logo {
-        grid-row: span 2;
-        width: 52px;
-        height: 52px;
-        margin: 0;
-    }
-
-    .login-brand-name {
-        font-size: 24px;
-        line-height: 30px;
-    }
-
-    .login-brand-system {
-        margin: 2px 0 0;
-        font-size: 13px;
-        line-height: 18px;
-    }
-
-    .login-brand-tagline,
-    .login-brand-school {
         display: none;
     }
 
     .login-main {
-        align-items: flex-start;
-        padding: 28px 20px 40px;
+        padding: 48px 32px;
     }
 
-    .login-head {
-        margin-bottom: 24px;
+    .login-compact-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 32px;
+        text-align: center;
+    }
+
+    .login-compact-brand img {
+        width: 56px;
+        height: 56px;
+    }
+
+    .login-compact-brand p {
+        margin: 0;
+        font-size: 24px;
+        line-height: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--ec-text);
+    }
+}
+
+/* ---------- Phone ---------- */
+
+@media (max-width: 600px) {
+    .login-main {
+        align-items: flex-start;
+        padding: 40px 24px;
     }
 
     .login-head h1 {
@@ -765,15 +739,18 @@ h1, h2, h3, h4, h5, h6 {
         line-height: 32px;
     }
 
-    .role {
-        height: 40px;
+    .login-form-wrap input {
+        font-size: 16px; /* 16px stops iOS from zooming into the field */
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .role,
     .login-form-wrap input,
     .login-button {
         transition: none;
+    }
+
+    .login-spinner {
+        animation-duration: 1.6s;
     }
 }

@@ -12,8 +12,8 @@ import "./Dashboard.css";
 import "./SectionAssignments.css";
 import Sidebar from "../components/Sidebar";
 import { getToken } from "../utils/session";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:5000/api";
 
 // Per SPMP v1.0 US-009/US-011: the Administrator configures each
 // section's staffing mode and assigns teachers to it here. This is the
