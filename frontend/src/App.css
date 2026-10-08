@@ -1,114 +1,160 @@
+/* Design tokens. Values come from the EduCheck design system
+   (claude.ai/artifact/AKUFdtNrBAeREv48o6vy4N, project/tokens.json).
+   The guide's own names (--ec-bg, --ec-action, --ec-status-*) come first;
+   the app's older names (--ec-slate-*, --ec-success, --ec-role-*...) follow
+   and now resolve to guide values, so every page picks up the new look
+   without per-page changes. New CSS should use the guide names. */
 :root {
-    /* Typography — Lexend for headings (designed for reading proficiency,
-       a deliberate fit for an academic-records product), Public Sans for
-       body text (built for institutional/civic legibility at small sizes). */
-    --ec-font-heading: "Lexend", "Segoe UI", Arial, sans-serif;
-    --ec-font-body: "Public Sans", "Segoe UI", Arial, sans-serif;
+    /* Typography: Public Sans for UI, Lexend for headings and key figures,
+       IBM Plex Mono for LRNs and grades, Source Serif 4 for the SF10 sheet. */
+    --font-sans: "Public Sans", system-ui, sans-serif;
+    --font-display: "Lexend", "Public Sans", system-ui, sans-serif;
+    --font-serif: "Source Serif 4", Georgia, serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --ec-font-sans: var(--font-sans);
+    --ec-font-display: var(--font-display);
+    --ec-font-serif: var(--font-serif);
+    --ec-font-mono: var(--font-mono);
+    --ec-font-heading: var(--font-display);
+    --ec-font-body: var(--font-sans);
 
-    /* Primary brand blue — one consistent scale replacing the three
-       slightly-different blues (#2447b8/#2468ed/#1769ed) previously
-       scattered across pages. */
-    --ec-primary-50: #eef2ff;
-    --ec-primary-100: #dfe7ff;
-    --ec-primary-400: #4a72ea;
-    --ec-primary-500: #2952e0;
-    --ec-primary-600: #2141bd;
-    --ec-primary-700: #1a3494;
+    /* Primary: deep green-teal. */
+    --ec-primary-50: #eef5f5;
+    --ec-primary-100: #d6e7e8;
+    --ec-primary-200: #aed0d3;
+    --ec-primary-300: #7bb1b6;
+    --ec-primary-400: #478c94;
+    --ec-primary-500: #1f6b75;
+    --ec-primary-600: #14545e;
+    --ec-primary-700: #0e404a;
 
-    /* Role accents — one identity per role, reused consistently across
-       badges, nav active-states, and role-specific quick actions. */
-    --ec-role-admin: #8a4fb3;
-    --ec-role-admin-bg: #f3e9fb;
-    --ec-role-subject: #2670c9;
-    --ec-role-subject-bg: #e8f1fc;
-    --ec-role-adviser: #158a63;
-    --ec-role-adviser-bg: #e3f6ee;
-    --ec-role-principal: #b3791f;
-    --ec-role-principal-bg: #faf1e0;
+    /* Surfaces and text (guide names) */
+    --ec-bg: #f6f3ec;
+    --ec-surface: #fcfaf6;
+    --ec-surface-sunken: #efebe2;
+    --ec-hover: #f1ede4;
+    --ec-selected: var(--ec-primary-50);
+    --ec-border: #ddd7ca;
+    --ec-border-strong: #8a8375;
+    --ec-text: #1f1d1a;
+    --ec-text-muted: #5c574d;
+    --ec-action: var(--ec-primary-600);
+    --ec-action-hover: var(--ec-primary-700);
+    --ec-on-action: #ffffff;
+    --ec-link: var(--ec-primary-600);
+    --ec-focus: var(--ec-primary-500);
+    --ec-overlay: rgba(31, 29, 26, 0.45);
+    --ec-workspace: #e6e1d6;
+    --ec-paper: #fffdf8;
+    --ec-paper-ink: #1c1a17;
+    --ec-paper-rule: #8c867a;
 
-    /* Semantic status */
-    --ec-success: #16a34a;
-    --ec-success-bg: #ecfdf3;
-    --ec-warning: #d97706;
-    --ec-warning-bg: #fffaeb;
-    --ec-danger: #dc2626;
-    --ec-danger-bg: #fef2f2;
-    /* "Needs Revision" status specifically — distinct from any role color,
-       used consistently across Consolidated Records/Section Progress/
-       Validation Results wherever a subject is sent back for correction. */
-    --ec-revision: #6d28d9;
-    --ec-revision-bg: #ede9fe;
+    /* Status (guide names). Always color + icon + label, and only for status. */
+    --ec-status-neutral-fg: #565147;
+    --ec-status-neutral-bg: #ebe7de;
+    --ec-status-neutral-border: #cdc6b8;
+    --ec-status-info-fg: #1b4d8c;
+    --ec-status-info-bg: #e4edf8;
+    --ec-status-info-border: #b3cbe8;
+    --ec-status-info-solid: #1f5aa6;
+    --ec-on-status-solid: #ffffff;
+    --ec-status-revision-fg: #6a5000;
+    --ec-status-revision-bg: #fbf1b4;
+    --ec-status-revision-border: #dcc650;
+    --ec-status-danger-fg: #99231a;
+    --ec-status-danger-bg: #fbe4e0;
+    --ec-status-danger-border: #e9b0a8;
+    --ec-status-success-fg: #1c6638;
+    --ec-status-success-bg: #e3efe5;
+    --ec-status-success-border: #9fc9aa;
+    --ec-status-success-solid: #1c6638;
+    --ec-severity-warning-fg: #8a4500;
+    --ec-severity-warning-bg: #fde3c6;
+    --ec-severity-warning-border: #eaae68;
+    --ec-severity-critical-fg: var(--ec-status-danger-fg);
+    --ec-severity-critical-border: var(--ec-status-danger-border);
 
-    /* Severity scale for intervention/at-risk grades — three fixed steps,
-       reserved meaning, never reused as a 4th categorical color. Distinct
-       from --ec-warning/--ec-danger above (those are generic form/banner
-       states) so a grade's urgency and an unrelated error message never
-       compete for the same visual weight. */
-    --ec-severity-warning: #b45309;
-    --ec-severity-warning-bg: #fef3c7;
-    --ec-severity-serious: #c2410c;
-    --ec-severity-serious-bg: #ffedd5;
-    --ec-severity-critical: #b91c1c;
-    --ec-severity-critical-bg: #fee2e2;
+    --ec-chart-1: var(--ec-primary-600);
+    --ec-chart-2: var(--ec-primary-400);
+    --ec-chart-3: #8a8375;
+    --ec-chart-grid: var(--ec-border);
 
-    /* Ordinal ramp for the four PASSING grade-distribution tiers — one
-       hue, light->dark = lower->higher achievement. "Below 75" breaks the
-       ramp entirely into --ec-danger above; it's a different state
-       (failing), not one more step down. */
-    --ec-tier-1: #86efac;
-    --ec-tier-2: #4ade80;
-    --ec-tier-3: #22c55e;
-    --ec-tier-4: #15803d;
+    /* Older app names, mapped onto the guide. Warm neutrals replace slate. */
+    --ec-slate-50: #f6f3ec;
+    --ec-slate-100: #efebe2;
+    --ec-slate-200: #ddd7ca;
+    --ec-slate-300: #bdb6a7;
+    --ec-slate-400: #8a8375;
+    --ec-slate-500: #5c574d;
+    --ec-slate-600: #4a463e;
+    --ec-slate-700: #37342e;
+    --ec-slate-800: #2a2824;
+    --ec-slate-900: #1f1d1a;
 
-    /* Neutrals */
-    --ec-slate-50: #f8fafc;
-    --ec-slate-100: #f1f5f9;
-    --ec-slate-200: #e2e8f0;
-    --ec-slate-300: #cbd5e1;
-    --ec-slate-400: #94a3b8;
-    --ec-slate-500: #64748b;
-    --ec-slate-600: #475569;
-    --ec-slate-700: #334155;
-    --ec-slate-800: #1e293b;
-    --ec-slate-900: #0f172a;
-
-    /* Legacy aliases — kept so existing var() references elsewhere in the
-       app keep working while every page migrates to the scale above. */
     --ec-blue: var(--ec-primary-500);
     --ec-blue-dark: var(--ec-primary-600);
-    --ec-text: var(--ec-slate-900);
-    --ec-text-muted: var(--ec-slate-500);
-    --ec-border: var(--ec-slate-200);
+    --ec-page-bg: var(--ec-bg);
+    --ec-surface-2: var(--ec-surface-sunken);
 
-    /* Surface tokens — the actual light/dark switch. Everything that was
-       a literal `white`/`#ffffff` card background or `--ec-slate-50` page
-       background now reads one of these three instead, so dark mode is a
-       token redefinition, not a per-component rewrite. */
-    --ec-page-bg: var(--ec-slate-50);
-    --ec-surface: #ffffff;
-    --ec-surface-2: var(--ec-slate-50);
+    /* Roles are shown as plain text (role + scope label), not color-coded. */
+    --ec-role-admin: var(--ec-primary-600);
+    --ec-role-admin-bg: var(--ec-primary-50);
+    --ec-role-subject: var(--ec-primary-600);
+    --ec-role-subject-bg: var(--ec-primary-50);
+    --ec-role-adviser: var(--ec-primary-600);
+    --ec-role-adviser-bg: var(--ec-primary-50);
+    --ec-role-principal: var(--ec-primary-600);
+    --ec-role-principal-bg: var(--ec-primary-50);
 
-    /* Fixed brand gradient for the sidebar specifically — deliberately
-       NOT redefined under [data-theme="dark"]. --ec-primary-600/700
-       themselves flip lighter in dark mode (so text/links stay readable
-       on a dark page), which would otherwise turn the sidebar's
-       background into a pale periwinkle. The sidebar is a fixed brand
-       element that looks the same in both themes, same as the login
-       page's gradient. */
-    --ec-sidebar-start: #2141bd;
-    --ec-sidebar-end: #1a3494;
+    --ec-success: var(--ec-status-success-fg);
+    --ec-success-bg: var(--ec-status-success-bg);
+    --ec-warning: var(--ec-severity-warning-fg);
+    --ec-warning-bg: var(--ec-severity-warning-bg);
+    --ec-danger: var(--ec-status-danger-fg);
+    --ec-danger-bg: var(--ec-status-danger-bg);
+    /* Needs Revision is the guide's lemon yellow (was purple). */
+    --ec-revision: var(--ec-status-revision-fg);
+    --ec-revision-bg: var(--ec-status-revision-bg);
 
-    --ec-radius-xs: 6px;
-    --ec-radius-sm: 8px;
-    --ec-radius-md: 12px;
-    --ec-radius-lg: 18px;
+    /* Intervention severity: warning (amber) < serious (burnt orange) < critical (red). */
+    --ec-severity-warning: var(--ec-severity-warning-fg);
+    --ec-severity-serious: #9a3412;
+    --ec-severity-serious-bg: #fbe2d2;
+    --ec-severity-critical: var(--ec-status-danger-fg);
+    --ec-severity-critical-bg: var(--ec-status-danger-bg);
+
+    /* Passing grade tiers: one teal hue, light -> dark = lower -> higher. */
+    --ec-tier-1: var(--ec-primary-200);
+    --ec-tier-2: var(--ec-primary-300);
+    --ec-tier-3: var(--ec-primary-400);
+    --ec-tier-4: var(--ec-primary-600);
+
+    /* Shape: 6px on controls and panels, 4px on badges. No large rounding. */
+    --ec-radius: 6px;
+    --ec-radius-xs: 4px;
+    --ec-radius-sm: 6px;
+    --ec-radius-md: 6px;
+    --ec-radius-lg: 6px;
     --ec-radius-pill: 999px;
 
-    --ec-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
-    --ec-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --ec-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
-    --ec-shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.18);
-    --ec-shadow-primary: 0 10px 24px rgba(41, 82, 224, 0.28);
+    /* Elevation: hairline borders instead of shadows. Only popovers and
+       dialogs (md/lg) cast one. */
+    --ec-shadow-popover: 0 8px 24px rgba(31, 29, 26, 0.14), 0 1px 2px rgba(31, 29, 26, 0.08);
+    --ec-shadow-sheet: 0 2px 12px rgba(31, 29, 26, 0.18);
+    --ec-shadow-xs: none;
+    --ec-shadow-sm: none;
+    --ec-shadow-md: var(--ec-shadow-popover);
+    --ec-shadow-lg: var(--ec-shadow-popover);
+    --ec-shadow-primary: none;
+
+    /* Spacing (8px grid) and motion */
+    --ec-space-1: 4px;
+    --ec-space-2: 8px;
+    --ec-space-3: 12px;
+    --ec-space-4: 16px;
+    --ec-space-5: 24px;
+    --ec-space-6: 32px;
+    --ec-duration: 200ms;
 }
 
 * {
@@ -116,72 +162,83 @@
 }
 
 /* Dark mode. An explicit choice stamps data-theme on <html> (see
-   utils/theme.js) - there is no "follow system" mode here, so this is the
-   only selector that needs to exist (no prefers-color-scheme query). Same
-   token names as :root above, redefined - every component already reads
-   these names, so nothing outside this block needs to know dark mode
-   exists. Dark-mode neutrals are a genuinely separate ramp (not an
-   inversion formula) so each step still does its usual job: --ec-slate-50
-   is "the most subtle surface/border a component reaches for," which in
-   dark mode means "barely lighter than the page," not "near white." */
+   utils/theme.js); there is no "follow system" mode. Same token names,
+   redefined. The guide keeps the primary scale fixed and switches
+   --ec-action/--ec-link per theme instead. Older CSS still paints text with
+   --ec-primary-500/600, so those steps lighten here too, and every solid
+   fill labels itself with --ec-on-action / --ec-on-status-solid (dark ink). */
 :root[data-theme="dark"] {
-    --ec-page-bg: #0b0d12;
-    --ec-surface: #12151c;
-    --ec-surface-2: #171b24;
+    --ec-primary-50: #172b2f;
+    --ec-primary-100: #1d3a3f;
+    --ec-primary-400: #5d9ea5;
+    --ec-primary-500: #7bb1b6;
+    --ec-primary-600: #93c1c5;
+    --ec-primary-700: #aed0d3;
 
-    --ec-slate-50: #171b24;
-    --ec-slate-100: #1d2230;
-    --ec-slate-200: #2a3040;
-    --ec-slate-300: #3a4256;
-    --ec-slate-400: #5b6376;
-    --ec-slate-500: #8b93a7;
-    --ec-slate-600: #aab2c5;
-    --ec-slate-700: #c7cede;
-    --ec-slate-800: #e2e6f0;
-    --ec-slate-900: #f5f7fb;
+    --ec-bg: #171614;
+    --ec-surface: #1f1e1b;
+    --ec-surface-sunken: #121110;
+    --ec-hover: #292724;
+    --ec-selected: #172b2f;
+    --ec-border: #35322d;
+    --ec-border-strong: #7d776e;
+    --ec-text: #ece8e0;
+    --ec-text-muted: #aaa499;
+    --ec-action: #7bb1b6;
+    --ec-action-hover: #aed0d3;
+    --ec-on-action: #0b2226;
+    --ec-link: #7bb1b6;
+    --ec-focus: #7bb1b6;
+    --ec-overlay: rgba(0, 0, 0, 0.6);
+    --ec-workspace: #0f0e0d;
 
-    --ec-primary-50: #16213f;
-    --ec-primary-100: #1d2c54;
-    --ec-primary-400: #6f92f0;
-    --ec-primary-500: #6087ef;
-    --ec-primary-600: #82a2f3;
-    --ec-primary-700: #aec0f7;
+    --ec-status-neutral-fg: #b9b3a8;
+    --ec-status-neutral-bg: #2a2825;
+    --ec-status-neutral-border: #47433d;
+    --ec-status-info-fg: #a3c5f0;
+    --ec-status-info-bg: #172638;
+    --ec-status-info-border: #2e4a6c;
+    --ec-status-info-solid: #86b4ee;
+    --ec-on-status-solid: #10161c;
+    --ec-status-revision-fg: #ecd56a;
+    --ec-status-revision-bg: #332c0c;
+    --ec-status-revision-border: #62541a;
+    --ec-status-danger-fg: #f5a096;
+    --ec-status-danger-bg: #3b1814;
+    --ec-status-danger-border: #6f2e27;
+    --ec-status-success-fg: #84d49e;
+    --ec-status-success-bg: #1a2e21;
+    --ec-status-success-border: #2c5a3a;
+    --ec-status-success-solid: #6fca8c;
+    --ec-severity-warning-fg: #f5a95c;
+    --ec-severity-warning-bg: #3b2410;
+    --ec-severity-warning-border: #74481b;
 
-    --ec-role-admin: #c99ee8;
-    --ec-role-admin-bg: #2c2140;
-    --ec-role-subject: #7fb1f0;
-    --ec-role-subject-bg: #1b2c42;
-    --ec-role-adviser: #5fd8ac;
-    --ec-role-adviser-bg: #133226;
-    --ec-role-principal: #e6b85c;
-    --ec-role-principal-bg: #3a2c12;
+    --ec-chart-1: #7bb1b6;
+    --ec-chart-2: #478c94;
+    --ec-chart-3: #7d776e;
 
-    --ec-success: #4ade80;
-    --ec-success-bg: #14291d;
-    --ec-warning: #f0ad4e;
-    --ec-warning-bg: #362509;
-    --ec-danger: #f87171;
-    --ec-danger-bg: #3a1717;
-    --ec-revision: #a78bfa;
-    --ec-revision-bg: #281e42;
+    --ec-slate-50: #24221f;
+    --ec-slate-100: #292724;
+    --ec-slate-200: #35322d;
+    --ec-slate-300: #47433d;
+    --ec-slate-400: #7d776e;
+    --ec-slate-500: #aaa499;
+    --ec-slate-600: #bdb7ac;
+    --ec-slate-700: #d0cbc1;
+    --ec-slate-800: #e0dcd4;
+    --ec-slate-900: #ece8e0;
 
-    --ec-severity-warning: #f0ad4e;
-    --ec-severity-warning-bg: #3a2c0f;
-    --ec-severity-serious: #f0824e;
-    --ec-severity-serious-bg: #3a220f;
-    --ec-severity-critical: #f87171;
-    --ec-severity-critical-bg: #3a1717;
+    --ec-severity-serious: #f58a5c;
+    --ec-severity-serious-bg: #3b1f10;
 
-    --ec-tier-1: #3a5f45;
-    --ec-tier-2: #3f7d52;
-    --ec-tier-3: #4a9f61;
-    --ec-tier-4: #5ec278;
+    --ec-tier-1: #24484d;
+    --ec-tier-2: #3a7178;
+    --ec-tier-3: #5d9ea5;
+    --ec-tier-4: #93c1c5;
 
-    --ec-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --ec-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
-    --ec-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
-    --ec-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
-    --ec-shadow-primary: 0 10px 24px rgba(96, 135, 239, 0.35);
+    --ec-shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
+    --ec-shadow-sheet: 0 2px 16px rgba(0, 0, 0, 0.6);
 }
 
 body {
@@ -193,6 +250,30 @@ body {
     transition: background 0.15s ease, color 0.15s ease;
 }
 
+/* Form controls default to the browser's white; give them the surface and
+   text tokens so they sit on paper in light mode and stay dark in dark mode.
+   Element selectors only, so any class-level styling still wins. */
+input,
+select,
+textarea {
+    background-color: var(--ec-surface);
+    color: var(--ec-text);
+}
+
+/* Chrome paints autofilled fields yellow; keep them on the paper surface. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ec-text);
+    caret-color: var(--ec-text);
+    box-shadow: inset 0 0 0 1000px var(--ec-surface);
+    transition: background-color 600000s 0s;
+}
+
+input:-webkit-autofill:focus {
+    box-shadow: inset 0 0 0 1000px var(--ec-surface), 0 0 0 2px var(--ec-focus);
+}
+
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--ec-font-heading);
     font-weight: 600;
@@ -200,194 +281,499 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 
+/* LOGIN — one composition in two parts:
+   left  = school photo under a teal treatment with the EduCheck branding,
+   right = the sign-in form directly on the ivory page.
+   The photo layer fades out inside its own column (light teal -> stronger
+   teal -> deep #14545E -> transparent teal -> page color), so the two sides
+   blend with no visible boundary and the form column only needs to be as
+   wide as the form plus its breathing room.
+   Tune the whole layout from the variables on .login-page. */
+
 .login-page {
+    --login-font: "Inter", var(--ec-font-sans);
+    --login-form-w: 400px;                        /* form max width */
+    --login-pad: clamp(48px, 5vw, 88px);          /* space beside the form */
+    /* form side grows with the screen so the form sits nearer the middle */
+    --login-panel: min(max(calc(var(--login-form-w) + 2 * var(--login-pad)), 45vw), 860px);
+    --login-fade: clamp(240px, 28vw, 520px);      /* length of the blend */
+    /* the faint tail of the blend may run into the empty space beside the form */
+    --login-overlap: max(0px, calc((var(--login-panel) - var(--login-form-w)) / 2 - 24px));
+
     min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--login-panel);
+    background: var(--ec-bg);
+    font-family: var(--login-font);
+}
+
+/* ---------- Brand side ---------- */
+
+.login-brand {
+    position: relative;
+    isolation: isolate;
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: 30px;
+    /* branding sits in the quieter left part of the photo,
+       leaving the teacher visible toward the centre */
+    justify-content: flex-start;
+    padding: 64px calc(var(--login-fade) - var(--login-overlap) + 16px) 64px clamp(40px, 5vw, 88px);
+    color: #ffffff;
+}
+
+.login-brand::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: calc(-1 * var(--login-overlap));
+    z-index: -1;
     background:
-        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.12), transparent 45%),
-        radial-gradient(circle at 85% 85%, rgba(255, 255, 255, 0.08), transparent 40%),
-        linear-gradient(135deg, var(--ec-primary-700), var(--ec-primary-500));
+        /* quieter area behind the branding: a soft teal falloff, no box */
+        radial-gradient(
+            ellipse 46% 62% at 18% 50%,
+            rgba(20, 84, 94, 0.42) 0%,
+            rgba(20, 84, 94, 0.24) 45%,
+            rgba(20, 84, 94, 0) 100%
+        ),
+        /* depth toward the bottom softens the papers and keyboard */
+        linear-gradient(180deg, rgba(8, 36, 41, 0) 40%, rgba(8, 36, 41, 0.34) 100%),
+        /* teal treatment: light tint -> gradually stronger -> deep #14545E,
+           reaching full strength only where the blend is already half done */
+        linear-gradient(
+            90deg,
+            rgba(20, 84, 94, 0.46) 0%,
+            rgba(20, 84, 94, 0.58) 30%,
+            rgba(20, 84, 94, 0.7) calc(100% - var(--login-fade)),
+            rgba(20, 84, 94, 0.86) calc(100% - var(--login-fade) * 0.7),
+            rgba(20, 84, 94, 0.96) calc(100% - var(--login-fade) * 0.5),
+            #14545e calc(100% - var(--login-fade) * 0.35),
+            #14545e 100%
+        ),
+        /* photo is pre-toned (less saturation and contrast) in the asset;
+           shifted so the teacher stays clear of the branding */
+        var(--login-photo) var(--login-photo-x, 30%) center / cover no-repeat,
+        #14545e;
+    /* teal -> transparent teal -> page color along a smootherstep curve,
+       so neither end of the blend has a visible edge */
+    -webkit-mask-image: var(--login-mask);
+    mask-image: var(--login-mask);
+    --login-mask: linear-gradient(
+        90deg,
+        #000 calc(100% - var(--login-fade)),
+        rgba(0, 0, 0, 0.991) calc(100% - var(--login-fade) * 0.9),
+        rgba(0, 0, 0, 0.942) calc(100% - var(--login-fade) * 0.8),
+        rgba(0, 0, 0, 0.837) calc(100% - var(--login-fade) * 0.7),
+        rgba(0, 0, 0, 0.683) calc(100% - var(--login-fade) * 0.6),
+        rgba(0, 0, 0, 0.5) calc(100% - var(--login-fade) * 0.5),
+        rgba(0, 0, 0, 0.317) calc(100% - var(--login-fade) * 0.4),
+        rgba(0, 0, 0, 0.163) calc(100% - var(--login-fade) * 0.3),
+        rgba(0, 0, 0, 0.058) calc(100% - var(--login-fade) * 0.2),
+        rgba(0, 0, 0, 0.009) calc(100% - var(--login-fade) * 0.1),
+        transparent 100%
+    );
 }
 
-.login-card {
+.login-brand-inner {
+    position: relative;
+    top: -6vh; /* sits slightly above centre, level with the form */
     width: 100%;
-    max-width: 520px;
-    background: var(--ec-surface);
-    border-radius: var(--ec-radius-lg);
-    padding: 44px;
-    box-shadow: var(--ec-shadow-lg);
+    max-width: 420px;
 }
 
-.brand-icon {
-    width: 76px;
-    height: 76px;
-    margin: 0 auto 18px;
-    border-radius: 22px;
-    background: linear-gradient(135deg, var(--ec-primary-400), var(--ec-primary-600));
+.login-brand-logo {
+    display: block;
+    width: 70px;
+    height: 70px;
+    margin-bottom: 24px;
+}
+
+.login-brand-name {
+    margin: 0;
+    font-size: 36px;
+    line-height: 44px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.login-brand-system {
+    margin: 6px 0 0;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.88);
+    text-wrap: balance; /* if it wraps, no lone "System" on the second line */
+}
+
+.login-brand-tagline {
+    margin: 20px 0 0;
+    max-width: 380px; /* keep the supporting line compact */
+    font-size: 15px;
+    line-height: 24px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.login-brand-school {
+    position: absolute;
+    left: clamp(40px, 6vw, 96px);
+    bottom: 32px;
+    margin: 0;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+/* ---------- Sign-in side ---------- */
+
+.login-main {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--ec-shadow-primary);
+    padding: 56px var(--login-pad);
 }
 
-.login-card h1 {
-    text-align: center;
+.login-form-wrap {
+    width: 100%;
+    max-width: var(--login-form-w);
+}
+
+.login-head {
+    margin-bottom: 28px;
+}
+
+.login-head h1 {
     margin: 0;
-    color: var(--ec-primary-500);
-    font-size: 34px;
+    font-family: var(--login-font);
+    font-size: 30px;
+    line-height: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ec-text);
 }
 
-.subtitle {
-    text-align: center;
+.login-subtitle {
+    margin: 6px 0 0;
+    font-size: 15px;
+    line-height: 22px;
     color: var(--ec-text-muted);
-    margin: 8px 0 14px;
-    font-size: 16px;
-    font-family: var(--ec-font-body);
 }
 
-.system-badge {
-    width: fit-content;
-    margin: 0 auto 32px;
-    padding: 8px 16px;
-    border-radius: var(--ec-radius-pill);
-    background: var(--ec-primary-50);
-    color: var(--ec-primary-600);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-}
-
-.login-card form {
+.login-form-wrap form {
     display: flex;
     flex-direction: column;
 }
 
-.login-card label {
-    margin-bottom: 8px;
-    margin-top: 18px;
-    color: var(--ec-slate-800);
+.login-form-wrap label,
+.login-form-wrap legend {
+    display: block;
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 13px;
+    line-height: 18px;
     font-weight: 600;
-    font-size: 14px;
+    color: var(--ec-text);
+}
+
+.login-field {
+    margin-top: 20px;
+}
+
+/* Role choice: one segmented control, selected = #14545E */
+.login-roles {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
 }
 
 .role-selector {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    padding: 3px;
+    background: var(--ec-surface-sunken);
+    border: 1px solid var(--ec-border);
+    border-radius: 8px;
 }
 
 .role {
-    min-height: 72px;
-    border: 1.5px solid var(--ec-border);
-    border-radius: var(--ec-radius-sm);
-    background: var(--ec-surface);
-    color: var(--ec-text);
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 14px;
+    height: 34px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ec-text-muted);
+    font-family: var(--login-font);
+    font-size: 13px;
+    line-height: 18px;
     font-weight: 500;
-    font-family: var(--ec-font-body);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease, background 0.15s ease;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--ec-duration) ease-out, color var(--ec-duration) ease-out;
 }
 
 .role:hover {
-    border-color: var(--ec-primary-400);
-    box-shadow: var(--ec-shadow-sm);
+    color: var(--ec-text);
 }
 
-.role:active {
-    transform: translateY(1px);
+.role[aria-pressed="true"] {
+    background: var(--ec-action);
+    color: var(--ec-on-action);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(20, 84, 94, 0.18);
 }
 
-.role.active-adviser {
-    border-color: var(--ec-role-adviser);
-    background: var(--ec-role-adviser-bg);
-    color: var(--ec-role-adviser);
+/* Inputs: white surface, restrained warm border, leading icon */
+.login-input {
+    position: relative;
 }
 
-.role.active-subject {
-    border-color: var(--ec-role-subject);
-    background: var(--ec-role-subject-bg);
-    color: var(--ec-role-subject);
+.login-input > svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ec-text-muted);
+    pointer-events: none;
 }
 
-.role.active-admin {
-    border-color: var(--ec-role-admin);
-    background: var(--ec-role-admin-bg);
-    color: var(--ec-role-admin);
-}
-
-.role.active-principal {
-    border-color: var(--ec-role-principal);
-    background: var(--ec-role-principal-bg);
-    color: var(--ec-role-principal);
-}
-
-.login-card input {
+.login-form-wrap input {
     width: 100%;
-    padding: 14px 15px;
-    border: 1.5px solid var(--ec-border);
-    border-radius: var(--ec-radius-sm);
+    height: 46px;
+    padding: 0 14px 0 42px;
+    border: 1px solid var(--ec-border-strong);
+    border-radius: 8px;
+    background: var(--ec-surface);
+    color: var(--ec-text);
+    font-family: var(--login-font);
     font-size: 15px;
-    font-family: var(--ec-font-body);
-    outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    line-height: 20px;
+    transition: border-color var(--ec-duration) ease-out, box-shadow var(--ec-duration) ease-out;
 }
 
-.login-card input:focus {
-    border-color: var(--ec-primary-500);
+:root:not([data-theme="dark"]) .login-form-wrap input {
+    background: #ffffff;
+}
+
+.login-form-wrap input#password {
+    padding-right: 48px;
+}
+
+.login-form-wrap input::placeholder {
+    color: var(--ec-text-muted);
+}
+
+.login-form-wrap input:hover {
+    border-color: var(--ec-text-muted);
+}
+
+.login-form-wrap input:focus {
+    outline: none;
+    border-color: var(--ec-action);
     box-shadow: 0 0 0 3px var(--ec-primary-100);
 }
 
-.login-button {
-    margin-top: 28px;
-    padding: 15px;
-    border: none;
-    border-radius: var(--ec-radius-sm);
-    background: var(--ec-primary-500);
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    font-family: var(--ec-font-heading);
+.login-reveal {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ec-text-muted);
     cursor: pointer;
-    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.login-reveal:hover {
+    background: var(--ec-hover);
+    color: var(--ec-text);
+}
+
+.role:focus-visible,
+.login-reveal:focus-visible,
+.login-button:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
+}
+
+.login-button {
+    margin-top: 24px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--ec-action);
+    color: var(--ec-on-action);
+    font-family: var(--login-font);
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--ec-duration) ease-out;
 }
 
 .login-button:hover {
-    background: var(--ec-primary-600);
-    box-shadow: var(--ec-shadow-primary);
-    transform: translateY(-1px);
+    background: var(--ec-action-hover);
 }
 
 .login-button:disabled {
-    opacity: 0.7;
     cursor: not-allowed;
-    transform: none;
+    background: var(--ec-surface-sunken);
+    color: var(--ec-text-muted);
 }
 
 .login-error {
-    margin-top: 16px;
-    padding: 12px 14px;
-    border-radius: var(--ec-radius-xs);
-    background: var(--ec-danger-bg);
-    color: var(--ec-danger);
-    border: 1px solid #fecaca;
-    font-size: 14px;
+    margin-top: 20px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border: 1px solid var(--ec-status-danger-border);
+    border-radius: 8px;
+    background: var(--ec-status-danger-bg);
+    color: var(--ec-status-danger-fg);
+    font-size: 13px;
+    line-height: 18px;
 }
 
-@media (max-width: 600px) {
-    .login-card {
-        padding: 28px;
+.login-error svg {
+    flex: none;
+    margin-top: 1px;
+}
+
+.login-note {
+    margin: 16px 0 0;
+    font-size: 12.5px;
+    line-height: 18px;
+    color: var(--ec-text-muted);
+}
+
+/* ---------- Tablet: smaller photo side, shorter blend ---------- */
+
+@media (max-width: 1100px) {
+    .login-page {
+        --login-pad: 36px;
+        --login-fade: 160px;
+        --login-photo-x: 48%;
     }
 
-    .role-selector {
+    .login-brand {
+        padding-left: 32px;
+    }
+
+    .login-brand-logo {
+        width: 56px;
+        height: 56px;
+        margin-bottom: 20px;
+    }
+
+    .login-brand-name {
+        font-size: 28px;
+        line-height: 36px;
+    }
+
+    .login-brand-system {
+        font-size: 15px;
+        line-height: 22px;
+    }
+
+    .login-brand-school {
+        left: 32px;
+    }
+}
+
+/* ---------- Mobile: compact branding header above the form ---------- */
+
+@media (max-width: 760px) {
+    .login-page {
+        --login-overlap: 0px;
         grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+    }
+
+    .login-brand {
+        justify-content: flex-start;
+        padding: 28px 20px 44px;
+    }
+
+    .login-brand::before {
+        background:
+            linear-gradient(180deg, rgba(20, 84, 94, 0.62) 0%, #14545e 70%),
+            var(--login-photo) center / cover no-repeat,
+            #14545e;
+        -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
+        mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
+    }
+
+    .login-brand-inner {
+        top: 0;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 14px;
+        align-items: center;
+    }
+
+    .login-brand-logo {
+        grid-row: span 2;
+        width: 52px;
+        height: 52px;
+        margin: 0;
+    }
+
+    .login-brand-name {
+        font-size: 24px;
+        line-height: 30px;
+    }
+
+    .login-brand-system {
+        margin: 2px 0 0;
+        font-size: 13px;
+        line-height: 18px;
+    }
+
+    .login-brand-tagline,
+    .login-brand-school {
+        display: none;
+    }
+
+    .login-main {
+        align-items: flex-start;
+        padding: 28px 20px 40px;
+    }
+
+    .login-head {
+        margin-bottom: 24px;
+    }
+
+    .login-head h1 {
+        font-size: 26px;
+        line-height: 32px;
+    }
+
+    .role {
+        height: 40px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .role,
+    .login-form-wrap input,
+    .login-button {
+        transition: none;
     }
 }

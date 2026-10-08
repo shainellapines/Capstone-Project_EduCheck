@@ -11,6 +11,7 @@ import {
 
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
+import StatusBadge from "../components/StatusBadge";
 import { getToken, getStoredUser } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
 
@@ -144,12 +145,6 @@ function Dashboard() {
         .sort((a, b) => new Date(b.upload_date) - new Date(a.upload_date))
         .slice(0, 4);
 
-    const getStatusBadgeClass = (status) => {
-        if (status === "Validated") return "status-badge submitted";
-        if (status === "Needs Attention") return "status-badge needs-attention";
-        return "status-badge draft";
-    };
-
     const isLoading = loadingSchoolYears || loadingData;
     const needsInterventionTotal = performanceCounts.at_risk + performanceCounts.needs_intervention;
 
@@ -166,11 +161,11 @@ function Dashboard() {
 
                     <div>
                         <h1>
-                            Welcome, {user.username}
+                            Dashboard
                         </h1>
 
                         <p>
-                            Adviser (Homeroom Teacher)
+                            Class Adviser · {user.username}
                         </p>
                     </div>
 
@@ -332,7 +327,7 @@ function Dashboard() {
 
                                             <p>
                                                 {needsInterventionTotal} student
-                                                {needsInterventionTotal === 1 ? "" : "s"} require
+                                                {needsInterventionTotal === 1 ? " requires" : "s require"}{" "}
                                                 attention this school year
                                             </p>
 
@@ -391,9 +386,7 @@ function Dashboard() {
                                         </div>
 
                                         <div className="record-status">
-                                            <span className={getStatusBadgeClass(upload.status)}>
-                                                {upload.status}
-                                            </span>
+                                            <StatusBadge status={upload.status} />
                                         </div>
 
                                         <div className="record-actions">

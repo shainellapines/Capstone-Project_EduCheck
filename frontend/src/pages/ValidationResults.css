@@ -67,7 +67,7 @@
     border: 1px solid var(--ec-slate-200);
     border-radius: 12px;
     padding: 18px 20px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-shadow: none;
 }
 
 .vr-category-card .label {
@@ -126,7 +126,7 @@
     border: none;
     border-radius: 8px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-size: 14px;
     font-family: inherit;
@@ -153,19 +153,20 @@
     border-top: none;
 }
 
+/* The SeverityBadge carries the severity; the learner name stays in text color. */
 .vr-issue-row .issue-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ec-space-2);
     font-weight: 600;
-    color: var(--ec-danger);
+    color: var(--ec-text);
     font-size: 14px;
-}
-
-.vr-issue-row.severity-warning .issue-header {
-    color: var(--ec-warning);
 }
 
 .vr-issue-row p {
     margin: 6px 0 0;
-    color: #57534e;
+    color: var(--ec-text-muted);
     font-size: 14px;
 }
 

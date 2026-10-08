@@ -123,7 +123,7 @@
 
 .pr-btn-primary {
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     box-shadow: var(--ec-shadow-xs);
 }
 
@@ -504,33 +504,43 @@
     white-space: nowrap;
 }
 
+/* Year-record state (Complete / Partial / Unavailable...), shaped like the
+   design system's badge: 22px, 4px corners, hairline border. */
 .pr-badge {
     flex: none;
-    padding: 3px 10px;
-    border-radius: var(--ec-radius-pill);
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--ec-radius-xs);
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
 }
 
 .pr-badge-success {
-    background: var(--ec-success-bg);
-    color: var(--ec-success);
+    background: none;
+    color: var(--ec-status-success-fg);
+    border-color: var(--ec-status-success-fg);
 }
 
 .pr-badge-warning {
-    background: var(--ec-warning-bg);
-    color: var(--ec-warning);
+    background: var(--ec-severity-warning-bg);
+    color: var(--ec-severity-warning-fg);
+    border-color: var(--ec-severity-warning-border);
 }
 
 .pr-badge-info {
-    background: var(--ec-primary-50);
-    color: var(--ec-primary-600);
+    background: var(--ec-status-info-bg);
+    color: var(--ec-status-info-fg);
+    border-color: var(--ec-status-info-border);
 }
 
 .pr-badge-neutral {
-    background: var(--ec-slate-100);
-    color: var(--ec-slate-500);
+    background: var(--ec-status-neutral-bg);
+    color: var(--ec-status-neutral-fg);
+    border-color: var(--ec-status-neutral-border);
 }
 
 .pr-grade-meta {
@@ -804,7 +814,7 @@
     display: grid;
     place-items: center;
     padding: 24px;
-    background: rgba(15, 23, 42, 0.45);
+    background: var(--ec-overlay);
     backdrop-filter: blur(2px);
 }
 

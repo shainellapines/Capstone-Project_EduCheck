@@ -13,6 +13,7 @@ import {
 
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
+import StatusBadge from "../components/StatusBadge";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -134,11 +135,11 @@ function SubjectDashboard() {
 
                     <div>
                         <h1>
-                            Welcome, {user.username}
+                            Dashboard
                         </h1>
 
                         <p>
-                            Academic Record Submission
+                            Subject Teacher · {user.username}
                         </p>
                     </div>
 
@@ -364,19 +365,7 @@ function SubjectDashboard() {
                                     </div>
 
                                     <div className="record-status">
-                                        <span
-                                            className={
-                                                record.status?.toLowerCase() === "validated"
-                                                    ? "status-badge submitted"
-                                                    : record.status?.toLowerCase() === "needs attention"
-                                                        ? "status-badge needs-attention"
-                                                        : record.status?.toLowerCase() === "needs revision"
-                                                            ? "status-badge needs-revision"
-                                                            : "status-badge draft"
-                                            }
-                                        >
-                                            {record.status}
-                                        </span>
+                                        <StatusBadge status={record.status} />
                                     </div>
 
                                     <div className="record-actions">

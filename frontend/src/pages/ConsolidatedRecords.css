@@ -44,7 +44,7 @@
 
 .cr-btn-primary {
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
 }
 
 .cr-btn-primary:hover:not(:disabled) {
@@ -53,7 +53,7 @@
 
 .cr-btn-approve {
     background: var(--ec-success);
-    color: #ffffff;
+    color: var(--ec-on-status-solid);
     padding: 8px 14px;
     font-size: 13px;
 }
@@ -64,7 +64,7 @@
 
 .cr-btn-reject {
     background: var(--ec-danger);
-    color: #ffffff;
+    color: var(--ec-on-status-solid);
     padding: 8px 14px;
     font-size: 13px;
 }
@@ -236,7 +236,7 @@
 .cr-reject-textarea:focus {
     outline: none;
     border-color: var(--ec-primary-500);
-    box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
+    box-shadow: 0 0 0 2px var(--ec-focus);
 }
 
 .cr-rejection-reason {
@@ -324,7 +324,7 @@
 
 .cr-btn-revision {
     background: var(--ec-revision);
-    color: #ffffff;
+    color: var(--ec-on-status-solid);
     padding: 6px 10px;
     font-size: 12px;
 }

@@ -14,6 +14,7 @@ import {
 import "./Dashboard.css";
 import "./Settings.css";
 import Sidebar from "../components/Sidebar";
+import "../components/StatusBadge.css";
 import { getToken, getStoredUser } from "../utils/session";
 import { getStoredTheme, setTheme } from "../utils/theme";
 
@@ -254,8 +255,8 @@ function Settings() {
                                             <span
                                                 className={
                                                     account.status === "Active"
-                                                        ? "status-badge submitted"
-                                                        : "status-badge draft"
+                                                        ? "ec-badge ec-badge-success-outline"
+                                                        : "ec-badge ec-badge-neutral"
                                                 }
                                             >
                                                 {account.status}

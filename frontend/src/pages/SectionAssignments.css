@@ -26,7 +26,7 @@
     border: none;
     border-radius: 8px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-size: 14px;
     font-family: inherit;
@@ -92,7 +92,7 @@
 .sa-field select:focus {
     outline: none;
     border-color: var(--ec-primary-500);
-    box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
+    box-shadow: 0 0 0 2px var(--ec-focus);
 }
 
 .sa-form-actions {
@@ -117,7 +117,7 @@
     border: none;
     border-radius: 8px;
     background: var(--ec-success);
-    color: #ffffff;
+    color: var(--ec-on-status-solid);
     font-weight: 600;
     font-size: 14px;
     font-family: inherit;
@@ -198,7 +198,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 12px;
-    border: 1px solid #fecaca;
+    border: 1px solid var(--ec-status-danger-border);
     border-radius: 6px;
     background: var(--ec-danger-bg);
     color: var(--ec-danger);
@@ -209,7 +209,7 @@
 }
 
 .sa-delete-button:hover {
-    background: #ffe4e4;
+    background: var(--ec-status-danger-bg);
 }
 
 @media (max-width: 700px) {

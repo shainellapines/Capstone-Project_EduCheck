@@ -14,6 +14,7 @@ import {
 
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
+import StatusBadge from "../components/StatusBadge";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -143,13 +144,6 @@ function AdminDashboard() {
         })
         .slice(0, 5);
 
-    const getStatusBadgeClass = (status) => {
-        if (status === "Approved") return "status-badge submitted";
-        if (status === "Rejected") return "status-badge needs-attention";
-        if (status === "Amendment Requested") return "status-badge needs-revision";
-        return "status-badge draft";
-    };
-
     const isLoading = loadingSchoolYears || loadingData;
 
     return (
@@ -165,11 +159,11 @@ function AdminDashboard() {
 
                     <div>
                         <h1>
-                            Welcome, {user.username}
+                            Dashboard
                         </h1>
 
                         <p>
-                            EduCheck System Administration
+                            School Administrator · {user.username}
                         </p>
                     </div>
 
@@ -350,9 +344,7 @@ function AdminDashboard() {
                                             </span>
                                         </div>
 
-                                        <span className={getStatusBadgeClass(student.submission.status)}>
-                                            {student.submission.status}
-                                        </span>
+                                        <StatusBadge status={student.submission.status} />
 
                                     </div>
                                 ))}

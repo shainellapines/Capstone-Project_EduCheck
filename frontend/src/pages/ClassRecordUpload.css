@@ -173,7 +173,7 @@
     padding: 10px 20px;
     border-radius: 8px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
@@ -217,7 +217,7 @@
     border: none;
     border-radius: 8px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-size: 15px;
     font-weight: 600;
     font-family: inherit;
@@ -383,7 +383,7 @@
     border-radius: 8px;
     padding: 10px 16px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-size: 14px;
     font-family: inherit;

@@ -87,7 +87,6 @@
 
 .settings-theme-option:hover {
     border-color: var(--ec-primary-400);
-    transform: translateY(-1px);
 }
 
 .settings-theme-option.active {
@@ -105,15 +104,15 @@
 }
 
 .settings-theme-preview.light-preview {
-    background: #f1f5f9;
-    color: #b45309;
-    border: 1px solid #e2e8f0;
+    background: #f6f3ec;
+    color: #14545e;
+    border: 1px solid #ddd7ca;
 }
 
 .settings-theme-preview.dark-preview {
-    background: #12151c;
-    color: #82a2f3;
-    border: 1px solid #2a3040;
+    background: #1f1e1b;
+    color: #7bb1b6;
+    border: 1px solid #35322d;
 }
 
 /* CHANGE PASSWORD */
@@ -178,7 +177,7 @@
     border: none;
     border-radius: var(--ec-radius-sm);
     background: var(--ec-primary-500);
-    color: white;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-size: 14px;
     font-family: var(--ec-font-body);

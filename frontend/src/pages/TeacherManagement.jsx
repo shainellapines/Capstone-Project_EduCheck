@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import "./TeacherManagement.css";
+import Sidebar from "../components/Sidebar";
 
 function TeacherManagement() {
     const API_URL = "http://localhost:5000/api";
@@ -532,6 +533,11 @@ function TeacherManagement() {
     // ==========================================
 
     return (
+        <div className="dashboard-layout">
+
+            <Sidebar activeKey="teacher-management" />
+
+            <main className="dashboard-main">
         <div className="teacher-management-page">
 
             {/* HEADER */}
@@ -1262,6 +1268,9 @@ function TeacherManagement() {
 
                 </div>
             )}
+
+        </div>
+            </main>
 
         </div>
     );

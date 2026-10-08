@@ -10,15 +10,15 @@
 .sidebar {
     width: 280px;
     min-height: 100vh;
-    background: linear-gradient(190deg, var(--ec-sidebar-start) 0%, var(--ec-sidebar-end) 100%);
-    color: white;
+    background: var(--ec-surface);
+    color: var(--ec-text);
+    border-right: 1px solid var(--ec-border);
     display: flex;
     flex-direction: column;
     position: fixed;
     left: 0;
     top: 0;
     bottom: 0;
-    box-shadow: 4px 0 24px rgba(15, 23, 42, 0.12);
     z-index: 10;
 }
 
@@ -30,15 +30,15 @@
 }
 
 .brand-logo {
-    width: 50px;
-    height: 50px;
-    border-radius: var(--ec-radius-sm);
-    background: var(--ec-surface);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--ec-radius);
+    background: var(--ec-primary-50);
+    color: var(--ec-link);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
 }
 
 .sidebar-brand h2 {
@@ -49,31 +49,24 @@
 }
 
 .sidebar-brand span {
-    font-size: 12.5px;
-    opacity: 0.72;
+    font-size: 12px;
+    color: var(--ec-text-muted);
     letter-spacing: 0.01em;
 }
 
+/* Role is plain text, the same for every role: no color-coded pill. */
 .role-badge {
-    margin: 0 20px 22px;
+    margin: 0 24px 16px;
     width: fit-content;
     display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 6px 13px;
-    border-radius: var(--ec-radius-pill);
-    background: rgba(255, 255, 255, 0.14);
-    color: white;
-    font-size: 12.5px;
+    gap: 6px;
+    padding: 0;
+    color: var(--ec-text-muted);
+    font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.01em;
-    border: 1px solid rgba(255, 255, 255, 0.18);
 }
-
-.role-badge-admin { background: rgba(232, 208, 251, 0.9); color: #5b2c82; border-color: transparent; }
-.role-badge-subject { background: rgba(206, 228, 251, 0.9); color: #1b4d84; border-color: transparent; }
-.role-badge-adviser { background: rgba(199, 240, 222, 0.9); color: #0d5d43; border-color: transparent; }
-.role-badge-principal { background: rgba(250, 227, 186, 0.9); color: #7a4f0f; border-color: transparent; }
 
 .sidebar-nav {
     display: flex;
@@ -86,37 +79,30 @@
     display: flex;
     align-items: center;
     gap: 13px;
-    padding: 11px 14px;
-    border-radius: var(--ec-radius-sm);
-    color: rgba(255, 255, 255, 0.78);
+    padding: 9px 12px;
+    border-radius: var(--ec-radius);
+    color: var(--ec-text-muted);
     text-decoration: none;
-    font-size: 14.5px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     position: relative;
-    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    transition: background var(--ec-duration) ease-out, color var(--ec-duration) ease-out;
 }
 
 .nav-item svg {
     flex-shrink: 0;
-    opacity: 0.85;
-    transition: opacity 0.15s ease;
 }
 
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: white;
-    transform: translateX(2px);
+    background: var(--ec-hover);
+    color: var(--ec-text);
 }
 
 .nav-item.active {
-    background: rgba(255, 255, 255, 0.16);
-    color: white;
+    background: var(--ec-selected);
+    color: var(--ec-link);
     font-weight: 600;
-}
-
-.nav-item.active svg {
-    opacity: 1;
 }
 
 .nav-item.active::before {
@@ -126,13 +112,19 @@
     top: 9px;
     bottom: 9px;
     width: 3px;
-    border-radius: 0 4px 4px 0;
-    background: var(--ec-surface);
+    border-radius: 0 2px 2px 0;
+    background: var(--ec-action);
+}
+
+.nav-item:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
 }
 
 .notification-badge {
     margin-left: auto;
-    background: #f04438;
+    background: var(--ec-status-danger-fg);
+    color: var(--ec-on-status-solid);
     width: 20px;
     height: 20px;
     border-radius: 50%;
@@ -141,13 +133,12 @@
     justify-content: center;
     font-size: 10.5px;
     font-weight: 700;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
 
 .sidebar-bottom {
     margin-top: auto;
     padding: 12px 14px 18px;
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid var(--ec-border);
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -232,7 +223,7 @@
     padding: 14px 16px;
     background: var(--ec-danger-bg);
     color: var(--ec-danger);
-    border: 1px solid #fecaca;
+    border: 1px solid var(--ec-status-danger-border);
     border-radius: var(--ec-radius-sm);
     margin-bottom: 20px;
 }
@@ -243,8 +234,8 @@
     gap: 10px;
     padding: 14px 16px;
     background: var(--ec-success-bg);
-    color: #15803d;
-    border: 1px solid #bbf7d0;
+    color: var(--ec-status-success-fg);
+    border: 1px solid var(--ec-status-success-border);
     border-radius: var(--ec-radius-sm);
     margin-bottom: 20px;
 }
@@ -310,44 +301,46 @@
 /* OVERVIEW */
 
 .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 18px;
-    margin-bottom: 26px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
+    background: var(--ec-border);
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    overflow: hidden;
+    margin-bottom: 24px;
 }
 
 .overview-card {
+    flex: 1 1 180px;
     background: var(--ec-surface);
-    border: 1px solid var(--ec-slate-200);
-    border-radius: var(--ec-radius-md);
-    padding: 22px 24px;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    box-shadow: var(--ec-shadow-xs);
-    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    align-items: flex-start;
+    gap: 12px;
+    transition: background var(--ec-duration) ease-out;
 }
 
-.overview-card:hover {
-    box-shadow: var(--ec-shadow-md);
-    transform: translateY(-2px);
-    border-color: var(--ec-slate-300);
-}
 
 .overview-card span {
     display: block;
-    color: var(--ec-slate-500);
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 10px;
+    color: var(--ec-text-muted);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin-bottom: 8px;
 }
 
-.overview-card strong {
-    font-size: 28px;
-    font-weight: 600;
-    font-family: var(--ec-font-heading);
-    color: var(--ec-primary-500);
-    letter-spacing: -0.01em;
+.overview-card strong,
+.overview-card strong.green-text,
+.overview-card strong.purple-text,
+.overview-card strong.red-text,
+.overview-card strong.orange-text {
+    font: 500 28px/32px var(--ec-font-display);
+    color: var(--ec-text) !important;
+    font-variant-numeric: tabular-nums;
 }
 
 .green-text {
@@ -367,38 +360,25 @@
 }
 
 .card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--ec-radius-sm);
+    flex: none;
+    width: 20px;
+    height: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--ec-text-muted);
 }
 
-.card-icon.blue {
-    color: var(--ec-primary-500);
-    background: var(--ec-primary-50);
+.card-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.75;
 }
 
-.card-icon.green {
-    color: var(--ec-success);
-    background: var(--ec-success-bg);
-}
 
-.card-icon.purple {
-    color: var(--ec-role-admin);
-    background: var(--ec-role-admin-bg);
-}
 
-.card-icon.red {
-    color: var(--ec-danger);
-    background: var(--ec-danger-bg);
-}
 
-.card-icon.orange {
-    color: var(--ec-warning);
-    background: var(--ec-warning-bg);
-}
+
 
 /* CARDS */
 
@@ -427,62 +407,74 @@
 /* SUMMARY */
 
 .student-summary-grid {
-    padding: 0 28px 28px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 18px;
+    margin: 0 26px 26px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
+    background: var(--ec-border);
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    overflow: hidden;
 }
 
 .summary-item {
-    padding: 18px;
-    border-radius: 9px;
+    flex: 1 1 180px;
+    padding: 14px 16px;
+    background: var(--ec-surface);
+    color: var(--ec-text);
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
 }
 
 .summary-item span {
     display: block;
-    font-size: 13px;
+    color: var(--ec-text-muted);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
     margin-bottom: 4px;
 }
 
 .summary-item strong {
-    font-size: 23px;
+    font: 500 24px/28px var(--ec-font-display);
+    font-variant-numeric: tabular-nums;
 }
 
-.blue-summary {
-    color: var(--ec-primary-600);
-    background: var(--ec-primary-50);
+.blue-summary > svg {
+    color: var(--ec-link);
 }
 
-.green-summary {
-    color: #0d7a48;
-    background: var(--ec-success-bg);
+.green-summary > svg {
+    color: var(--ec-status-success-fg);
 }
 
-.yellow-summary {
-    color: #92600a;
-    background: var(--ec-warning-bg);
+.yellow-summary > svg {
+    color: var(--ec-severity-warning-fg);
 }
 
-.red-summary {
-    color: #b91c1c;
-    background: var(--ec-danger-bg);
+.red-summary > svg {
+    color: var(--ec-status-danger-fg);
 }
 
 /* ATTENTION */
 
 .attention-card {
-    border: 1px solid #fed7aa;
-    background: var(--ec-warning-bg);
-    border-radius: var(--ec-radius-md);
-    padding: 24px 26px;
-    margin-bottom: 26px;
+    border: 1px solid var(--ec-border);
+    background: var(--ec-surface);
+    border-radius: var(--ec-radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #9a4a0a;
+    gap: 16px;
+    color: var(--ec-text);
+}
+
+.attention-content > svg {
+    flex: none;
+    color: var(--ec-severity-warning-fg);
 }
 
 .attention-content {
@@ -491,22 +483,26 @@
 }
 
 .attention-card h3 {
-    margin: 0 0 6px;
-    font-size: 17px;
+    margin: 0 0 4px;
+    font-size: 16px;
+    color: var(--ec-text);
 }
 
 .attention-card p {
-    margin: 0 0 14px;
+    margin: 0 0 12px;
+    color: var(--ec-text-muted);
     font-family: var(--ec-font-body);
 }
 
 .class-alert {
-    background: var(--ec-surface);
-    border: 1px solid #fed7aa;
-    padding: 13px 14px;
-    border-radius: var(--ec-radius-xs);
+    background: var(--ec-surface-sunken);
+    border: 1px solid var(--ec-border);
+    padding: 8px 12px;
+    border-radius: var(--ec-radius);
     display: flex;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: fit-content;
 }
 
 .class-alert span {
@@ -515,20 +511,25 @@
 }
 
 .attention-card button {
-    border: none;
-    background: var(--ec-warning);
-    color: white;
-    padding: 11px 20px;
-    border-radius: var(--ec-radius-xs);
+    flex: none;
+    border: 1px solid transparent;
+    background: var(--ec-action);
+    color: var(--ec-on-action);
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--ec-radius);
     cursor: pointer;
-    font-weight: 600;
-    font-family: var(--ec-font-heading);
-    transition: background 0.15s ease, transform 0.15s ease;
+    font: 600 13px/18px var(--ec-font-sans);
+    transition: background var(--ec-duration) ease-out;
 }
 
 .attention-card button:hover {
-    background: #b45f09;
-    transform: translateY(-1px);
+    background: var(--ec-action-hover);
+}
+
+.attention-card button:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
 }
 
 /* RECORDS */
@@ -585,30 +586,34 @@
     display: inline-flex !important;
     width: fit-content;
     margin-top: 0 !important;
-    padding: 6px 13px;
-    border-radius: var(--ec-radius-pill);
-    font-size: 12.5px !important;
+    padding: 3px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--ec-radius-xs);
+    font-size: 12px !important;
     font-weight: 600;
 }
 
 .status-badge.draft {
-    color: #92600a;
-    background: var(--ec-warning-bg);
+    color: var(--ec-status-neutral-fg);
+    background: var(--ec-status-neutral-bg);
+    border-color: var(--ec-status-neutral-border);
 }
 
 .status-badge.submitted {
-    color: var(--ec-role-admin);
-    background: var(--ec-role-admin-bg);
+    color: var(--ec-on-status-solid);
+    background: var(--ec-status-info-solid);
 }
 
 .status-badge.needs-attention {
     color: var(--ec-danger);
     background: var(--ec-danger-bg);
+    border-color: var(--ec-status-danger-border);
 }
 
 .status-badge.needs-revision {
-    color: #6d28d9;
-    background: #ede9fe;
+    color: var(--ec-status-revision-fg);
+    background: var(--ec-status-revision-bg);
+    border-color: var(--ec-status-revision-border);
 }
 
 .revision-remarks-note {
@@ -616,7 +621,7 @@
     margin-top: 4px;
     font-size: 13px;
     font-style: italic;
-    color: #6d28d9;
+    color: var(--ec-status-revision-fg);
 }
 
 .view-results-button {
@@ -624,7 +629,7 @@
     border-radius: var(--ec-radius-xs);
     padding: 9px 14px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-family: var(--ec-font-body);
     font-size: 13.5px;
@@ -634,7 +639,6 @@
 
 .view-results-button:hover {
     background: var(--ec-primary-600);
-    transform: translateY(-1px);
 }
 
 /* Used wherever the same action repeats once per row (dashboard "recent
@@ -723,12 +727,12 @@
     gap: 9px;
     cursor: pointer;
     font-family: var(--ec-font-body);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition: background var(--ec-duration) ease-out, border-color var(--ec-duration) ease-out;
 }
 
 .quick-action:hover {
-    box-shadow: var(--ec-shadow-md);
-    transform: translateY(-2px);
+    background: var(--ec-hover) !important;
+    border-color: var(--ec-border-strong) !important;
 }
 
 .quick-action:active {
@@ -753,27 +757,27 @@
 }
 
 .blue-action {
-    color: var(--ec-role-subject);
-    background: var(--ec-role-subject-bg);
-    border-color: #bcd9f5;
+    color: var(--ec-text);
+    background: var(--ec-surface);
+    border-color: var(--ec-border);
 }
 
 .purple-action {
-    color: var(--ec-role-admin);
-    background: var(--ec-role-admin-bg);
-    border-color: #dfc7ef;
+    color: var(--ec-text);
+    background: var(--ec-surface);
+    border-color: var(--ec-border);
 }
 
 .green-action {
-    color: var(--ec-role-adviser);
-    background: var(--ec-role-adviser-bg);
-    border-color: #b9e6d3;
+    color: var(--ec-text);
+    background: var(--ec-surface);
+    border-color: var(--ec-border);
 }
 
 .orange-action {
-    color: var(--ec-role-principal);
-    background: var(--ec-role-principal-bg);
-    border-color: #f2d9ab;
+    color: var(--ec-text);
+    background: var(--ec-surface);
+    border-color: var(--ec-border);
 }
 
 /* RESPONSIVE */

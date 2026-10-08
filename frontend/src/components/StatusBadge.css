@@ -1,0 +1,84 @@
+/* StatusBadge / SeverityBadge / GradeCell, from the EduCheck design system
+   (components/bundle.css). Every value is an --ec- token from App.css. */
+
+.ec-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ec-space-1);
+    height: 22px;
+    width: fit-content;
+    padding: 0 var(--ec-space-2) 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--ec-radius-xs);
+    font: 600 12px/16px var(--ec-font-sans);
+    white-space: nowrap;
+}
+
+.ec-badge svg {
+    flex: none;
+}
+
+.ec-badge-neutral {
+    background: var(--ec-status-neutral-bg);
+    color: var(--ec-status-neutral-fg);
+    border-color: var(--ec-status-neutral-border);
+}
+
+.ec-badge-info {
+    background: var(--ec-status-info-bg);
+    color: var(--ec-status-info-fg);
+    border-color: var(--ec-status-info-border);
+}
+
+.ec-badge-info-solid {
+    background: var(--ec-status-info-solid);
+    color: var(--ec-on-status-solid);
+    border-color: var(--ec-status-info-solid);
+}
+
+.ec-badge-revision {
+    background: var(--ec-status-revision-bg);
+    color: var(--ec-status-revision-fg);
+    border-color: var(--ec-status-revision-border);
+}
+
+.ec-badge-danger {
+    background: var(--ec-status-danger-bg);
+    color: var(--ec-status-danger-fg);
+    border-color: var(--ec-status-danger-border);
+}
+
+.ec-badge-success-outline {
+    background: none;
+    color: var(--ec-status-success-fg);
+    border-color: var(--ec-status-success-fg);
+}
+
+.ec-badge-success-solid {
+    background: var(--ec-status-success-solid);
+    color: var(--ec-on-status-solid);
+    border-color: var(--ec-status-success-solid);
+}
+
+.ec-badge-warning {
+    background: var(--ec-severity-warning-bg);
+    color: var(--ec-severity-warning-fg);
+    border-color: var(--ec-severity-warning-border);
+}
+
+.ec-badge-critical {
+    background: var(--ec-status-danger-bg);
+    color: var(--ec-status-danger-fg);
+    border-color: var(--ec-status-danger-border);
+}
+
+.ec-grade {
+    font-family: var(--ec-font-mono);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.ec-grade-empty {
+    color: var(--ec-text-muted);
+}

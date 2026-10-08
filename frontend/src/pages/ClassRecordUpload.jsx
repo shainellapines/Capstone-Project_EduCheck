@@ -277,7 +277,7 @@ function ClassRecordUpload() {
 
                         {selectedFile && (
                             <div className="cru-selected-file">
-                                <FileSpreadsheet size={22} color="#16a34a" />
+                                <FileSpreadsheet size={22} style={{ color: "var(--ec-status-success-fg)" }} />
 
                                 <div>
                                     <strong>{selectedFile.name}</strong>

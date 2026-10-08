@@ -143,11 +143,11 @@ function PrincipalDashboard() {
 
                     <div>
                         <h1>
-                            Welcome, {user.username}
+                            Dashboard
                         </h1>
 
                         <p>
-                            School-wide academic record oversight
+                            Principal · School-wide, view-only · {user.username}
                         </p>
                     </div>
 

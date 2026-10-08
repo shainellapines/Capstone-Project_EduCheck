@@ -225,7 +225,7 @@ function RecordsRepository({ sf10Mode = false }) {
                             {results.map((student) => (
                                 <div key={student.lrn} className="rr-result-row">
                                     <div className="rr-result-identity">
-                                        <IdCard size={20} color="#64748b" />
+                                        <IdCard size={20} style={{ color: "var(--ec-text-muted)" }} />
 
                                         <div>
                                             <div className="name">

@@ -137,7 +137,7 @@ function Sidebar({ activeKey }) {
 
             <div className="sidebar-brand">
                 <div className="brand-logo">
-                    <GraduationCap size={28} color="#2447b8" strokeWidth={2.2} />
+                    <GraduationCap size={22} strokeWidth={1.75} />
                 </div>
 
                 <div>

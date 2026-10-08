@@ -144,7 +144,8 @@
 }
 
 .an-row-flagged:hover {
-    background: #fecaca;
+    background: var(--ec-status-danger-bg);
+    box-shadow: inset 3px 0 0 var(--ec-status-danger-fg);
 }
 
 /* INTERVENTION FLAG LIST */

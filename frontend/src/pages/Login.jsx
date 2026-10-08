@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, User, BookOpen, ShieldCheck, Eye } from "lucide-react";
+import { ArrowRight, CircleAlert, Eye, EyeOff, LockKeyhole, UserRound } from "lucide-react";
+import logo from "../assets/educheck-logo-white.png";
+import schoolPhoto from "../assets/login-photo.jpg";
+// The school's name, set once per installation in frontend/.env
+// (VITE_SCHOOL_NAME=...). Hidden when not set.
+const SCHOOL_NAME = (import.meta.env.VITE_SCHOOL_NAME || "").trim();
 
 function Login() {
     const [role, setRole] = useState("adviser");
@@ -8,6 +13,8 @@ function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    // Display only: lets the user check what they typed.
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async (e) => {
@@ -63,117 +70,142 @@ function Login() {
         }
     };
 
+    const roles = [
+        { key: "adviser", label: "Adviser" },
+        { key: "subject", label: "Subject" },
+        { key: "admin", label: "Admin" },
+        { key: "principal", label: "Principal" },
+    ];
+
     return (
         <div className="login-page">
-            <div className="login-card">
 
-                <div className="brand-icon">
-                    <GraduationCap size={36} color="#ffffff" strokeWidth={2} />
+            {/* BRAND: school photo under an even #14545E veil */}
+            <aside
+                className="login-brand"
+                style={{ "--login-photo": `url(${schoolPhoto})` }}
+            >
+                <div className="login-brand-inner">
+                    <img
+                        className="login-brand-logo"
+                        src={logo}
+                        alt="EduCheck logo"
+                        width="80"
+                        height="80"
+                    />
+                    <p className="login-brand-name">EduCheck</p>
+                    <p className="login-brand-system">
+                        Academic Record Validation &amp; Consolidation System
+                    </p>
+                    <p className="login-brand-tagline">
+                        Validate, consolidate, and manage academic records with confidence.
+                    </p>
                 </div>
 
-                <h1>EduCheck</h1>
+                {SCHOOL_NAME && <p className="login-brand-school">{SCHOOL_NAME}</p>}
+            </aside>
 
-                <p className="subtitle">
-                    Academic Record Validation System
-                </p>
+            {/* AUTHENTICATION: form directly on the ivory page */}
+            <main className="login-main">
+                <div className="login-form-wrap">
 
-                <div className="system-badge">
-                    Subject-Based RBAC Enabled
-                </div>
+                    <header className="login-head">
+                        <h1>Sign in</h1>
+                        <p className="login-subtitle">
+                            Welcome back. Sign in to continue to EduCheck.
+                        </p>
+                    </header>
 
-                <form onSubmit={handleLogin}>
+                    <form onSubmit={handleLogin}>
 
-                    <label>Login as</label>
+                        <fieldset className="login-roles">
+                            <legend>Sign in as</legend>
+                            <div className="role-selector">
+                                {roles.map(({ key, label }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        className="role"
+                                        aria-pressed={role === key}
+                                        onClick={() => setRole(key)}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </fieldset>
 
-                    <div className="role-selector">
-
-                        <button
-                            type="button"
-                            className={role === "adviser" ? "role active-adviser" : "role"}
-                            onClick={() => setRole("adviser")}
-                        >
-                            <User size={20} />
-                            <span>Adviser</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            className={role === "subject" ? "role active-subject" : "role"}
-                            onClick={() => setRole("subject")}
-                        >
-                            <BookOpen size={20} />
-                            <span>Subject</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            className={role === "admin" ? "role active-admin" : "role"}
-                            onClick={() => setRole("admin")}
-                        >
-                            <ShieldCheck size={20} />
-                            <span>Admin</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            className={role === "principal" ? "role active-principal" : "role"}
-                            onClick={() => setRole("principal")}
-                        >
-                            <Eye size={20} />
-                            <span>Principal</span>
-                        </button>
-
-                    </div>
-
-                    <label htmlFor="username">
-                        Username
-                    </label>
-
-                    <input
-                        id="username"
-                        type="text"
-                        placeholder="Enter your username"
-                        value={username}
-                        onChange={(e) =>
-                            setUsername(e.target.value)
-                        }
-                        required
-                    />
-
-                    <label htmlFor="password">
-                        Password
-                    </label>
-
-                    <input
-                        id="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) =>
-                            setPassword(e.target.value)
-                        }
-                        required
-                    />
-
-                    {error && (
-                        <div className="login-error">
-                            {error}
+                        <div className="login-field">
+                            <label htmlFor="username">Username</label>
+                            <div className="login-input">
+                                <UserRound size={18} strokeWidth={1.75} aria-hidden="true" />
+                                <input
+                                    id="username"
+                                    type="text"
+                                    autoComplete="username"
+                                    placeholder="Enter your username"
+                                    value={username}
+                                    onChange={(e) =>
+                                        setUsername(e.target.value)
+                                    }
+                                    required
+                                />
+                            </div>
                         </div>
-                    )}
 
-                    <button
-                        type="submit"
-                        className="login-button"
-                        disabled={loading}
-                    >
-                        {loading
-                            ? "Signing in..."
-                            : "Login to Dashboard"}
-                    </button>
+                        <div className="login-field">
+                            <label htmlFor="password">Password</label>
+                            <div className="login-input">
+                                <LockKeyhole size={18} strokeWidth={1.75} aria-hidden="true" />
+                                <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    autoComplete="current-password"
+                                    placeholder="Enter your password"
+                                    value={password}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="login-reveal"
+                                    onClick={() => setShowPassword((shown) => !shown)}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                    aria-pressed={showPassword}
+                                >
+                                    {showPassword
+                                        ? <EyeOff size={18} strokeWidth={1.75} />
+                                        : <Eye size={18} strokeWidth={1.75} />}
+                                </button>
+                            </div>
+                        </div>
 
-                </form>
+                        {error && (
+                            <div className="login-error" role="alert">
+                                <CircleAlert size={16} strokeWidth={1.75} aria-hidden="true" />
+                                <span>{error}</span>
+                            </div>
+                        )}
 
-            </div>
+                        <button
+                            type="submit"
+                            className="login-button"
+                            disabled={loading}
+                        >
+                            {loading ? "Signing in…" : "Sign in"}
+                            {!loading && <ArrowRight size={16} strokeWidth={2} aria-hidden="true" />}
+                        </button>
+
+                    </form>
+
+                    <p className="login-note">
+                        Password resets are handled by your School Administrator.
+                    </p>
+
+                </div>
+            </main>
         </div>
     );
 }

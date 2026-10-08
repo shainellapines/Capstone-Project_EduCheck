@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import "./UserManagement.css";
+import Sidebar from "../components/Sidebar";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -228,6 +229,11 @@ function UserManagement() {
     ).length;
 
     return (
+        <div className="dashboard-layout">
+
+            <Sidebar activeKey="user-management" />
+
+            <main className="dashboard-main">
         <div className="user-management-page">
 
             {/* HEADER */}
@@ -663,6 +669,9 @@ function UserManagement() {
                     </div>
                 </div>
             )}
+
+        </div>
+            </main>
 
         </div>
     );

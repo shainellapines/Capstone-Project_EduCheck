@@ -69,7 +69,7 @@
 
 .notif-filter-pill.active .notif-filter-count {
     background: var(--ec-primary-500);
-    color: white;
+    color: var(--ec-on-action);
 }
 
 .notif-mark-all {
@@ -102,7 +102,7 @@
     border: 1px solid var(--ec-slate-200);
     border-radius: 12px;
     margin-bottom: 14px;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-shadow: none;
     cursor: pointer;
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
     position: relative;
@@ -112,7 +112,8 @@
 }
 
 .notif-card:hover {
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+    box-shadow: none;
+    border-color: var(--ec-border-strong);
 }
 
 .notif-card.unread {

@@ -50,7 +50,7 @@
     border: none;
     border-radius: 7px;
     background: var(--ec-primary-500);
-    color: white;
+    color: var(--ec-on-action);
     padding: 12px 18px;
     font-size: 14px;
     font-family: inherit;
@@ -77,13 +77,13 @@
 .success-message {
     color: var(--ec-success);
     background: var(--ec-success-bg);
-    border: 1px solid #bcebcf;
+    border: 1px solid var(--ec-status-success-border);
 }
 
 .error-message {
     color: var(--ec-danger);
     background: var(--ec-danger-bg);
-    border: 1px solid #f2c2c2;
+    border: 1px solid var(--ec-status-danger-border);
 }
 
 /* SUMMARY */
@@ -349,7 +349,7 @@
 .icon-button.delete {
     color: var(--ec-danger);
     background: var(--ec-danger-bg);
-    border-color: #f4caca;
+    border-color: var(--ec-status-danger-border);
 }
 
 /* TABLE STATES */
@@ -390,7 +390,7 @@
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.48);
+    background: var(--ec-overlay);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -403,7 +403,7 @@
     max-width: 540px;
     background: var(--ec-surface);
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--ec-shadow-popover);
 }
 
 .modal-header {
@@ -473,7 +473,7 @@
 .form-group input:focus,
 .form-group select:focus {
     border-color: var(--ec-primary-500);
-    box-shadow: 0 0 0 3px rgba(23, 105, 237, 0.1);
+    box-shadow: 0 0 0 2px var(--ec-focus);
 }
 
 .form-row {
@@ -488,7 +488,7 @@
     gap: 8px;
     color: var(--ec-danger);
     background: var(--ec-danger-bg);
-    border: 1px solid #f2c2c2;
+    border: 1px solid var(--ec-status-danger-border);
     border-radius: 6px;
     padding: 10px 12px;
     font-size: 13px;
@@ -521,7 +521,7 @@
 .save-user-button {
     border: none;
     background: var(--ec-primary-500);
-    color: white;
+    color: var(--ec-on-action);
 }
 
 .save-user-button:hover {

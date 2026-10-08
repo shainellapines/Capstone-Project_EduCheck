@@ -158,7 +158,7 @@
     border: none;
     border-radius: 8px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-size: 14px;
     font-family: inherit;

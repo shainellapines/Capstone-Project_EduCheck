@@ -16,26 +16,10 @@ import {
 import "./Dashboard.css";
 import "./ConsolidatedRecords.css";
 import Sidebar from "../components/Sidebar";
+import StatusBadge, { GradeCell } from "../components/StatusBadge";
 
 const API_URL = "http://localhost:5000/api";
 const PAGE_SIZE = 20;
-
-const SUBMISSION_BADGE_CLASS = {
-    "Not Submitted": "not-submitted",
-    "Pending Approval": "pending-approval",
-    "Approved": "approved",
-    "Rejected": "rejected",
-    // A revision request against one of this student's subjects reopened an
-    // already-Approved record — see consolidationController.requestRevision.
-    "Amendment Requested": "amendment-requested",
-};
-
-const SUBJECT_STATUS_BADGE_CLASS = {
-    "Uploaded": "subject-uploaded",
-    "Validated": "subject-validated",
-    "Needs Attention": "subject-needs-attention",
-    "Needs Revision": "subject-needs-revision",
-};
 
 function ConsolidatedRecords() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -482,8 +466,15 @@ function ConsolidatedRecords() {
                                 const isExpanded = expandedLrns.has(student.lrn);
                                 const isPending = pendingLrns.has(student.lrn);
                                 const submissionStatus = student.submission.status;
-                                const badgeClass =
-                                    SUBMISSION_BADGE_CLASS[submissionStatus] || SUBMISSION_BADGE_CLASS["Not Submitted"];
+                                // Display only: a learner not yet submitted who has every
+                                // subject in and none in Needs Revision is shown as Ready
+                                // (the same test as the bulk-submit eligibility count).
+                                const displayStatus =
+                                    submissionStatus === "Not Submitted" &&
+                                    student.all_subjects_submitted &&
+                                    !student.subjects.some((subject) => subject.status === "Needs Revision")
+                                        ? "ready"
+                                        : submissionStatus;
 
                                 const isHighlighted = student.lrn === highlightedLrn;
 
@@ -500,9 +491,9 @@ function ConsolidatedRecords() {
                                                 onClick={() => toggleExpanded(student.lrn)}
                                             >
                                                 {isExpanded ? (
-                                                    <ChevronUp size={18} color="#64748b" />
+                                                    <ChevronUp size={18} style={{ color: "var(--ec-text-muted)" }} />
                                                 ) : (
-                                                    <ChevronDown size={18} color="#64748b" />
+                                                    <ChevronDown size={18} style={{ color: "var(--ec-text-muted)" }} />
                                                 )}
 
                                                 <div>
@@ -542,9 +533,7 @@ function ConsolidatedRecords() {
                                                         : "Incomplete"}
                                                 </span>
 
-                                                <span className={`submission-badge ${badgeClass}`}>
-                                                    {submissionStatus}
-                                                </span>
+                                                <StatusBadge status={displayStatus} />
 
                                                 {user.role === "adviser" &&
                                                     student.all_subjects_submitted &&
@@ -673,21 +662,14 @@ function ConsolidatedRecords() {
                                                                             {subject.subject_name}
                                                                         </td>
                                                                         <td>{subject.teacher_name}</td>
-                                                                        <td>{subject.term_1 ?? "—"}</td>
-                                                                        <td>{subject.term_2 ?? "—"}</td>
-                                                                        <td>{subject.term_3 ?? "—"}</td>
+                                                                        <td><GradeCell value={subject.term_1} /></td>
+                                                                        <td><GradeCell value={subject.term_2} /></td>
+                                                                        <td><GradeCell value={subject.term_3} /></td>
                                                                         <td className="final-grade">
-                                                                            {subject.final_grade ?? "—"}
+                                                                            <GradeCell value={subject.final_grade} />
                                                                         </td>
                                                                         <td>
-                                                                            <span
-                                                                                className={`subject-status-badge ${
-                                                                                    SUBJECT_STATUS_BADGE_CLASS[subject.status] ||
-                                                                                    "subject-uploaded"
-                                                                                }`}
-                                                                            >
-                                                                                {subject.status}
-                                                                            </span>
+                                                                            <StatusBadge status={subject.status || "Uploaded"} />
                                                                         </td>
 
                                                                         {user.role === "adviser" && (

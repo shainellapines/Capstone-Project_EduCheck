@@ -187,9 +187,9 @@ function AuditLog() {
                                             onClick={() => toggleExpanded(log.audit_log_id)}
                                         >
                                             {isExpanded ? (
-                                                <ChevronUp size={18} color="#64748b" />
+                                                <ChevronUp size={18} style={{ color: "var(--ec-text-muted)" }} />
                                             ) : (
-                                                <ChevronDown size={18} color="#64748b" />
+                                                <ChevronDown size={18} style={{ color: "var(--ec-text-muted)" }} />
                                             )}
 
                                             <span className={`al-action-badge al-action-${log.action}`}>

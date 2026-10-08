@@ -16,6 +16,7 @@ import {
 import "./Dashboard.css";
 import "./ValidationResults.css";
 import Sidebar from "../components/Sidebar";
+import { SeverityBadge } from "../components/StatusBadge";
 
 const API_URL = "http://localhost:5000/api";
 
@@ -238,14 +239,9 @@ function ValidationResults() {
                                                         : "vr-issue-row"
                                                 }
                                             >
-                                                {issue.severity === "warning" ? (
-                                                    <AlertTriangle size={20} color="#d97706" />
-                                                ) : (
-                                                    <AlertTriangle size={20} color="#dc2626" />
-                                                )}
-
                                                 <div>
                                                     <div className="issue-header">
+                                                        <SeverityBadge severity={issue.severity} />
                                                         {issue.learner_name || "Workbook"}
                                                         {issue.term ? ` — ${issue.term}` : ""}
                                                     </div>

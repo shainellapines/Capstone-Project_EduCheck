@@ -13,7 +13,7 @@
     padding: 20px;
     border-radius: 12px;
     border: 1px solid var(--ec-slate-200);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-shadow: none;
 }
 
 .rr-field {
@@ -44,7 +44,7 @@
 .rr-field select:focus {
     outline: none;
     border-color: var(--ec-primary-500);
-    box-shadow: 0 0 0 3px rgba(37, 104, 237, 0.1);
+    box-shadow: 0 0 0 2px var(--ec-focus);
 }
 
 .rr-field-query {
@@ -71,7 +71,7 @@
     border: none;
     border-radius: 8px;
     background: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
     font-weight: 600;
     font-size: 14px;
     font-family: inherit;
@@ -95,7 +95,7 @@
     padding: 14px;
     border-radius: 8px;
     margin-bottom: 20px;
-    background: #fffbeb;
+    background: var(--ec-warning-bg);
     color: var(--ec-warning);
 }
 
@@ -170,7 +170,7 @@
 
 .rr-year-chip:hover {
     background: var(--ec-primary-100);
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.18);
+    box-shadow: none;
 }
 
 @media (max-width: 700px) {
@@ -183,5 +183,5 @@
 .rr-permanent-chip {
     background: var(--ec-primary-500);
     border-color: var(--ec-primary-500);
-    color: #ffffff;
+    color: var(--ec-on-action);
 }
