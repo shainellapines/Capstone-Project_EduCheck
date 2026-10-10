@@ -7,6 +7,22 @@ const pool = require("../db");
 // weaker password than an admin-issued one would be allowed to.
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
+// Names live on the teacher profile (teachers table), which the Admin
+// manages in Teacher Management. Admin and Principal accounts have no
+// teacher profile, so they have no name and the UI shows the username.
+const getTeacherProfile = async (userId) => {
+    const result = await pool.query(
+        `SELECT teacher_id, first_name, last_name, employee_number, contact_number
+         FROM teachers
+         WHERE user_id = $1`,
+        [userId]
+    );
+
+    return result.rows[0] ?? null;
+};
+
+const fullNameOf = (profile) => (profile ? `${profile.first_name} ${profile.last_name}`.trim() : null);
+
 const login = async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -66,6 +82,8 @@ const login = async (req, res) => {
             }
         );
 
+        const profile = await getTeacherProfile(user.user_id);
+
         res.json({
             message: "Login successful.",
             token,
@@ -73,7 +91,8 @@ const login = async (req, res) => {
                 user_id: user.user_id,
                 username: user.username,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                full_name: fullNameOf(profile)
             }
         });
 
@@ -109,7 +128,47 @@ const getMe = async (req, res) => {
             });
         }
 
-        res.json({ user: result.rows[0] });
+        const profile = await getTeacherProfile(req.user.user_id);
+
+        // The user's own sections/subjects, newest school year first. A null
+        // subject is the Class Adviser assignment for the whole section.
+        const assignments = profile
+            ? (
+                  await pool.query(
+                      `
+                      SELECT
+                          ta.assignment_id,
+                          sy.school_year,
+                          sy.status AS school_year_status,
+                          sec.section_name,
+                          sec.grade_level,
+                          sec.staffing_mode,
+                          sub.subject_name
+                      FROM teacher_assignments ta
+                      INNER JOIN sections sec ON sec.section_id = ta.section_id
+                      INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
+                      LEFT JOIN subjects sub ON sub.subject_id = ta.subject_id
+                      WHERE ta.teacher_id = $1
+                      ORDER BY sy.school_year DESC, sec.grade_level, sec.section_name, sub.subject_name NULLS FIRST
+                      `,
+                      [profile.teacher_id]
+                  )
+              ).rows
+            : [];
+
+        res.json({
+            user: {
+                ...result.rows[0],
+                full_name: fullNameOf(profile),
+            },
+            profile: profile && {
+                first_name: profile.first_name,
+                last_name: profile.last_name,
+                employee_number: profile.employee_number,
+                contact_number: profile.contact_number,
+            },
+            assignments,
+        });
     } catch (error) {
         console.error("Get me error:", error);
 

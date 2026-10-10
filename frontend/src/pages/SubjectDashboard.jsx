@@ -15,6 +15,7 @@ import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
 import StatusBadge from "../components/StatusBadge";
 import { API_URL } from "../config";
+import { getDisplayName } from "../utils/session";
 
 
 // Statuses class_records can carry that mean the record can't move
@@ -139,7 +140,7 @@ function SubjectDashboard() {
                         </h1>
 
                         <p>
-                            Subject Teacher · {user.username}
+                            Subject Teacher · {getDisplayName(user)}
                         </p>
                     </div>
 

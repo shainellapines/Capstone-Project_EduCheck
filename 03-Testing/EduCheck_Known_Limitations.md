@@ -12,6 +12,7 @@ defect and should be reported.
 | L-01 | Mobile notifications | Alerts arrive only while the mobile app is open. The app checks the server every 30 seconds. There are no push notifications when the app is closed. | Open the app to see new alerts. Polling was chosen over Firebase so the system runs on a local network with no third-party service. |
 | L-02 | Passwords | There is no "forgot password" link or email reset. | The School Administrator resets passwords in User Management. The login page says so. |
 | L-03 | Notifications list | Only the 50 most recent notifications are shown, with no paging. | Older notifications are kept in the database but not listed. |
+| L-05 | Profile details | Users cannot edit their own name, email or contact number. Settings shows them read-only. Admin and Principal accounts have no name, because names belong to teacher profiles, so EduCheck shows their username. | The Administrator updates details in User Management and Teacher Management. Accounts are managed centrally on purpose. |
 | L-04 | Hosting | The system is set up for a local network (localhost or a LAN address) over plain http. There is no https and no automatic database backup. | Out of scope for the capstone deployment. Required before any internet-facing use. |
 
 ## Design decisions (expected behaviour, not defects)

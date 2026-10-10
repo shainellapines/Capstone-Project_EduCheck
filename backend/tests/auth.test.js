@@ -76,4 +76,30 @@ describe("Authentication (EPIC-01)", () => {
         });
         assert.equal(relogin.status, 200);
     });
+    it("AUTH-09 login and /me give a teacher their name, profile and own assignments", async () => {
+        const login = await t.request("POST", "/api/auth/login", { body: { username: "subject_t", password: PASSWORD } });
+        assert.equal(login.status, 200);
+        assert.equal(login.body.user.full_name, "Sam Subject");
+
+        const me = await t.request("GET", "/api/auth/me", { token: t.tokens.subject_t });
+        assert.equal(me.status, 200);
+        assert.equal(me.body.user.full_name, "Sam Subject");
+        assert.equal(me.body.profile.employee_number, "EMP-3");
+        assert.equal(me.body.user.password_hash, undefined);
+
+        // Seeded: English 4 in Mabini and Rizal, Mathematics 4 in Mabini - and nobody else's.
+        const mine = me.body.assignments.map((a) => `${a.section_name}:${a.subject_name}`).sort();
+        assert.deepEqual(mine, ["Mabini:English", "Mabini:Mathematics", "Rizal:English"]);
+        assert.ok(me.body.assignments.every((a) => a.school_year && a.grade_level));
+    });
+
+    it("AUTH-10 Admin and Principal have no teacher profile: no name, no assignments", async () => {
+        for (const role of ["admin", "principal"]) {
+            const me = await t.request("GET", "/api/auth/me", { token: t.tokens[role] });
+            assert.equal(me.status, 200);
+            assert.equal(me.body.user.full_name, null);
+            assert.equal(me.body.profile, null);
+            assert.deepEqual(me.body.assignments, []);
+        }
+    });
 });

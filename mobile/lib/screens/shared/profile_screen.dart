@@ -51,6 +51,8 @@ class ProfileScreen extends StatelessWidget {
       },
       builder: (context, data, reload) {
         final user = asMap(data['user']);
+        final profile = user['profile'] == null ? null : asMap(user['profile']);
+        final displayName = (user['full_name'] ?? user['username'] ?? '').toString();
         final assignments = asList(data['assignments']);
 
         return [
@@ -61,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
                   radius: 28,
                   backgroundColor: AppTheme.lightBlue,
                   child: Text(
-                    (user['username'] ?? '?').toString().characters.first.toUpperCase(),
+                    displayName.isEmpty ? '?' : displayName.characters.first.toUpperCase(),
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
                   ),
                 ),
@@ -71,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user['username']?.toString() ?? '',
+                        displayName,
                         style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                       ),
                       const SizedBox(height: 3),
@@ -90,9 +92,29 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Column(
               children: [
+                if (profile != null) ...[
+                  _InfoRow(
+                    icon: Icons.badge_outlined,
+                    label: 'Employee No.',
+                    value: profile['employee_number']?.toString() ?? '-',
+                  ),
+                  _InfoRow(
+                    icon: Icons.phone_outlined,
+                    label: 'Contact',
+                    value: profile['contact_number']?.toString() ?? 'Not provided',
+                  ),
+                ],
+                _InfoRow(icon: Icons.person_outline_rounded, label: 'Username', value: user['username']?.toString() ?? '-'),
                 _InfoRow(icon: Icons.mail_outline_rounded, label: 'Email', value: user['email']?.toString() ?? '-'),
                 _InfoRow(icon: Icons.verified_user_outlined, label: 'Status', value: user['status']?.toString() ?? '-'),
                 _InfoRow(icon: Icons.event_outlined, label: 'Member since', value: formatDate(user['created_at'])),
+                const Padding(
+                  padding: EdgeInsets.only(top: 4, bottom: 8),
+                  child: Text(
+                    'To correct these details, ask the School Administrator.',
+                    style: TextStyle(fontSize: 11.5, color: AppTheme.textGray),
+                  ),
+                ),
               ],
             ),
           ),

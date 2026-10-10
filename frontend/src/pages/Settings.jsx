@@ -9,13 +9,14 @@ import {
     Loader2,
     ShieldCheck,
     ListChecks,
+    BookOpen,
 } from "lucide-react";
 
 import "./Dashboard.css";
 import "./Settings.css";
 import Sidebar from "../components/Sidebar";
 import "../components/StatusBadge.css";
-import { getToken, getStoredUser } from "../utils/session";
+import { getToken, getStoredUser, updateStoredUser } from "../utils/session";
 import { getStoredTheme, setTheme } from "../utils/theme";
 import { API_URL } from "../config";
 
@@ -100,6 +101,8 @@ function Settings() {
     const isAdmin = getStoredUser()?.role === "admin";
 
     const [account, setAccount] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const [assignments, setAssignments] = useState([]);
     const [loadingAccount, setLoadingAccount] = useState(true);
     const [accountError, setAccountError] = useState("");
 
@@ -139,6 +142,9 @@ function Settings() {
                 }
 
                 setAccount(data.user);
+                setProfile(data.profile || null);
+                setAssignments(data.assignments || []);
+                updateStoredUser({ full_name: data.user.full_name || null });
             } catch (fetchError) {
                 setAccountError(fetchError.message || "Failed to load account information.");
             } finally {
@@ -235,6 +241,27 @@ function Settings() {
                             ) : (
                                 account && (
                                     <div className="settings-info-list">
+                                        {profile && (
+                                            <>
+                                                <div className="settings-info-row">
+                                                    <span>Full Name</span>
+                                                    <strong>
+                                                        {profile.first_name} {profile.last_name}
+                                                    </strong>
+                                                </div>
+
+                                                <div className="settings-info-row">
+                                                    <span>Employee No.</span>
+                                                    <strong>{profile.employee_number}</strong>
+                                                </div>
+
+                                                <div className="settings-info-row">
+                                                    <span>Contact Number</span>
+                                                    <strong>{profile.contact_number || "Not provided"}</strong>
+                                                </div>
+                                            </>
+                                        )}
+
                                         <div className="settings-info-row">
                                             <span>Username</span>
                                             <strong>{account.username}</strong>
@@ -271,10 +298,54 @@ function Settings() {
                                                 })}
                                             </strong>
                                         </div>
+
+                                        <p className="settings-info-note">
+                                            {isAdmin
+                                                ? "Account details are managed in User Management and Teacher Management."
+                                                : "To correct your name, email or contact number, ask the School Administrator."}
+                                        </p>
                                     </div>
                                 )
                             )}
                         </div>
+
+                        {/* MY ASSIGNMENTS (teachers only - Admin/Principal have no teacher profile) */}
+                        {!loadingAccount && profile && (
+                            <div className="content-card settings-card settings-card-wide">
+                                <div className="card-header">
+                                    <h3>
+                                        <BookOpen size={18} className="settings-header-icon" />
+                                        My Assignments
+                                    </h3>
+                                </div>
+
+                                {assignments.length === 0 ? (
+                                    <p className="settings-assignments-empty">
+                                        You have no section or subject assignments yet. The School Administrator
+                                        assigns them in Section &amp; Teacher Assignments.
+                                    </p>
+                                ) : (
+                                    <div className="settings-assignments">
+                                        {assignments.map((assignment) => (
+                                            <div key={assignment.assignment_id} className="settings-assignment-row">
+                                                <div>
+                                                    <strong>
+                                                        Grade {assignment.grade_level} – {assignment.section_name}
+                                                    </strong>
+                                                    <span>{assignment.subject_name || "Class Adviser"}</span>
+                                                </div>
+                                                <div className="settings-assignment-meta">
+                                                    <span>{assignment.school_year}</span>
+                                                    {assignment.school_year_status === "Active" && (
+                                                        <span className="ec-badge ec-badge-success-outline">Current</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* APPEARANCE */}
                         <div className="content-card settings-card">

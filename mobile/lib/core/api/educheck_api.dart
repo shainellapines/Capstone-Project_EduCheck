@@ -40,7 +40,11 @@ class EduCheckApi {
 
   Future<ApiResult<Json>> me() async {
     final result = await _client.get('/auth/me');
-    return ApiResult(asMap(asMap(result.data)['user']), fromCache: result.fromCache, cachedAt: result.cachedAt);
+    final body = asMap(result.data);
+    // `profile` is the teacher profile (name, employee no., contact), or
+    // null for Admin/Principal accounts, which have none.
+    final user = {...asMap(body['user']), 'profile': body['profile']};
+    return ApiResult(user, fromCache: result.fromCache, cachedAt: result.cachedAt);
   }
 
   Future<void> changePassword(String current, String next) =>

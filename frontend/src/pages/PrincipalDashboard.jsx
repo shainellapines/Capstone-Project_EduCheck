@@ -14,7 +14,7 @@ import {
 
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
-import { getToken, getStoredUser } from "../utils/session";
+import { getToken, getStoredUser, getDisplayName } from "../utils/session";
 import { API_URL } from "../config";
 
 
@@ -147,7 +147,7 @@ function PrincipalDashboard() {
                         </h1>
 
                         <p>
-                            Principal · School-wide, view-only · {user.username}
+                            Principal · School-wide, view-only · {getDisplayName(user)}
                         </p>
                     </div>
 

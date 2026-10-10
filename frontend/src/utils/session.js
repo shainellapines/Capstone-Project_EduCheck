@@ -31,6 +31,23 @@ function getStoredUser() {
     }
 }
 
+// The name to greet a user by: their teacher-profile name when they have
+// one (login and /auth/me return it as full_name), otherwise the
+// username - Admin and Principal accounts have no teacher profile.
+function getDisplayName(user) {
+    return user?.full_name || user?.username || "";
+}
+
+// Merges fresh account fields (e.g. from /auth/me) into the stored user,
+// so a name the Admin added after this login shows up without a re-login.
+function updateStoredUser(fields) {
+    const current = getStoredUser();
+
+    if (!current) return;
+
+    localStorage.setItem(USER_KEY, JSON.stringify({ ...current, ...fields }));
+}
+
 // Decodes the JWT's payload segment client-side to read its expiry.
 // This is NOT a signature check — the client has no way to verify a
 // JWT's signature, nor should it need to; that's the backend's job on
@@ -96,6 +113,8 @@ function installSessionGuard() {
 export {
     getToken,
     getStoredUser,
+    getDisplayName,
+    updateStoredUser,
     isSessionValid,
     clearSession,
     installSessionGuard,

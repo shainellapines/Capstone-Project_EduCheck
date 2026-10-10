@@ -12,7 +12,7 @@ import {
 import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
 import StatusBadge from "../components/StatusBadge";
-import { getToken, getStoredUser } from "../utils/session";
+import { getToken, getStoredUser, getDisplayName } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
 import { API_URL } from "../config";
 
@@ -165,7 +165,7 @@ function Dashboard() {
                         </h1>
 
                         <p>
-                            Class Adviser · {user.username}
+                            Class Adviser · {getDisplayName(user)}
                         </p>
                     </div>
 

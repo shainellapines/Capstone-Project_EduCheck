@@ -16,6 +16,7 @@ import "./Dashboard.css";
 import Sidebar from "../components/Sidebar";
 import StatusBadge from "../components/StatusBadge";
 import { API_URL } from "../config";
+import { getDisplayName } from "../utils/session";
 
 
 function AdminDashboard() {
@@ -163,7 +164,7 @@ function AdminDashboard() {
                         </h1>
 
                         <p>
-                            School Administrator · {user.username}
+                            School Administrator · {getDisplayName(user)}
                         </p>
                     </div>
 
