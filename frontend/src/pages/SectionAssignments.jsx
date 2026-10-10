@@ -231,6 +231,15 @@ function SectionAssignments() {
         const sectionLabel = selectedSection ? selectedSection.section_name : "this section";
         const roleLabel = selectedSubject ? selectedSubject.subject_name : "Class Adviser";
 
+        // Same rule as the backend: the Class Adviser slot needs an Adviser account.
+        if (!selectedSubject && selectedTeacher && selectedTeacher.role !== "adviser") {
+            setActionMessage("");
+            setActionError(
+                `${teacherLabel} has a Subject Teacher account, so they can't be Class Adviser. Choose a subject, or change their role to Adviser in User Management first.`
+            );
+            return;
+        }
+
         const confirmed = window.confirm(
             `Assign ${teacherLabel} to ${sectionLabel} as ${roleLabel}? Double-check the subject and section before confirming.`
         );

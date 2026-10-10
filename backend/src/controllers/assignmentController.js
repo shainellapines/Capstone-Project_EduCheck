@@ -103,6 +103,23 @@ const createAssignment = async (req, res) => {
             });
         }
 
+        // The Class Adviser slot (no subject) needs an Adviser account: the
+        // Adviser pages are gated by users.role, so any other account would
+        // hold the section's only Adviser slot without being able to use it.
+        // An Adviser account may still take a subject (partial
+        // departmentalization), so the reverse is not checked.
+        if (!subject_id) {
+            const teacher = await pool.query(
+                `SELECT u.role FROM teachers t INNER JOIN users u ON u.user_id = t.user_id WHERE t.teacher_id = $1`,
+                [teacher_id]
+            );
+            if (teacher.rows[0] && teacher.rows[0].role !== "adviser") {
+                return res.status(409).json({
+                    message:
+                        "Only an Adviser account can be assigned as Class Adviser. Choose a subject for this teacher, or change the account's role to Adviser in User Management first."
+                });
+            }
+        }
         // A subject belongs to one grade level; it can only be assigned to
         // a section of that same grade level.
         if (subject_id) {

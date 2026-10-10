@@ -134,6 +134,25 @@ describe("Upload integrity: roster, wrong-section, grade level (EPIC-02)", () =>
         assert.match(res.body.message, /Grade 4 subject/);
     });
 
+    it("ASG-01 a Subject Teacher account cannot take a section's Class Adviser slot (409)", async () => {
+        // Luna has no Adviser yet, so a refusal here can only come from the role check.
+        const res = await t.request("POST", "/api/assignments", {
+            token: t.tokens.admin,
+            body: {
+                teacher_id: t.ids.subjectTeacher,
+                section_id: t.ids.luna,
+                school_year_id: t.ids.schoolYear,
+            },
+        });
+        assert.equal(res.status, 409);
+        assert.match(res.body.message, /Only an Adviser account/);
+        const held = await t.pool.query(
+            "SELECT 1 FROM teacher_assignments WHERE section_id=$1 AND subject_id IS NULL",
+            [t.ids.luna]
+        );
+        assert.equal(held.rows.length, 0, "the Adviser slot must stay free");
+    });
+
     it("GRD-04 the Adviser assignment (no subject) is not subject to the grade-level check", async () => {
         const res = await t.request("POST", "/api/assignments", {
             token: t.tokens.admin,

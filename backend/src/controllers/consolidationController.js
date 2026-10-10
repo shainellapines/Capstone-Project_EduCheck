@@ -9,6 +9,15 @@ const { getAdviserSectionIds, getVisibleSectionIds, isSectionVisible } = require
 // subject (a corrected re-upload). Until re-uploads are formally linked
 // (superseded_by or similar), "latest wins" is resolved here by
 // upload_date, tie-broken by class_record_id.
+//
+// Only subjects of the learner's grade level for that school year count.
+// The grade level comes from the section they were enrolled in that year
+// (section_enrollments), falling back to students.grade_level for learners
+// enrolled before that table existed, so a promoted learner's past year
+// is still judged against the grade they were in. A grade for another
+// grade level's subject (legacy data from before the upload grade-level
+// check) is left out of completeness, the approval snapshot, analytics
+// and the SF10, rather than counted as one of the learner's subjects.
 
 const buildRankedGradesQuery = (extraWhere) => `
     WITH ranked_grades AS (
@@ -40,7 +49,7 @@ const buildRankedGradesQuery = (extraWhere) => `
         rg.lrn,
         s.first_name,
         s.last_name,
-        s.grade_level,
+        COALESCE(enrolled_section.grade_level, s.grade_level) AS grade_level,
         s.section_id,
         subj.subject_id,
         subj.subject_name,
@@ -61,7 +70,12 @@ const buildRankedGradesQuery = (extraWhere) => `
     INNER JOIN students s ON s.lrn = rg.lrn
     INNER JOIN subjects subj ON subj.subject_id = rg.subject_id
     INNER JOIN teachers t ON t.teacher_id = rg.teacher_id
+    LEFT JOIN section_enrollments enrollment
+        ON enrollment.lrn = rg.lrn AND enrollment.school_year_id = $1
+    LEFT JOIN sections enrolled_section
+        ON enrolled_section.section_id = enrollment.section_id
     WHERE rg.rn = 1
+      AND subj.grade_level = COALESCE(enrolled_section.grade_level, s.grade_level)
     ORDER BY s.last_name, s.first_name, subj.subject_name
 `;
 
@@ -115,9 +129,10 @@ const groupRowsByStudent = (rows) => {
 
 // Attaches subjects_expected (how many subjects exist for this grade level)
 // and subjects_recorded (how many the student actually has a grade for) so
-// a reviewer can see at a glance whether a student's record is complete —
-// this is a proxy only; it does not yet know about elective/optional
-// subjects or subjects not tracked in this school's `subjects` table.
+// a reviewer can see at a glance whether a student's record is complete.
+// buildRankedGradesQuery returns at most one row per subject and only
+// subjects of the learner's grade level, so recorded >= expected means
+// every expected subject is present (not just "enough" subjects).
 const attachCompleteness = async (students, gradeLevels) => {
     if (students.length === 0) return students;
 
@@ -392,7 +407,9 @@ const getSectionProgressForSchoolYear = async (req, res) => {
         // Latest class_record per (section, subject) for this school year —
         // same "latest upload wins" ranking buildRankedGradesQuery uses, just
         // keyed by section+subject instead of student+subject, since one
-        // upload covers a whole section at once.
+        // upload covers a whole section at once. Only the section's own
+        // grade-level subjects count toward its progress (legacy uploads of
+        // another grade's subject are ignored, as in buildRankedGradesQuery).
         const latestSubjectStatusResult = await pool.query(
             `
             WITH ranked AS (
@@ -405,7 +422,10 @@ const getSectionProgressForSchoolYear = async (req, res) => {
                         ORDER BY cr.upload_date DESC, cr.class_record_id DESC
                     ) AS rn
                 FROM class_records cr
-                WHERE cr.school_year_id = $1 AND cr.section_id IS NOT NULL
+                INNER JOIN sections sec ON sec.section_id = cr.section_id
+                INNER JOIN subjects sub ON sub.subject_id = cr.subject_id
+                WHERE cr.school_year_id = $1
+                  AND sub.grade_level = sec.grade_level
             )
             SELECT section_id, subject_id, status
             FROM ranked
