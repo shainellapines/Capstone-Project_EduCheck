@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui.dart';
 import '../shared/profile_screen.dart';
 import '../shared/role_shell.dart';
+import '../shared/notification_screen.dart';
 import 'upload_detail_screen.dart';
 
 /// Subject Teacher on mobile (SPMP §6.5): the status of every e-Class
@@ -22,7 +23,18 @@ class SubjectDashboardScreen extends StatelessWidget {
       subtitle: 'Subject Teacher',
       tabs: [
         ShellTab(label: 'Home', icon: Icons.home_rounded, builder: (context, goTo) => _SubjectHome(goTo: goTo)),
-        ShellTab(label: 'My Uploads', icon: Icons.upload_file_rounded, builder: (context, goTo) => const _UploadsList()),
+        ShellTab(
+          label: 'My Uploads',
+          icon: Icons.upload_file_rounded,
+          builder: (context, goTo) => const _UploadsList(),
+          opensFor: const {
+            NotificationTitles.uploadNeedsCorrection,
+            NotificationTitles.uploadHasWarnings,
+            NotificationTitles.revisionRequested,
+            NotificationTitles.submissionApproved,
+            NotificationTitles.submissionRejected,
+          },
+        ),
         ShellTab(label: 'Account', icon: Icons.person_outline_rounded, builder: (context, goTo) => const ProfileScreen()),
       ],
     );
@@ -76,8 +88,8 @@ class _SubjectHome extends StatelessWidget {
               title: 'Total uploaded',
               value: '${summary['total_uploaded'] ?? 0}',
               icon: Icons.upload_file_rounded,
-              color: AppTheme.primaryBlue,
-              background: const Color(0xFFEFF6FF),
+              color: AppTheme.primary,
+              background: AppTheme.primaryTint,
               onTap: () => goTo(1),
             ),
             StatCard(
@@ -85,7 +97,7 @@ class _SubjectHome extends StatelessWidget {
               value: '${summary['validated'] ?? 0}',
               icon: Icons.verified_outlined,
               color: AppTheme.success,
-              background: const Color(0xFFF0FDF4),
+              background: AppTheme.successBg,
               onTap: () => goTo(1),
             ),
             StatCard(
@@ -93,7 +105,7 @@ class _SubjectHome extends StatelessWidget {
               value: '${summary['needs_attention'] ?? 0}',
               icon: Icons.warning_amber_rounded,
               color: AppTheme.danger,
-              background: const Color(0xFFFEF2F2),
+              background: AppTheme.dangerBg,
               onTap: () => goTo(1),
             ),
             StatCard(
@@ -101,7 +113,7 @@ class _SubjectHome extends StatelessWidget {
               value: '${summary['pending_validation'] ?? 0}',
               icon: Icons.hourglass_top_rounded,
               color: AppTheme.warning,
-              background: const Color(0xFFFFF7ED),
+              background: AppTheme.warningBg,
               onTap: () => goTo(1),
             ),
           ]),

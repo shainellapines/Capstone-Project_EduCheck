@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   const Text(
                     'EduCheck',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppTheme.primaryBlue),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppTheme.primary),
                   ),
                   const SizedBox(height: 5),
                   const Text(
@@ -108,21 +108,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLogo() {
-    return Container(
-      width: 68,
-      height: 68,
-      decoration: BoxDecoration(
-        color: AppTheme.primaryBlue,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.16),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: const Icon(Icons.school_outlined, size: 34, color: Colors.white),
+    return Image.asset(
+      'assets/images/educheck-logo.png',
+      width: 88,
+      height: 88,
+      semanticLabel: 'EduCheck logo',
     );
   }
 
@@ -131,11 +121,11 @@ class _LoginScreenState extends State<LoginScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: _borderColor),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 18, offset: const Offset(0, 6)),
+          BoxShadow(color: AppTheme.textDark.withValues(alpha: 0.03), blurRadius: 18, offset: const Offset(0, 6)),
         ],
       ),
       child: AutofillGroup(
@@ -157,9 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: AppTheme.dangerBg,
                   borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: const Color(0xFFFECACA)),
+                  border: Border.all(color: AppTheme.dangerBorder),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: Text(
                         _error!,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.35),
+                        style: const TextStyle(fontSize: 12, color: AppTheme.danger, height: 1.35),
                       ),
                     ),
                   ],
@@ -213,9 +203,9 @@ class _LoginScreenState extends State<LoginScreen> {
               child: ElevatedButton(
                 onPressed: _loading ? null : _login,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.6),
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: AppTheme.onPrimary,
+                  disabledBackgroundColor: AppTheme.primary.withValues(alpha: 0.6),
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
                 ),
@@ -223,7 +213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                        child: CircularProgressIndicator(strokeWidth: 2.2, color: AppTheme.onPrimary),
                       )
                     : const Text('Log In', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
               ),
@@ -267,10 +257,10 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _inputDecoration({required String hintText, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+      hintStyle: const TextStyle(fontSize: 12, color: AppTheme.textGray),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFFFAFBFC),
+      fillColor: AppTheme.background,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(11),
@@ -278,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(11),
-        borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 1.4),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 1.4),
       ),
     );
   }

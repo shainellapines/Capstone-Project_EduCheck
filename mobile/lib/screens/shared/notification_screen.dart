@@ -6,11 +6,29 @@ import '../../core/notifications/notification_poller.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui.dart';
 
+/// Notification titles the backend writes (must match the strings in
+/// backend/src/controllers). Role tabs use them to say which alerts open them.
+class NotificationTitles {
+  static const recordSubmitted = 'Record Submitted for Approval';
+  static const recordsSubmitted = 'Records Submitted for Approval';
+  static const submissionApproved = 'Submission Approved';
+  static const submissionRejected = 'Submission Rejected';
+  static const revisionRequested = 'Revision Requested';
+  static const amendmentNeeded = 'Approved Record Needs Amendment';
+  static const uploadNeedsCorrection = 'Upload Needs Correction';
+  static const uploadHasWarnings = 'Upload Has Warnings';
+}
+
 /// SPMP M-09 (Notification History): every alert the backend raised for
 /// this account - validation results, revision requests, approvals and
 /// rejections - so nothing is lost if a phone notification was missed.
+/// Tapping an alert whose title is in [openableTitles] marks it read and
+/// closes this screen with that title, so the role shell can open the
+/// matching tab (SPMP M-06: act on a record from its notification).
 class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({super.key});
+  const NotificationScreen({super.key, this.openableTitles = const {}});
+
+  final Set<String> openableTitles;
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -34,6 +52,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
     } catch (error) {
       if (mounted) showMessage(context, error.toString(), error: true);
     }
+  }
+
+  Future<void> _open(Json item) async {
+    final title = item['title']?.toString() ?? '';
+    await _markRead(item);
+    if (!mounted) return;
+    if (widget.openableTitles.contains(title)) Navigator.pop(context, title);
   }
 
   Future<void> _markAllRead() async {
@@ -60,7 +85,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (lower.contains('approved')) return AppTheme.success;
     if (lower.contains('rejected')) return AppTheme.danger;
     if (lower.contains('revision') || lower.contains('amendment')) return AppTheme.warning;
-    return AppTheme.primaryBlue;
+    return AppTheme.primary;
   }
 
   @override
@@ -104,7 +129,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 item: item,
                 icon: _iconFor(item['title']?.toString() ?? ''),
                 color: _colorFor(item['title']?.toString() ?? ''),
-                onTap: () => _markRead(item),
+                opens: widget.openableTitles.contains(item['title']?.toString()),
+                onTap: () => _open(item),
               ),
               const SizedBox(height: 10),
             ],
@@ -125,19 +151,28 @@ class _NotificationScreenState extends State<NotificationScreen> {
 }
 
 class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({required this.item, required this.icon, required this.color, required this.onTap});
+  const _NotificationTile({
+    required this.item,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.opens = false,
+  });
 
   final Json item;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
 
+  /// Tapping opens the related screen, so show a chevron.
+  final bool opens;
+
   @override
   Widget build(BuildContext context) {
     final unread = item['status'] == 'Unread';
     return AppCard(
       onTap: onTap,
-      borderColor: unread ? AppTheme.primaryBlue.withValues(alpha: 0.35) : null,
+      borderColor: unread ? AppTheme.primary.withValues(alpha: 0.35) : null,
       padding: const EdgeInsets.all(14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +199,7 @@ class _NotificationTile extends StatelessWidget {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+                        decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
                       ),
                   ],
                 ),
@@ -176,11 +211,15 @@ class _NotificationTile extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   formatDate(item['created_at'], withTime: true),
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                  style: const TextStyle(fontSize: 11, color: AppTheme.textGray),
                 ),
               ],
             ),
           ),
+          if (opens) ...[
+            const SizedBox(width: 6),
+            const Icon(Icons.chevron_right_rounded, color: AppTheme.textGray),
+          ],
         ],
       ),
     );

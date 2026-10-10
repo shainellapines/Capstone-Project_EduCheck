@@ -113,8 +113,8 @@ class _RepositoryScreenState extends State<RepositoryScreen> {
                   children: [
                     const IconTile(
                       icon: Icons.badge_outlined,
-                      color: AppTheme.primaryBlue,
-                      background: AppTheme.lightBlue,
+                      color: AppTheme.primary,
+                      background: AppTheme.primaryTint,
                       size: 38,
                     ),
                     const SizedBox(width: 12),

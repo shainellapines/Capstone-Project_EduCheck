@@ -61,10 +61,10 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: AppTheme.lightBlue,
+                  backgroundColor: AppTheme.primaryTint,
                   child: Text(
                     displayName.isEmpty ? '?' : displayName.characters.first.toUpperCase(),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.primary),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -79,7 +79,7 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         roleLabels[user['role']] ?? '',
-                        style: const TextStyle(fontSize: 12.5, color: AppTheme.primaryBlue, fontWeight: FontWeight.w600),
+                        style: const TextStyle(fontSize: 12.5, color: AppTheme.primary, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -132,8 +132,8 @@ class ProfileScreen extends StatelessWidget {
                   children: [
                     IconTile(
                       icon: assignment['subject_id'] == null ? Icons.groups_rounded : Icons.menu_book_rounded,
-                      color: AppTheme.primaryBlue,
-                      background: AppTheme.lightBlue,
+                      color: AppTheme.primary,
+                      background: AppTheme.primaryTint,
                       size: 38,
                     ),
                     const SizedBox(width: 12),
@@ -194,7 +194,7 @@ class ProfileScreen extends StatelessWidget {
             label: const Text('Log out'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.danger,
-              side: const BorderSide(color: Color(0xFFFECACA)),
+              side: const BorderSide(color: AppTheme.dangerBorder),
               minimumSize: const Size.fromHeight(48),
             ),
           ),
@@ -328,7 +328,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
 
   InputDecoration _decoration(String label) => InputDecoration(
         labelText: label,
-        fillColor: const Color(0xFFF8FAFC),
+        fillColor: AppTheme.background,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppTheme.border),

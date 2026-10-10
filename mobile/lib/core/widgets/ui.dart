@@ -26,6 +26,32 @@ String formatGrade(dynamic value) {
   return number % 1 == 0 ? number.toInt().toString() : number.toStringAsFixed(2);
 }
 
+/// The words shown for a stored status, the same as the web StatusBadge
+/// (frontend/src/components/StatusBadge.jsx RAW_TO_STATUS). Display only:
+/// logic keeps comparing the stored values. Anything not listed (SF10
+/// readiness words such as Complete or Partial) is shown as it is.
+String statusLabel(String? status) {
+  if (status == null) return 'Pending';
+  switch (status) {
+    case 'Not Submitted':
+      return 'Pending';
+    case 'Pending Approval':
+      return 'Submitted';
+    case 'Rejected':
+      return 'Returned by Administrator';
+    case 'Uploaded':
+    case 'Validated':
+      return 'Uploaded';
+    case 'Pending Validation':
+      return 'Validating';
+    case 'Needs Attention':
+    case 'Needs Revision':
+      return 'Needs Revision';
+    default:
+      return status;
+  }
+}
+
 class StatusStyle {
   const StatusStyle(this.foreground, this.background, this.icon);
 
@@ -33,27 +59,31 @@ class StatusStyle {
   final Color background;
   final IconData icon;
 
+  // Same mapping as the web StatusBadge (frontend/src/components/StatusBadge.jsx).
   static StatusStyle of(String? status) {
     switch (status) {
       case 'Approved':
+        return const StatusStyle(AppTheme.onStatusSolid, AppTheme.success, Icons.verified_outlined);
+      case 'Pending Approval':
+        return const StatusStyle(AppTheme.onStatusSolid, AppTheme.infoSolid, Icons.send_outlined);
       case 'Validated':
+      case 'Uploaded':
+        return const StatusStyle(AppTheme.info, AppTheme.infoBg, Icons.upload_outlined);
       case 'Complete':
       case 'Passed':
-        return const StatusStyle(AppTheme.success, Color(0xFFF0FDF4), Icons.check_circle_outline_rounded);
-      case 'Pending Approval':
-      case 'Uploaded':
-        return const StatusStyle(AppTheme.primaryBlue, Color(0xFFEFF6FF), Icons.hourglass_top_rounded);
+        return const StatusStyle(AppTheme.success, AppTheme.successBg, Icons.check_circle_outline_rounded);
       case 'Needs Attention':
-      case 'Partial':
-        return const StatusStyle(AppTheme.warning, Color(0xFFFFF7ED), Icons.warning_amber_rounded);
       case 'Needs Revision':
+        return const StatusStyle(AppTheme.revision, AppTheme.revisionBg, Icons.edit_outlined);
+      case 'Amendment Requested':
+        return const StatusStyle(AppTheme.revision, AppTheme.revisionBg, Icons.replay_rounded);
+      case 'Partial':
+        return const StatusStyle(AppTheme.warning, AppTheme.warningBg, Icons.warning_amber_rounded);
       case 'Rejected':
       case 'Failed':
-        return const StatusStyle(AppTheme.danger, Color(0xFFFEF2F2), Icons.error_outline_rounded);
-      case 'Amendment Requested':
-        return const StatusStyle(AppTheme.purple, Color(0xFFF5F3FF), Icons.edit_note_rounded);
+        return const StatusStyle(AppTheme.danger, AppTheme.dangerBg, Icons.undo_rounded);
       default:
-        return const StatusStyle(AppTheme.textGray, Color(0xFFF1F5F9), Icons.radio_button_unchecked_rounded);
+        return const StatusStyle(AppTheme.neutral, AppTheme.neutralBg, Icons.schedule_rounded);
     }
   }
 }
@@ -70,7 +100,7 @@ class StatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(color: style.background, borderRadius: BorderRadius.circular(20)),
       child: Text(
-        status,
+        statusLabel(status),
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: style.foreground),
       ),
     );
@@ -88,7 +118,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppTheme.surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -239,7 +269,7 @@ class EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
       child: Column(
         children: [
-          Icon(icon, size: 34, color: const Color(0xFF94A3B8)),
+          Icon(icon, size: 34, color: AppTheme.textGray),
           const SizedBox(height: 10),
           Text(
             message,
@@ -263,7 +293,7 @@ class OfflineBanner extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: const Color(0xFFFFF7ED), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: AppTheme.warningBg, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           const Icon(Icons.cloud_off_rounded, size: 18, color: AppTheme.warning),
@@ -272,7 +302,7 @@ class OfflineBanner extends StatelessWidget {
             child: Text(
               'Offline - showing data last synced ${formatDate(cachedAt?.toIso8601String(), withTime: true)}. '
               'Pull down to refresh when you are back online.',
-              style: const TextStyle(fontSize: 11.5, color: Color(0xFF9A3412), height: 1.35),
+              style: const TextStyle(fontSize: 11.5, color: AppTheme.warning, height: 1.35),
             ),
           ),
         ],
@@ -363,16 +393,16 @@ class _ErrorCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
+        color: AppTheme.dangerBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFECACA)),
+        border: Border.all(color: AppTheme.dangerBorder),
       ),
       child: Row(
         children: [
           const Icon(Icons.error_outline_rounded, color: AppTheme.danger),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(message, style: const TextStyle(fontSize: 12.5, color: Color(0xFF991B1B), height: 1.35)),
+            child: Text(message, style: const TextStyle(fontSize: 12.5, color: AppTheme.danger, height: 1.35)),
           ),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
@@ -396,11 +426,11 @@ class DashboardHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: Row(
         children: [
-          Container(
+          Image.asset(
+            'assets/images/educheck-logo.png',
             width: 42,
             height: 42,
-            decoration: BoxDecoration(color: AppTheme.primaryBlue, borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.school_rounded, color: Colors.white, size: 24),
+            semanticLabel: 'EduCheck logo',
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -420,7 +450,7 @@ class DashboardHeader extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.border),
                 ),
@@ -443,12 +473,12 @@ class DashboardHeader extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: AppTheme.danger,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white, width: 1.5),
+                            border: Border.all(color: AppTheme.surface, width: 1.5),
                           ),
                           child: Text(
                             unread > 99 ? '99+' : '$unread',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: const TextStyle(color: AppTheme.onPrimary, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -476,26 +506,26 @@ class WelcomeCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppTheme.primaryBlue, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(20)),
       child: Row(
         children: [
           Container(
             width: 54,
             height: 54,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
+              color: AppTheme.onPrimary.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
+            child: Icon(icon, color: AppTheme.onPrimary, size: 28),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(greeting, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+                Text(greeting, style: const TextStyle(color: AppTheme.onPrimary, fontSize: 19, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 5),
-                Text(detail, style: const TextStyle(color: Color(0xFFDCE8FF), fontSize: 12, height: 1.35)),
+                Text(detail, style: const TextStyle(color: AppTheme.primarySoft, fontSize: 12, height: 1.35)),
               ],
             ),
           ),
@@ -514,7 +544,7 @@ Future<String?> askForRemarks(
   required String hint,
   required String confirmLabel,
   bool required = true,
-  Color confirmColor = AppTheme.primaryBlue,
+  Color confirmColor = AppTheme.primary,
 }) {
   final controller = TextEditingController();
   return showDialog<String>(
@@ -533,7 +563,7 @@ Future<String?> askForRemarks(
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: hint,
-                fillColor: const Color(0xFFF8FAFC),
+                fillColor: AppTheme.background,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(color: AppTheme.border),
@@ -588,8 +618,8 @@ void showMessage(BuildContext context, String message, {bool error = false}) {
 PreferredSizeWidget detailAppBar(String title, {List<Widget>? actions}) {
   return AppBar(
     title: Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
-    backgroundColor: Colors.white,
-    surfaceTintColor: Colors.white,
+    backgroundColor: AppTheme.surface,
+    surfaceTintColor: AppTheme.surface,
     foregroundColor: AppTheme.textDark,
     elevation: 0,
     actions: actions,

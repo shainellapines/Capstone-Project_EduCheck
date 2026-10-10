@@ -119,7 +119,7 @@ class OverviewHome extends StatelessWidget {
                 value: '$ready',
                 icon: Icons.task_alt_rounded,
                 color: AppTheme.success,
-                background: const Color(0xFFF0FDF4),
+                background: AppTheme.successBg,
                 onTap: () => goTo(recordsTab),
               )
             else
@@ -127,16 +127,16 @@ class OverviewHome extends StatelessWidget {
                 title: 'Learners with records',
                 value: '${students.length}',
                 icon: Icons.groups_rounded,
-                color: AppTheme.primaryBlue,
-                background: const Color(0xFFEFF6FF),
+                color: AppTheme.primary,
+                background: AppTheme.primaryTint,
                 onTap: () => goTo(recordsTab),
               ),
             StatCard(
               title: 'Pending approval',
               value: '${count('Pending Approval')}',
               icon: Icons.hourglass_top_rounded,
-              color: AppTheme.primaryBlue,
-              background: const Color(0xFFEFF6FF),
+              color: AppTheme.primary,
+              background: AppTheme.primaryTint,
               onTap: () => openList('Pending Approval'),
             ),
             StatCard(
@@ -144,7 +144,7 @@ class OverviewHome extends StatelessWidget {
               value: '${count('Approved')}',
               icon: Icons.verified_outlined,
               color: AppTheme.success,
-              background: const Color(0xFFF0FDF4),
+              background: AppTheme.successBg,
               onTap: () => openList('Approved'),
             ),
             StatCard(
@@ -152,7 +152,7 @@ class OverviewHome extends StatelessWidget {
               value: '$needsRevision',
               icon: Icons.edit_note_rounded,
               color: AppTheme.danger,
-              background: const Color(0xFFFEF2F2),
+              background: AppTheme.dangerBg,
               onTap: () => goTo(recordsTab),
             ),
           ]),
@@ -284,8 +284,8 @@ class _SectionRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: expected == 0 ? 0 : submitted / expected,
               minHeight: 7,
-              backgroundColor: const Color(0xFFE2E8F0),
-              color: AppTheme.primaryBlue,
+              backgroundColor: AppTheme.surfaceSunken,
+              color: AppTheme.primary,
             ),
           ),
           const SizedBox(height: 6),

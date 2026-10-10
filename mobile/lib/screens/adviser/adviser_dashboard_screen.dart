@@ -6,6 +6,7 @@ import '../shared/profile_screen.dart';
 import '../shared/repository_screen.dart';
 import '../shared/role_shell.dart';
 import '../shared/student_list_screen.dart';
+import '../shared/notification_screen.dart';
 
 /// Class Adviser on mobile (SPMP §6.5): an on-the-go view of every
 /// subject's status for their own section (M-03), submit for approval or
@@ -24,7 +25,12 @@ class AdviserDashboardScreen extends StatelessWidget {
           icon: Icons.home_rounded,
           builder: (context, goTo) => OverviewHome(goTo: goTo, recordsTab: 1, analyticsTab: 2),
         ),
-        ShellTab(label: 'Records', icon: Icons.description_outlined, builder: (context, goTo) => const StudentListScreen()),
+        ShellTab(
+          label: 'Records',
+          icon: Icons.description_outlined,
+          builder: (context, goTo) => const StudentListScreen(),
+          opensFor: const {NotificationTitles.submissionApproved, NotificationTitles.submissionRejected},
+        ),
         ShellTab(label: 'Analytics', icon: Icons.insights_rounded, builder: (context, goTo) => const AnalyticsScreen()),
         ShellTab(label: 'Repository', icon: Icons.manage_search_rounded, builder: (context, goTo) => const RepositoryScreen()),
         ShellTab(label: 'Account', icon: Icons.person_outline_rounded, builder: (context, goTo) => const ProfileScreen()),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../shared/analytics_screen.dart';
+import '../shared/notification_screen.dart';
 import '../shared/overview_home.dart';
 import '../shared/profile_screen.dart';
 import '../shared/repository_screen.dart';
@@ -27,6 +28,11 @@ class AdminDashboardScreen extends StatelessWidget {
           label: 'Approvals',
           icon: Icons.fact_check_outlined,
           builder: (context, goTo) => const StudentListScreen(initialStatus: 'Pending Approval'),
+          opensFor: const {
+            NotificationTitles.recordSubmitted,
+            NotificationTitles.recordsSubmitted,
+            NotificationTitles.amendmentNeeded,
+          },
         ),
         ShellTab(label: 'Repository', icon: Icons.manage_search_rounded, builder: (context, goTo) => const RepositoryScreen()),
         ShellTab(label: 'Analytics', icon: Icons.insights_rounded, builder: (context, goTo) => const AnalyticsScreen()),

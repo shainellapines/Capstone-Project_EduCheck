@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-    GraduationCap,
     LayoutDashboard,
     Users,
     UserCog,
@@ -21,6 +20,7 @@ import {
 } from "lucide-react";
 
 import "../pages/Dashboard.css";
+import logo from "../assets/educheck-logo.png";
 import { getStoredUser, getToken, clearSession } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
 import { API_URL } from "../config";
@@ -137,7 +137,7 @@ function Sidebar({ activeKey }) {
 
             <div className="sidebar-brand">
                 <div className="brand-logo">
-                    <GraduationCap size={22} strokeWidth={1.75} />
+                    <img src={logo} alt="EduCheck logo" />
                 </div>
 
                 <div>

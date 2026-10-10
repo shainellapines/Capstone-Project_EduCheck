@@ -72,7 +72,7 @@ class Sf10PreviewScreen extends StatelessWidget {
                             Icon(
                               issue['level'] == 'info' ? Icons.info_outline_rounded : Icons.warning_amber_rounded,
                               size: 16,
-                              color: issue['level'] == 'info' ? const Color(0xFF94A3B8) : AppTheme.warning,
+                              color: issue['level'] == 'info' ? AppTheme.textGray : AppTheme.warning,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -134,7 +134,7 @@ class _ReadinessBar extends StatelessWidget {
     Color segment(String? blockStatus) => switch (blockStatus) {
           'Complete' => AppTheme.success,
           'Partial' || 'Unavailable' => AppTheme.warning,
-          'Unsupported' => const Color(0xFF60A5FA),
+          'Unsupported' => AppTheme.info,
           _ => AppTheme.border,
         };
 
@@ -195,7 +195,7 @@ class _GradeBlock extends StatelessWidget {
                 width: 32,
                 height: 32,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(9)),
+                decoration: BoxDecoration(color: AppTheme.surfaceSunken, borderRadius: BorderRadius.circular(9)),
                 child: Text(
                   '${block['grade_level']}',
                   style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textDark),

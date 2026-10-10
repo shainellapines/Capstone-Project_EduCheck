@@ -108,8 +108,8 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
             'Student Record',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
           ),
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
+          backgroundColor: AppTheme.surface,
+          surfaceTintColor: AppTheme.surface,
           foregroundColor: AppTheme.textDark,
           elevation: 0,
           bottom: const PreferredSize(
@@ -143,11 +143,11 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: AppTheme.lightBlue,
+                  backgroundColor: AppTheme.primaryTint,
                   child: Text(
                     '${(student['first_name'] ?? ' ').toString().characters.first}'
                     '${(student['last_name'] ?? ' ').toString().characters.first}',
-                    style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -186,10 +186,10 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppTheme.dangerBg, borderRadius: BorderRadius.circular(10)),
                 child: Text(
                   'Administrator remarks: ${submission['remarks']}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B), height: 1.35),
+                  style: const TextStyle(fontSize: 12, color: AppTheme.danger, height: 1.35),
                 ),
               ),
             ],
@@ -296,7 +296,7 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
   Widget _chip(IconData icon, String label, {Color color = AppTheme.textGray}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: AppTheme.surfaceSunken, borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

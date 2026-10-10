@@ -139,7 +139,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     children: [
                       _filterChip(null, 'All (${students.length})'),
                       for (final status in submissionStatuses)
-                        if ((counts[status] ?? 0) > 0) _filterChip(status, '$status (${counts[status]})'),
+                        if ((counts[status] ?? 0) > 0) _filterChip(status, '${statusLabel(status)} (${counts[status]})'),
                     ],
                   ),
                 ),
