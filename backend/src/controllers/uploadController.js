@@ -760,6 +760,39 @@ const uploadClassRecord = async (req, res) => {
                 sectionId: section.section_id,
             });
 
+            // SPMP M-02: tell the uploader when rule-based validation flagged
+            // something, so the alert also reaches them on mobile. A clean
+            // upload sends nothing. Same transaction as the upload, so the
+            // alert never outlives a rolled-back upload.
+            const errorCount = classRecord.validation_error_count;
+            const warningCount = classRecord.validation_warning_count;
+
+            if (errorCount > 0 || warningCount > 0) {
+                const found = [
+                    errorCount > 0 ? `${errorCount} error(s)` : null,
+                    warningCount > 0 ? `${warningCount} warning(s)` : null,
+                ]
+                    .filter(Boolean)
+                    .join(" and ");
+                const nextStep =
+                    errorCount > 0
+                        ? "Correct them in the e-Class Record and re-upload."
+                        : "Review them on the validation results page.";
+
+                await dbClient.query(
+                    `
+                    INSERT INTO notifications (user_id, title, message, status)
+                    VALUES ($1, $2, $3, 'Unread')
+                    `,
+                    [
+                        req.user.user_id,
+                        errorCount > 0 ? "Upload Needs Correction" : "Upload Has Warnings",
+                        `Validation found ${found} in your ${subject.subject_name} upload for ` +
+                            `Grade ${subject.grade_level} – ${section.section_name}. ${nextStep}`,
+                    ]
+                );
+            }
+
             await dbClient.query("COMMIT");
         } catch (error) {
             await dbClient.query("ROLLBACK");
