@@ -1,6 +1,6 @@
 # EduCheck - Automated Backend Test Coverage
 
-Run: `cd backend && npm test` (91 tests, about 35 s).
+Run: `cd backend && npm test` (93 tests, about 40 s).
 
 The suite uses its own PostgreSQL database `educheck_test`, dropped and rebuilt from
 `02-Product Design/06-Database/SQL/educheck_schema.sql` on every file, and spawns the
@@ -16,7 +16,7 @@ permission to create a database.
 | EPIC-01 | Self-service account and password change with complexity rule | `auth.test.js` | AUTH-07, AUTH-08 |
 | §6.2, US-009, US-011 | Role-based access control per endpoint and role (22 endpoints x 4 roles + anonymous) | `rolematrix.test.js` | one test per endpoint |
 | §6.2 "own section only", US-008 | Adviser reads are limited to the section they advise; Admin/Principal school-wide | `scoping.test.js` | CON-06, ANA-02 (consolidation, section progress, student detail, upload summary, analytics, repository) |
-| EPIC-02, US-002 | Upload accepts only assigned (subject, section); file-type and workbook checks | `upload-integrity.test.js` | INT-08, INT-09 |
+| EPIC-02, US-002 | Upload accepts only assigned (subject, section); file-type and workbook checks | `upload-integrity.test.js` | INT-08, INT-09, INT-10 (10 MB size limit) |
 | EPIC-02/03 | Class roster per school year; first upload establishes it; wrong-section upload rejected; partial overlap warns; header mismatch warns | `upload-integrity.test.js` | INT-01 to INT-07 |
 | §6.2, US-009 | Subject grade level must match section grade level (assignment and upload) | `upload-integrity.test.js` | GRD-01 to GRD-04 |
 | EPIC-02, EPIC-04, US-004 | Parser reads learners, LRNs and header; validator marks a clean record ready | `parser.test.js` | PRS-01 to PRS-03, VAL-01, VAL-02, INT-H1, INT-H2 |

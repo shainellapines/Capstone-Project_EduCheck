@@ -56,10 +56,37 @@ const storage = multer.diskStorage({
     }
 });
 
+// A real e-class record workbook is about 2 MB; 10 MB leaves headroom
+// while stopping a huge file from filling the disk or stalling the parser.
+const MAX_UPLOAD_MB = 10;
+
 const upload =
     multer({
-        storage
+        storage,
+        limits: {
+            fileSize: MAX_UPLOAD_MB * 1024 * 1024,
+            files: 1
+        }
     });
+
+// Turns multer's errors (oversized file, extra files) into a JSON message
+// the upload page can show, instead of Express's default error page.
+const uploadSingleFile = (req, res, next) => {
+    upload.single("file")(req, res, (error) => {
+        if (!error) return next();
+
+        if (error instanceof multer.MulterError) {
+            const tooLarge = error.code === "LIMIT_FILE_SIZE";
+            return res.status(tooLarge ? 413 : 400).json({
+                message: tooLarge
+                    ? `The file is larger than ${MAX_UPLOAD_MB} MB. Upload the e-class record workbook only.`
+                    : "Upload one Excel file at a time."
+            });
+        }
+
+        return next(error);
+    });
+};
 
 // ==========================================
 // ALL UPLOAD ROUTES
@@ -112,7 +139,7 @@ router.get(
 
 router.post(
     "/",
-    upload.single("file"),
+    uploadSingleFile,
     uploadClassRecord
 );
 

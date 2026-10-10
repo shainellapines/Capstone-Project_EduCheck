@@ -23,6 +23,13 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+// Refuse to start with no signing key, or the placeholder from .env.example:
+// anyone who knows it could forge an Admin token.
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "change-me") {
+    console.error("JWT_SECRET is missing or still 'change-me' in backend/.env. Set a long random value (see .env.example).");
+    process.exit(1);
+}
+
 const pool = require("./db");
 
 const app = express();

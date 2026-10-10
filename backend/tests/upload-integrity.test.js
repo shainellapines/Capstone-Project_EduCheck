@@ -161,4 +161,19 @@ describe("Upload integrity: roster, wrong-section, grade level (EPIC-02)", () =>
         assert.ok([422, 500].includes(badBook.status));
         assert.notEqual(badBook.status, 201);
     });
+
+    it("INT-10 a file over the 10 MB upload limit is rejected (413) with a readable message", async () => {
+        const fs = require("fs");
+        const os = require("os");
+        const path = require("path");
+        const big = path.join(os.tmpdir(), `big-${Date.now()}.xlsx`);
+        fs.writeFileSync(big, Buffer.alloc(11 * 1024 * 1024));
+        try {
+            const res = await uploadAs(big, t.ids.mabini);
+            assert.equal(res.status, 413);
+            assert.match(res.body.message, /larger than 10 MB/);
+        } finally {
+            fs.unlinkSync(big);
+        }
+    });
 });
