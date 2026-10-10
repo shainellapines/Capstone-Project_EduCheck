@@ -154,4 +154,25 @@ describe("Submission workflow, snapshot and re-upload guard", () => {
         assert.ok(rows.some((r) => r.username === "adviser_a" && r.title === "Submission Approved"));
         assert.ok(rows.some((r) => r.username === "admin" && r.title === "Approved Record Needs Amendment"));
     });
+
+    const adminNotices = async (title) =>
+        (
+            await t.pool.query(
+                `SELECT n.message FROM notifications n JOIN users u USING (user_id)
+                 WHERE u.username = 'admin' AND n.title = $1 ORDER BY n.notification_id`,
+                [title]
+            )
+        ).rows;
+
+    it("WF-14 submitting a record notifies the Administrator, naming the learner, section and Adviser", async () => {
+        const notices = await adminNotices("Record Submitted for Approval");
+        // WF-01, WF-03's resubmit and WF-10's resubmit each submitted once.
+        assert.ok(notices.length >= 2, `expected submit notices, got ${notices.length}`);
+        assert.match(notices[0].message, /^Ana Adviser-A submitted .+'s consolidated record \(Grade 4 – Mabini\) for approval\.$/);
+        const others = await t.pool.query(
+            `SELECT COUNT(*) FROM notifications n JOIN users u USING (user_id)
+             WHERE n.title = 'Record Submitted for Approval' AND u.role <> 'admin'`
+        );
+        assert.equal(Number(others.rows[0].count), 0, "only Administrators are told about a submission");
+    });
 });

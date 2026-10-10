@@ -116,4 +116,24 @@ describe("Completeness counts only the learner's own grade-level subjects", () =
             grade4Subjects.map((subject) => subject.subject_name).sort()
         );
     });
+
+    it("COMP-05 'submit all' submits the other complete learners and sends the Administrator one summary", async () => {
+        const res = await t.request("POST", `/api/submissions/school-years/${sy}/submit-all`, {
+            token: t.tokens.adviser_a,
+        });
+        assert.equal(res.status, 200, JSON.stringify(res.body));
+        assert.equal(res.body.submitted_count, 2, "the two complete, not-yet-approved Mabini learners");
+
+        const notices = (
+            await t.pool.query(
+                `SELECT n.message FROM notifications n JOIN users u USING (user_id)
+                 WHERE u.username = 'admin' AND n.title = 'Records Submitted for Approval'`
+            )
+        ).rows;
+        assert.equal(notices.length, 1, "one summary, not one per learner");
+        assert.equal(
+            notices[0].message,
+            "Ana Adviser-A submitted 2 consolidated record(s) for approval (2 from Grade 4 – Mabini)."
+        );
+    });
 });

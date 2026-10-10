@@ -8,6 +8,47 @@ const {
 const isValidSchoolYearId = (value) => Number.isInteger(value) && value > 0;
 const isValidLrn = (value) => typeof value === "string" && /^\d{12}$/.test(value);
 
+// "Grade 6 – Rizal" for each of the given section ids.
+const loadSectionLabels = async (sectionIds) => {
+    const result = await pool.query(
+        "SELECT section_id, section_name, grade_level FROM sections WHERE section_id = ANY($1)",
+        [sectionIds]
+    );
+
+    return new Map(
+        result.rows.map((row) => [row.section_id, `Grade ${row.grade_level} – ${row.section_name}`])
+    );
+};
+
+// The submitting Adviser's teacher-profile name, or their username.
+const loadUserDisplayName = async (userId) => {
+    const result = await pool.query(
+        `SELECT u.username, t.first_name, t.last_name
+         FROM users u LEFT JOIN teachers t ON t.user_id = u.user_id
+         WHERE u.user_id = $1`,
+        [userId]
+    );
+    const row = result.rows[0];
+
+    if (!row) return "An Adviser";
+
+    return row.first_name ? `${row.first_name} ${row.last_name}` : row.username;
+};
+
+// Any active Administrator can approve or return a submission, so every one
+// of them is told a record is waiting (SPMP US-010, M-06).
+const notifyAdministrators = async (title, message) => {
+    await pool.query(
+        `
+        INSERT INTO notifications (user_id, title, message, status)
+        SELECT user_id, $1, $2, 'Unread'
+        FROM users
+        WHERE role = 'admin' AND LOWER(COALESCE(status, 'Active')) = 'active'
+        `,
+        [title, message]
+    );
+};
+
 // ==========================================
 // SUBMIT ONE STUDENT'S RECORD FOR APPROVAL
 // (Class Adviser)
@@ -100,6 +141,15 @@ const submitForApproval = async (req, res) => {
             [lrn, schoolYearId, req.user.user_id]
         );
 
+        const sectionLabel = (await loadSectionLabels([student.section_id])).get(student.section_id);
+        const adviserName = await loadUserDisplayName(req.user.user_id);
+
+        await notifyAdministrators(
+            "Record Submitted for Approval",
+            `${adviserName} submitted ${student.last_name}, ${student.first_name}'s consolidated record ` +
+                `(${sectionLabel}) for approval.`
+        );
+
         return res.json({
             message: "Submitted for approval.",
             submission: result.rows[0],
@@ -145,6 +195,7 @@ const submitAllEligible = async (req, res) => {
         );
 
         let submittedCount = 0;
+        const submittedBySection = new Map();
 
         for (const student of eligible) {
             await pool.query(
@@ -167,6 +218,21 @@ const submitAllEligible = async (req, res) => {
             );
 
             submittedCount += 1;
+            submittedBySection.set(student.section_id, (submittedBySection.get(student.section_id) || 0) + 1);
+        }
+
+        // One summary notification per submit, not one per learner.
+        if (submittedCount > 0) {
+            const sectionLabels = await loadSectionLabels([...submittedBySection.keys()]);
+            const breakdown = [...submittedBySection]
+                .map(([sectionId, count]) => `${count} from ${sectionLabels.get(sectionId)}`)
+                .join(", ");
+            const adviserName = await loadUserDisplayName(req.user.user_id);
+
+            await notifyAdministrators(
+                "Records Submitted for Approval",
+                `${adviserName} submitted ${submittedCount} consolidated record(s) for approval (${breakdown}).`
+            );
         }
 
         return res.json({
