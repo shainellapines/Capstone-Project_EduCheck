@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, ChevronDown, ChevronUp, ClipboardList, Loader2 } from "lucide-react";
+import {
+    AlertTriangle,
+    ChevronDown,
+    ClipboardList,
+    Loader2,
+    PencilLine,
+    Plus,
+    Trash2,
+} from "lucide-react";
 
 import "../../styles/Dashboard.css";
+import "../../components/StatusBadge.css";
 import "./AuditLog.css";
 import Sidebar from "../../components/Sidebar";
 import { getToken } from "../../utils/session";
@@ -11,16 +20,19 @@ import { API_URL } from "../../config";
 const ENTITY_TYPE_LABEL = {
     section: "Section",
     teacher_assignment: "Teacher Assignment",
+    historical_record: "SF10 Historical Record",
 };
 
-const ACTION_LABEL = {
-    create: "Created",
-    update: "Updated",
-    delete: "Deleted",
+// Shared badge tones from StatusBadge.css, each with its own icon so the
+// action is never conveyed by color alone.
+const ACTION_BADGE = {
+    create: { label: "Created", tone: "success-outline", icon: Plus },
+    update: { label: "Updated", tone: "revision", icon: PencilLine },
+    delete: { label: "Deleted", tone: "danger", icon: Trash2 },
 };
 
 // Fields that are pure bookkeeping, not a meaningful change to call out in
-// the diff — every row already has its own "When" column for created_at.
+// the diff — every row already shows its own time for created_at.
 const IGNORED_DIFF_FIELDS = new Set(["created_at"]);
 
 // For an update, only the fields that actually differ; for a create/delete
@@ -40,11 +52,38 @@ function formatValue(value) {
     return String(value);
 }
 
-function formatTimestamp(isoString) {
-    return new Date(isoString).toLocaleString(undefined, {
-        dateStyle: "medium",
+function formatDate(isoString) {
+    return new Date(isoString).toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+function formatTime(isoString) {
+    return new Date(isoString).toLocaleTimeString(undefined, {
         timeStyle: "short",
     });
+}
+
+// Logs arrive newest first; consecutive entries from the same day share
+// one date heading.
+function groupByDay(logs) {
+    const groups = [];
+
+    logs.forEach((log) => {
+        const day = formatDate(log.created_at);
+        const last = groups[groups.length - 1];
+
+        if (last && last.day === day) {
+            last.logs.push(log);
+        } else {
+            groups.push({ day, logs: [log] });
+        }
+    });
+
+    return groups;
 }
 
 // SPMP v1.0 Risk Management §11 — a read-only trail of every section and
@@ -167,7 +206,7 @@ function AuditLog() {
                     )}
 
                     {!loading && logs && logs.length > 0 && (
-                        <div className="content-card">
+                        <div className="content-card al-list">
 
                             {truncated && (
                                 <p className="al-truncated-note">
@@ -175,90 +214,102 @@ function AuditLog() {
                                 </p>
                             )}
 
-                            {logs.map((log) => {
-                                const isExpanded = expandedIds.has(log.audit_log_id);
-                                const changedFields = diffFields(log.before_data, log.after_data);
+                            {groupByDay(logs).map((group) => (
+                                <div className="al-day" key={group.day}>
+                                    <h3 className="al-day-heading">{group.day}</h3>
 
-                                return (
-                                    <div className="al-row" key={log.audit_log_id}>
-                                        <button
-                                            type="button"
-                                            className="al-row-summary"
-                                            onClick={() => toggleExpanded(log.audit_log_id)}
-                                        >
-                                            {isExpanded ? (
-                                                <ChevronUp size={18} style={{ color: "var(--ec-text-muted)" }} />
-                                            ) : (
-                                                <ChevronDown size={18} style={{ color: "var(--ec-text-muted)" }} />
-                                            )}
+                                    {group.logs.map((log) => {
+                                        const isExpanded = expandedIds.has(log.audit_log_id);
+                                        const changedFields = diffFields(log.before_data, log.after_data);
+                                        const badge = ACTION_BADGE[log.action];
+                                        const BadgeIcon = badge?.icon;
 
-                                            <span className={`al-action-badge al-action-${log.action}`}>
-                                                {ACTION_LABEL[log.action] || log.action}
-                                            </span>
+                                        return (
+                                            <div
+                                                className={`al-row${isExpanded ? " al-row-open" : ""}`}
+                                                key={log.audit_log_id}
+                                            >
+                                                <button
+                                                    type="button"
+                                                    className="al-row-summary"
+                                                    onClick={() => toggleExpanded(log.audit_log_id)}
+                                                    aria-expanded={isExpanded}
+                                                >
+                                                    <ChevronDown size={18} className="al-chevron" aria-hidden="true" />
 
-                                            <span className="al-entity">
-                                                {ENTITY_TYPE_LABEL[log.entity_type] || log.entity_type} #
-                                                {log.entity_id}
-                                            </span>
+                                                    <span className={`ec-badge ec-badge-${badge?.tone || "neutral"} al-action-badge`}>
+                                                        {BadgeIcon && (
+                                                            <BadgeIcon size={14} strokeWidth={1.75} aria-hidden="true" />
+                                                        )}
+                                                        {badge?.label || log.action}
+                                                    </span>
 
-                                            <span className="al-actor">by {log.actor_username}</span>
+                                                    <span className="al-what">
+                                                        <span className="al-entity">
+                                                            {ENTITY_TYPE_LABEL[log.entity_type] || log.entity_type} #
+                                                            {log.entity_id}
+                                                        </span>
+                                                        <span className="al-actor">by {log.actor_username}</span>
+                                                    </span>
 
-                                            <span className="al-timestamp">
-                                                {formatTimestamp(log.created_at)}
-                                            </span>
-                                        </button>
+                                                    <span className="al-timestamp">
+                                                        {formatTime(log.created_at)}
+                                                    </span>
+                                                </button>
 
-                                        {isExpanded && (
-                                            <div className="al-details">
-                                                {log.action === "update" ? (
-                                                    changedFields.length > 0 ? (
-                                                        <table className="al-table">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Field</th>
-                                                                    <th>Before</th>
-                                                                    <th>After</th>
-                                                                </tr>
-                                                            </thead>
+                                                {isExpanded && (
+                                                    <div className="al-details">
+                                                        {log.action === "update" ? (
+                                                            changedFields.length > 0 ? (
+                                                                <table className="al-table">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Field</th>
+                                                                            <th>Before</th>
+                                                                            <th>After</th>
+                                                                        </tr>
+                                                                    </thead>
 
-                                                            <tbody>
-                                                                {changedFields.map((field) => (
-                                                                    <tr key={field.key}>
-                                                                        <td>{field.key}</td>
-                                                                        <td>{formatValue(field.before)}</td>
-                                                                        <td>{formatValue(field.after)}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    ) : (
-                                                        <p className="al-empty-note">
-                                                            No field values changed.
-                                                        </p>
-                                                    )
-                                                ) : (
-                                                    <table className="al-table">
-                                                        <tbody>
-                                                            {Object.entries(
-                                                                log.action === "create"
-                                                                    ? log.after_data || {}
-                                                                    : log.before_data || {}
+                                                                    <tbody>
+                                                                        {changedFields.map((field) => (
+                                                                            <tr key={field.key}>
+                                                                                <td>{field.key}</td>
+                                                                                <td>{formatValue(field.before)}</td>
+                                                                                <td>{formatValue(field.after)}</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            ) : (
+                                                                <p className="al-empty-note">
+                                                                    No field values changed.
+                                                                </p>
                                                             )
-                                                                .filter(([key]) => !IGNORED_DIFF_FIELDS.has(key))
-                                                                .map(([key, value]) => (
-                                                                    <tr key={key}>
-                                                                        <td>{key}</td>
-                                                                        <td>{formatValue(value)}</td>
-                                                                    </tr>
-                                                                ))}
-                                                        </tbody>
-                                                    </table>
+                                                        ) : (
+                                                            <table className="al-table">
+                                                                <tbody>
+                                                                    {Object.entries(
+                                                                        log.action === "create"
+                                                                            ? log.after_data || {}
+                                                                            : log.before_data || {}
+                                                                    )
+                                                                        .filter(([key]) => !IGNORED_DIFF_FIELDS.has(key))
+                                                                        .map(([key, value]) => (
+                                                                            <tr key={key}>
+                                                                                <td>{key}</td>
+                                                                                <td>{formatValue(value)}</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                </tbody>
+                                                            </table>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
+                                        );
+                                    })}
+                                </div>
+                            ))}
                         </div>
                     )}
 

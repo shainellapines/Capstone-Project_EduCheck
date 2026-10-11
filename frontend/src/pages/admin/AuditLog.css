@@ -1,118 +1,190 @@
 /* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
    dashboard-header, dashboard-content, content-card, error-banner,
    loading-state, school-year-select, empty-state-card) for everything
-   generic — this file only covers the row list and its expandable diff. */
+   generic, and StatusBadge.css for the action badges — this file only
+   covers the day-grouped row list and its expandable diff. */
+
+/* One grid for every row so the badge, entity and time line up down the
+   page: chevron | badge | what changed | time. */
+.al-list {
+    --al-columns: 18px 96px minmax(0, 1fr) auto;
+    --al-gap: 16px;
+    --al-pad-x: 24px;
+}
 
 .al-truncated-note {
-    margin: 0 0 12px;
+    margin: 0;
+    padding: 12px var(--al-pad-x);
+    border-bottom: 1px solid var(--ec-border);
     font-size: 13px;
-    color: var(--ec-slate-500);
+    color: var(--ec-text-muted);
 }
 
-.al-row {
-    border-bottom: 1px solid var(--ec-slate-100);
+.al-day + .al-day {
+    border-top: 1px solid var(--ec-border);
 }
 
-.al-row:last-child {
-    border-bottom: none;
+.al-day-heading {
+    margin: 0;
+    padding: 10px var(--al-pad-x);
+    background: var(--ec-surface-sunken);
+    border-bottom: 1px solid var(--ec-border);
+    font-family: var(--ec-font-sans);
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ec-text-muted);
+}
+
+.al-row + .al-row {
+    border-top: 1px solid var(--ec-border);
 }
 
 .al-row-summary {
     width: 100%;
-    display: flex;
+    display: grid;
+    grid-template-columns: var(--al-columns);
     align-items: center;
-    gap: 14px;
-    padding: 14px 4px;
+    gap: var(--al-gap);
+    padding: 12px var(--al-pad-x);
     background: none;
     border: none;
     cursor: pointer;
     font-family: inherit;
     text-align: left;
+    color: inherit;
+    transition: background var(--ec-duration) ease-out;
 }
 
+.al-row-summary:hover,
+.al-row-open .al-row-summary {
+    background: var(--ec-hover);
+}
+
+.al-row-summary:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: -2px;
+}
+
+.al-chevron {
+    color: var(--ec-text-muted);
+    transition: transform var(--ec-duration) ease-out;
+}
+
+.al-row-open .al-chevron {
+    transform: rotate(180deg);
+}
+
+/* The badge column is a fixed width (in --al-columns), so the entity
+   column starts at one line whatever the badge says. */
 .al-action-badge {
-    display: inline-flex;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
+    justify-self: start;
 }
 
-.al-action-create {
-    background: var(--ec-success-bg);
-    color: var(--ec-success);
-}
-
-.al-action-update {
-    background: var(--ec-warning-bg);
-    color: var(--ec-warning);
-}
-
-.al-action-delete {
-    background: var(--ec-danger-bg);
-    color: var(--ec-danger);
+.al-what {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
 }
 
 .al-entity {
     font-weight: 600;
-    color: var(--ec-slate-900);
     font-size: 14px;
+    line-height: 20px;
+    color: var(--ec-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .al-actor {
-    color: var(--ec-slate-500);
     font-size: 13px;
-    white-space: nowrap;
+    line-height: 18px;
+    color: var(--ec-text-muted);
 }
 
 .al-timestamp {
-    margin-left: auto;
-    color: var(--ec-slate-400);
     font-size: 13px;
+    color: var(--ec-text-muted);
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 
+/* Details start under the entity column, not under the chevron. */
 .al-details {
-    padding: 0 4px 16px 36px;
+    padding: 4px var(--al-pad-x) 18px
+        calc(var(--al-pad-x) + 18px + 96px + 2 * var(--al-gap));
+    background: var(--ec-hover);
     overflow-x: auto;
 }
 
 .al-empty-note {
     margin: 0;
-    color: var(--ec-slate-500);
+    color: var(--ec-text-muted);
     font-size: 13px;
 }
 
 .al-table {
     width: 100%;
+    max-width: 760px;
     border-collapse: collapse;
+    background: var(--ec-surface);
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
 }
 
 .al-table th {
     text-align: left;
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--ec-slate-200);
-    background: var(--ec-slate-50);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--ec-border);
+    background: var(--ec-surface-sunken);
     font-size: 12px;
-    color: var(--ec-slate-600);
+    font-weight: 600;
+    color: var(--ec-text-muted);
 }
 
 .al-table td {
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--ec-slate-100);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--ec-border);
     font-size: 13px;
-    color: var(--ec-slate-700);
+    color: var(--ec-text);
     word-break: break-word;
 }
 
+.al-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Field names in mono, like other raw identifiers in the app. */
+.al-table td:first-child {
+    width: 34%;
+    font-family: var(--ec-font-mono);
+    font-size: 12px;
+    color: var(--ec-text-muted);
+}
+
 @media (max-width: 700px) {
-    .al-row-summary {
-        flex-wrap: wrap;
+    .al-list {
+        --al-pad-x: 16px;
+        --al-gap: 12px;
     }
 
-    .al-timestamp {
-        margin-left: 32px;
+    .al-row-summary {
+        grid-template-columns: 18px minmax(0, 1fr) auto;
+        grid-template-areas:
+            "chevron badge time"
+            ". what what";
+        row-gap: 6px;
+    }
+
+    .al-chevron { grid-area: chevron; }
+    .al-action-badge { grid-area: badge; width: fit-content; }
+    .al-what { grid-area: what; }
+    .al-timestamp { grid-area: time; }
+
+    .al-details {
+        padding-left: var(--al-pad-x);
     }
 }
