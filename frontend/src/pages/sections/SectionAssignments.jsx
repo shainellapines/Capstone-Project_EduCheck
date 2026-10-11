@@ -307,11 +307,20 @@ function SectionAssignments() {
         }
     };
 
+    // What a teacher loses with the Class Adviser slot: every Adviser page is
+    // scoped to the sections whose slot they hold, not to their subjects.
+    const classAdviserLossWarning = (teacherName, sectionName) =>
+        `${teacherName} will no longer be ${sectionName}'s Class Adviser, so they can no longer see its ` +
+        "consolidated records, submit records for approval, return subjects to teachers or request revisions. " +
+        "Their subject uploads are not affected.";
+
     const handleDeleteAssignment = async (assignment) => {
+        const teacherName = `${assignment.first_name} ${assignment.last_name}`;
         const confirmed = window.confirm(
-            `Remove ${assignment.first_name} ${assignment.last_name}'s assignment to ${assignment.section_name}${
-                assignment.subject_name ? ` (${assignment.subject_name})` : " (Adviser)"
-            }?`
+            assignment.subject_name
+                ? `Remove ${teacherName}'s ${assignment.subject_name} assignment in ${assignment.section_name}?`
+                : `Remove ${teacherName} as Class Adviser of ${assignment.section_name}?\n\n` +
+                      classAdviserLossWarning(teacherName, assignment.section_name)
         );
 
         if (!confirmed) return;
@@ -342,8 +351,10 @@ function SectionAssignments() {
     // one DELETE per assignment (the same endpoint as a single removal).
     const handleRemoveTeacherLoad = async (load) => {
         const labels = load.slots.map((slot) => slot.subject_name || "Class Adviser");
+        const holdsAdviserSlot = load.slots.some((slot) => slot.subject_id === null);
         const confirmed = window.confirm(
-            `Remove all of ${load.name}'s assignments in ${load.sectionName} (${load.schoolYear})?\n\n• ${labels.join("\n• ")}`
+            `Remove all of ${load.name}'s assignments in ${load.sectionName} (${load.schoolYear})?\n\n• ${labels.join("\n• ")}` +
+                (holdsAdviserSlot ? `\n\n${classAdviserLossWarning(load.name, load.sectionName)}` : "")
         );
 
         if (!confirmed) return;
