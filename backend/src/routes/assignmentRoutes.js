@@ -4,6 +4,7 @@ const {
     getAssignments,
     getMyAssignments,
     createAssignment,
+    createAssignmentsBatch,
     deleteAssignment
 } = require("../controllers/assignmentController");
 
@@ -25,6 +26,8 @@ router.use(authorizeRoles("admin"));
 
 router.get("/", getAssignments);
 router.post("/", createAssignment);
+// One teacher's whole load in a section (several subjects and/or Class Adviser).
+router.post("/batch", createAssignmentsBatch);
 router.delete("/:id", deleteAssignment);
 
 module.exports = router;

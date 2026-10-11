@@ -1,6 +1,6 @@
 # EduCheck - Automated Backend Test Coverage
 
-Run: `cd backend && npm test` (115 tests, about 55 s).
+Run: `cd backend && npm test` (123 tests, about 60 s).
 
 The suite uses its own PostgreSQL database `educheck_test`, dropped and rebuilt from
 `02-Product Design/06-Database/SQL/educheck_schema.sql` on every file, and spawns the
@@ -20,6 +20,7 @@ permission to create a database.
 | EPIC-02/03 | Class roster per school year; first upload establishes it; wrong-section upload rejected; partial overlap warns; header mismatch warns | `upload-integrity.test.js` | INT-01 to INT-07 |
 | §6.2, US-009 | Subject grade level must match section grade level (assignment and upload) | `upload-integrity.test.js` | GRD-01 to GRD-04 |
 | §6.2 | Only an Adviser account can hold a section's Class Adviser slot | `upload-integrity.test.js` | ASG-01 |
+| §6.2, US-009 | One teacher's several subjects (and/or Class Adviser slot) in one save: all-or-nothing; a taken slot is named; role, grade-level and input checks apply to every item; each assignment is audit-logged and becomes an upload option | `assignment-batch.test.js`, `rolematrix.test.js` | BAT-01 to BAT-07, POST /api/assignments/batch |
 | EPIC-02, D-08 | A file whose header names another subject is refused and nothing is saved; common short names (Math, AP, EsP/GMRC, TLE/EPP, MAPEH parts) still match; a blank or unknown label only warns | `upload-integrity.test.js`, `parser.test.js` | SUBJ-01, SUBJ-02, INT-H3, INT-H4 |
 | §6.2, US-009, US-011 | Partial departmentalization: an Adviser assigned their own subjects in a Departmentalized section uploads only those, not other teachers' subjects, and their consolidated record holds every teacher's subjects | `departmentalized.test.js` | DEP-01 to DEP-06 |
 | EPIC-03/06 | A record is complete only when every subject of the learner's own grade level has a grade; another grade's subject is ignored by completeness, Section Progress and the approval snapshot | `completeness.test.js` | COMP-01 to COMP-04 |

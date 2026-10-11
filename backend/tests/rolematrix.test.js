@@ -12,6 +12,7 @@ const MATRIX = [
     ["GET", "/api/users", ["admin"]],
     ["GET", "/api/teachers", ["admin"]],
     ["GET", "/api/assignments", ["admin"]],
+    ["POST", "/api/assignments/batch", ["admin"]],
     ["GET", "/api/audit-logs", ["admin"]],
     ["POST", "/api/sections", ["admin"]],
     ["GET", "/api/sections", ALL],

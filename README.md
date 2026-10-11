@@ -96,7 +96,7 @@ set the server address to the backend's LAN address, e.g.
 ## Tests
 
 ```
-cd backend && npm test      # 115 API tests on a separate educheck_test database
+cd backend && npm test      # 123 API tests on a separate educheck_test database
 cd mobile && flutter test   # mobile unit tests
 ```
 

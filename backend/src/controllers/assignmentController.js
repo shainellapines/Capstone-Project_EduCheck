@@ -187,6 +187,158 @@ const createAssignment = async (req, res) => {
     }
 };
 
+// CREATE several assignments for one teacher in one section at once: any
+// of the section's subjects, plus optionally its Class Adviser slot. Same
+// rules as createAssignment, applied to every item; nothing is saved
+// unless every item can be (one transaction), so the Administrator never
+// ends up with half of a teacher's load assigned.
+const createAssignmentsBatch = async (req, res) => {
+    const { teacher_id, section_id, school_year_id, class_adviser = false, subject_ids = [] } = req.body || {};
+
+    if (!teacher_id || !section_id || !school_year_id) {
+        return res.status(400).json({
+            message: "teacher_id, section_id, and school_year_id are required."
+        });
+    }
+
+    if (!Array.isArray(subject_ids)) {
+        return res.status(400).json({ message: "subject_ids must be a list." });
+    }
+
+    const subjectIds = [...new Set(subject_ids.map(Number))];
+
+    if (subjectIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+        return res.status(400).json({ message: "subject_ids must be valid subject IDs." });
+    }
+
+    if (!class_adviser && subjectIds.length === 0) {
+        return res.status(400).json({ message: "Choose Class Adviser, at least one subject, or both." });
+    }
+
+    const dbClient = await pool.connect();
+
+    try {
+        const teacher = await dbClient.query(
+            `SELECT t.first_name, t.last_name, u.role
+             FROM teachers t INNER JOIN users u ON u.user_id = t.user_id
+             WHERE t.teacher_id = $1`,
+            [teacher_id]
+        );
+        const section = await dbClient.query(
+            `SELECT section_name, grade_level FROM sections WHERE section_id = $1`,
+            [section_id]
+        );
+
+        if (teacher.rows.length === 0 || section.rows.length === 0) {
+            return res.status(400).json({ message: "The selected teacher or section does not exist." });
+        }
+
+        if (class_adviser && teacher.rows[0].role !== "adviser") {
+            return res.status(409).json({
+                message:
+                    "Only an Adviser account can be assigned as Class Adviser. Choose a subject for this teacher, or change the account's role to Adviser in User Management first."
+            });
+        }
+
+        const subjects = subjectIds.length
+            ? (
+                  await dbClient.query(
+                      `SELECT subject_id, subject_name, grade_level FROM subjects WHERE subject_id = ANY($1)`,
+                      [subjectIds]
+                  )
+              ).rows
+            : [];
+
+        if (subjects.length !== subjectIds.length) {
+            return res.status(400).json({ message: "One or more selected subjects do not exist." });
+        }
+
+        for (const subject of subjects) {
+            const mismatch = checkGradeLevel({ subject, section: section.rows[0] });
+            if (mismatch) {
+                return res.status(mismatch.status).json({ message: mismatch.message });
+            }
+        }
+
+        // Name every slot that is already held, so the Administrator sees
+        // all conflicts at once instead of one per attempt.
+        const taken = await dbClient.query(
+            `
+            SELECT ta.subject_id, sub.subject_name, t.first_name, t.last_name
+            FROM teacher_assignments ta
+            INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+            LEFT JOIN subjects sub ON sub.subject_id = ta.subject_id
+            WHERE ta.section_id = $1 AND ta.school_year_id = $2
+              AND (ta.subject_id = ANY($3) OR ($4 AND ta.subject_id IS NULL))
+            `,
+            [section_id, school_year_id, subjectIds, Boolean(class_adviser)]
+        );
+
+        if (taken.rows.length > 0) {
+            const held = taken.rows.map(
+                (row) => `${row.subject_name || "Class Adviser"} (${row.first_name} ${row.last_name})`
+            );
+            return res.status(409).json({
+                message: `Already assigned for this section and school year: ${held.join(", ")}. Nothing was saved.`
+            });
+        }
+
+        await dbClient.query("BEGIN");
+
+        const created = [];
+        const slots = [...(class_adviser ? [null] : []), ...subjectIds];
+
+        for (const subjectId of slots) {
+            const result = await dbClient.query(
+                `INSERT INTO teacher_assignments (teacher_id, section_id, subject_id, school_year_id)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING assignment_id, teacher_id, section_id, subject_id, school_year_id, created_at`,
+                [teacher_id, section_id, subjectId, school_year_id]
+            );
+            created.push(result.rows[0]);
+        }
+
+        await dbClient.query("COMMIT");
+
+        for (const assignment of created) {
+            await recordAuditLog({
+                actorUserId: req.user.user_id,
+                action: "create",
+                entityType: "teacher_assignment",
+                entityId: assignment.assignment_id,
+                beforeData: null,
+                afterData: assignment,
+            });
+        }
+
+        res.status(201).json({
+            message: `${created.length} assignment${created.length === 1 ? "" : "s"} created.`,
+            assignments: created
+        });
+    } catch (error) {
+        await dbClient.query("ROLLBACK").catch(() => {});
+
+        // Another Administrator took a slot between the check and the save.
+        if (error.code === "23505") {
+            return res.status(409).json({
+                message: "One of these slots was just assigned by someone else. Nothing was saved; reload and try again."
+            });
+        }
+
+        if (error.code === "23503") {
+            return res.status(400).json({
+                message: "One of teacher_id, section_id, subject_ids, or school_year_id does not exist."
+            });
+        }
+
+        console.error("Create assignments batch error:", error);
+
+        res.status(500).json({ message: "Failed to create assignments." });
+    } finally {
+        dbClient.release();
+    }
+};
+
 const subject_id_conflict_message = ({ subject_id }) =>
     subject_id
         ? "This subject already has a Subject Teacher assigned for this section and school year."
@@ -233,5 +385,6 @@ module.exports = {
     getAssignments,
     getMyAssignments,
     createAssignment,
+    createAssignmentsBatch,
     deleteAssignment
 };

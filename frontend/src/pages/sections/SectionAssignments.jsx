@@ -41,12 +41,14 @@ function SectionAssignments() {
     const [savingSection, setSavingSection] = useState(false);
 
     const [showAssignmentForm, setShowAssignmentForm] = useState(false);
-    const [assignmentForm, setAssignmentForm] = useState({
+    const emptyAssignmentForm = {
         teacher_id: "",
         section_id: "",
-        subject_id: "",
         school_year_id: "",
-    });
+        class_adviser: false,
+        subject_ids: [],
+    };
+    const [assignmentForm, setAssignmentForm] = useState(emptyAssignmentForm);
     const [savingAssignment, setSavingAssignment] = useState(false);
 
     const authHeaders = () => {
@@ -207,41 +209,65 @@ function SectionAssignments() {
     // ASSIGNMENTS
     // ==========================================
 
+    // Changing the teacher, section or school year changes which slots are
+    // valid and which are already taken, so the ticked boxes start over.
     const handleAssignmentFormChange = (e) => {
         const { name, value } = e.target;
-        setAssignmentForm((previous) => ({ ...previous, [name]: value }));
+        setAssignmentForm((previous) => ({ ...previous, [name]: value, class_adviser: false, subject_ids: [] }));
+    };
+
+    const toggleAssignmentSubject = (subjectId) => {
+        setAssignmentForm((previous) => ({
+            ...previous,
+            subject_ids: previous.subject_ids.includes(subjectId)
+                ? previous.subject_ids.filter((id) => id !== subjectId)
+                : [...previous.subject_ids, subjectId],
+        }));
+    };
+
+    const formTeacher = teachers.find(
+        (teacher) => String(teacher.teacher_id) === String(assignmentForm.teacher_id)
+    );
+    const formSection = sections.find(
+        (section) => String(section.section_id) === String(assignmentForm.section_id)
+    );
+    const formSubjects = formSection
+        ? subjects.filter((subject) => String(subject.grade_level) === String(formSection.grade_level))
+        : [];
+
+    // Who already holds a slot in the chosen section and school year
+    // (subjectId null = the Class Adviser slot).
+    const slotHolder = (subjectId) => {
+        const held = assignments.find(
+            (assignment) =>
+                String(assignment.section_id) === String(assignmentForm.section_id) &&
+                String(assignment.school_year_id) === String(assignmentForm.school_year_id) &&
+                (subjectId === null ? assignment.subject_id === null : String(assignment.subject_id) === String(subjectId))
+        );
+        return held ? `${held.first_name} ${held.last_name}` : null;
     };
 
     const handleCreateAssignment = async (e) => {
         e.preventDefault();
 
-        const selectedTeacher = teachers.find(
-            (teacher) => String(teacher.teacher_id) === String(assignmentForm.teacher_id)
+        const teacherLabel = formTeacher ? `${formTeacher.first_name} ${formTeacher.last_name}` : "this teacher";
+        const sectionLabel = formSection ? formSection.section_name : "this section";
+        const chosenSubjects = formSubjects.filter((subject) =>
+            assignmentForm.subject_ids.includes(subject.subject_id)
         );
-        const selectedSection = sections.find(
-            (section) => String(section.section_id) === String(assignmentForm.section_id)
-        );
-        const selectedSubject = subjects.find(
-            (subject) => String(subject.subject_id) === String(assignmentForm.subject_id)
-        );
+        const roleLabels = [
+            ...(assignmentForm.class_adviser ? ["Class Adviser"] : []),
+            ...chosenSubjects.map((subject) => subject.subject_name),
+        ];
 
-        const teacherLabel = selectedTeacher
-            ? `${selectedTeacher.first_name} ${selectedTeacher.last_name}`
-            : "this teacher";
-        const sectionLabel = selectedSection ? selectedSection.section_name : "this section";
-        const roleLabel = selectedSubject ? selectedSubject.subject_name : "Class Adviser";
-
-        // Same rule as the backend: the Class Adviser slot needs an Adviser account.
-        if (!selectedSubject && selectedTeacher && selectedTeacher.role !== "adviser") {
+        if (roleLabels.length === 0) {
             setActionMessage("");
-            setActionError(
-                `${teacherLabel} has a Subject Teacher account, so they can't be Class Adviser. Choose a subject, or change their role to Adviser in User Management first.`
-            );
+            setActionError("Tick Class Adviser, at least one subject, or both.");
             return;
         }
 
         const confirmed = window.confirm(
-            `Assign ${teacherLabel} to ${sectionLabel} as ${roleLabel}? Double-check the subject and section before confirming.`
+            `Assign ${teacherLabel} to ${sectionLabel} as:\n\n• ${roleLabels.join("\n• ")}\n\nDouble-check before confirming.`
         );
 
         if (!confirmed) return;
@@ -251,26 +277,27 @@ function SectionAssignments() {
         setSavingAssignment(true);
 
         try {
-            const response = await fetch(`${API_URL}/assignments`, {
+            const response = await fetch(`${API_URL}/assignments/batch`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", ...authHeaders() },
                 body: JSON.stringify({
                     teacher_id: Number(assignmentForm.teacher_id),
                     section_id: Number(assignmentForm.section_id),
-                    subject_id: assignmentForm.subject_id ? Number(assignmentForm.subject_id) : null,
                     school_year_id: Number(assignmentForm.school_year_id),
+                    class_adviser: assignmentForm.class_adviser,
+                    subject_ids: assignmentForm.subject_ids,
                 }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || "Failed to create assignment.");
+                throw new Error(data.message || "Failed to create the assignments.");
             }
 
-            setAssignmentForm({ teacher_id: "", section_id: "", subject_id: "", school_year_id: "" });
+            setAssignmentForm(emptyAssignmentForm);
             setShowAssignmentForm(false);
-            setActionMessage("Assignment created successfully.");
+            setActionMessage(data.message || "Assignments created successfully.");
             await loadAll();
         } catch (createError) {
             setActionError(createError.message);
@@ -557,25 +584,6 @@ function SectionAssignments() {
                                         </div>
 
                                         <div className="sa-field">
-                                            <label htmlFor="subject_id">
-                                                Subject <span>(leave blank for Class Adviser)</span>
-                                            </label>
-                                            <select
-                                                id="subject_id"
-                                                name="subject_id"
-                                                value={assignmentForm.subject_id}
-                                                onChange={handleAssignmentFormChange}
-                                            >
-                                                <option value="">— Class Adviser (no single subject) —</option>
-                                                {subjects.map((subject) => (
-                                                    <option key={subject.subject_id} value={subject.subject_id}>
-                                                        {subject.subject_name} (Grade {subject.grade_level})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="sa-field">
                                             <label htmlFor="school_year_id">School Year</label>
                                             <select
                                                 id="school_year_id"
@@ -595,6 +603,68 @@ function SectionAssignments() {
                                             </select>
                                         </div>
 
+                                        <fieldset className="sa-slot-picker">
+                                            <legend>
+                                                Assign as <span>(tick everything this teacher handles in the section)</span>
+                                            </legend>
+
+                                            {!formSection || !assignmentForm.school_year_id ? (
+                                                <p className="sa-slot-hint">
+                                                    Choose a section and school year to see its subjects.
+                                                </p>
+                                            ) : (
+                                                <>
+                                                    {(() => {
+                                                        const holder = slotHolder(null);
+                                                        const notAdviser = formTeacher && formTeacher.role !== "adviser";
+                                                        return (
+                                                            <label className={`sa-slot${holder || notAdviser ? " is-disabled" : ""}`}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={assignmentForm.class_adviser}
+                                                                    disabled={Boolean(holder) || notAdviser}
+                                                                    onChange={(event) =>
+                                                                        setAssignmentForm((previous) => ({
+                                                                            ...previous,
+                                                                            class_adviser: event.target.checked,
+                                                                        }))
+                                                                    }
+                                                                />
+                                                                <span className="sa-slot-name">Class Adviser</span>
+                                                                {holder && <span className="sa-slot-note">assigned to {holder}</span>}
+                                                                {!holder && notAdviser && (
+                                                                    <span className="sa-slot-note">needs an Adviser account</span>
+                                                                )}
+                                                            </label>
+                                                        );
+                                                    })()}
+
+                                                    <p className="sa-slot-group">Subjects (Grade {formSection.grade_level})</p>
+
+                                                    <div className="sa-slot-grid">
+                                                        {formSubjects.map((subject) => {
+                                                            const holder = slotHolder(subject.subject_id);
+                                                            return (
+                                                                <label
+                                                                    key={subject.subject_id}
+                                                                    className={`sa-slot${holder ? " is-disabled" : ""}`}
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={assignmentForm.subject_ids.includes(subject.subject_id)}
+                                                                        disabled={Boolean(holder)}
+                                                                        onChange={() => toggleAssignmentSubject(subject.subject_id)}
+                                                                    />
+                                                                    <span className="sa-slot-name">{subject.subject_name}</span>
+                                                                    {holder && <span className="sa-slot-note">assigned to {holder}</span>}
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </fieldset>
+
                                         <div className="sa-form-actions">
                                             <button
                                                 type="button"
@@ -610,7 +680,12 @@ function SectionAssignments() {
                                                 className="sa-save-button"
                                                 disabled={savingAssignment}
                                             >
-                                                {savingAssignment ? "Creating..." : "Create Assignment"}
+                                                {(() => {
+                                                    const count =
+                                                        assignmentForm.subject_ids.length + (assignmentForm.class_adviser ? 1 : 0);
+                                                    if (savingAssignment) return "Saving...";
+                                                    return count > 1 ? `Save ${count} Assignments` : "Save Assignment";
+                                                })()}
                                             </button>
                                         </div>
                                     </form>
