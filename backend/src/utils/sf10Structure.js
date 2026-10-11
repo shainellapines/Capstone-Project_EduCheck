@@ -3,7 +3,7 @@
 // DepEd Order No. 10, s. 2024" edition.
 //
 // Source template: "Grade 4-School-Form-10-ES-Learners-Academic Permanent-
-// Record-Grade4-032725.xlsx" (repo root, next to this project's other
+// Record-Grade4-032725.xlsx" (in "02-Product Design/", with this project's other
 // planning docs). Despite the "Grade4" filename, this is the FULL
 // elementary form covering Grades 1-6 on one document - "Grade4" just
 // names which student's copy this particular file was exported from, not
