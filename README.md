@@ -123,7 +123,7 @@ psql -U postgres -d educheck_db -f "C:\Users\<you>\EduCheck-db-backups\<file>.sq
 | Folder | Contents |
 |---|---|
 | `01-Project Management/` | SPMP, role features |
-| `02-Product Design/` | Database schema, UI/UX, backlogs, SF10 source form |
+| `02-Product Design/` | Database schema, UI/UX, backlogs, and the official DepEd source forms: SF10-ES and the blank e-Class Record (Grades 4-10, 3 terms) |
 | `03-Testing/` | UAT test cases, known limitations, test coverage, UAT input files |
 | `04-Development Evidence/` | Sprint screenshots |
 | `05-Handoffs/` | Development hand-off notes, one per session |
