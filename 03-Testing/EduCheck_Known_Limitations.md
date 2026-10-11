@@ -26,6 +26,7 @@ defect and should be reported.
 | D-05 | A school year recorded in 3 terms is not printed on the SF10. It shows as "Unsupported" in the readiness report. If no year can be printed, the download returns an error. | The official SF10-ES form has 4 quarter columns. EduCheck does not convert 3 terms into 4 quarters, because that would invent grades. |
 | D-06 | Uploads must be Excel e-class record workbooks of 10 MB or less. | A real e-class record is about 2 MB. The limit stops oversized files. |
 | D-07 | After 10 failed login attempts within 15 minutes, further attempts from that device are blocked until the 15 minutes pass. | Protects accounts against password guessing. Successful logins are not counted. |
+| D-08 | An e-Class Record whose header names a different subject from the one selected is refused (for example an English file uploaded as Mathematics). A blank subject cell, or a label EduCheck does not recognise, is accepted with a warning. Common short names are accepted: Math, AP, EsP, GMRC, TLE/EPP, and MAPEH or its parts. | Uploading the wrong subject's file would save its grades under the selected subject. Each subject has its own e-Class Record, so the header (cell Y7 of the INPUT sheet) must name the subject being uploaded. |
 
 ## Test data notes
 

@@ -10,6 +10,21 @@ Each file name starts with the test case that uses it.
 | `TC-026_ecr-other-section.xlsx` | TC-026 | Learners with Mabini LRNs (300000000001-005) | Refused when uploaded to Rizal: the learners belong to another section |
 | `TC-027_ecr-with-errors.xlsx` | TC-027 | The TC-022 file (Mathematics) with 3 Written/Oral scores (Term 1) above the highest possible score: Aguilar, Alcantara, Andrada | Needs Attention, 3 errors |
 
+## One file per subject: `per-subject/`
+
+`ecr-rizal-<Subject>.xlsx` for the 8 Grade 6 subjects (Filipino, English,
+Mathematics, Science, Araling Panlipunan, TLE, MAPEH, ESP). Each is the valid
+Rizal record with that subject in its header (cell Y7 of the INPUT sheet).
+
+- Uploaded as its own subject: Validated, 0 errors, no header warning.
+- Uploaded as a different subject: refused, because the file is for another
+  subject (TC-068, Known Limitations D-08).
+
+Use these whenever a tester uploads a subject other than Mathematics, for
+example the Adviser's own subjects in TC-030.
+
+## Notes
+
 Use the files as they are. Do not open and re-save them in Excel before
 uploading, because that can change them.
 
