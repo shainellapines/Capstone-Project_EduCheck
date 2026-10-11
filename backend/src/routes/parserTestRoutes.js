@@ -5,7 +5,7 @@ const fs = require("fs");
 
 const {
     parseClassRecord,
-} = require("../controllers/classRecordParser");
+} = require("../services/classRecord/classRecordParser");
 
 const {
     authenticateToken,

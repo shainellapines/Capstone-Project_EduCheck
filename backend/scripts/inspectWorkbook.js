@@ -3,7 +3,7 @@ const path = require("path");
 
 const filePath = path.join(
     __dirname,
-    "../uploads/0a85bb5e9c386f04548b2ac116141577"
+    "../src/uploads/0a85bb5e9c386f04548b2ac116141577"
 );
 
 const workbook = XLSX.readFile(filePath, {

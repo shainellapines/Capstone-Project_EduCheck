@@ -2,7 +2,7 @@ const XLSX = require("xlsx");
 const path = require("path");
 const fs = require("fs");
 
-const uploadsDir = path.join(__dirname, "../uploads");
+const uploadsDir = path.join(__dirname, "../src/uploads");
 
 const files = fs.readdirSync(uploadsDir);
 

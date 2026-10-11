@@ -2,9 +2,9 @@ const { describe, it, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const { buildEcr, lrnGenerator } = require("./helpers/env");
-const { parseClassRecord } = require("../src/controllers/classRecordParser");
-const { validateClassRecord } = require("../src/controllers/classRecordValidator");
-const { compareHeader, checkGradeLevel } = require("../src/controllers/rosterCheck");
+const { parseClassRecord } = require("../src/services/classRecord/classRecordParser");
+const { validateClassRecord } = require("../src/services/classRecord/classRecordValidator");
+const { compareHeader, checkGradeLevel } = require("../src/services/classRecord/rosterCheck");
 
 // Parser / validator / integrity helpers (EPIC-02, EPIC-04) - no server or DB.
 describe("e-Class Record parser, validator and integrity helpers", () => {

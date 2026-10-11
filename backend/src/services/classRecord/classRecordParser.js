@@ -1,5 +1,5 @@
 const XLSX = require("xlsx");
-const workbookStructure = require("../utils/workbookStructure");
+const workbookStructure = require("../../utils/workbookStructure");
 
 const REQUIRED_SHEETS = [workbookStructure.sheets.input, workbookStructure.sheets.term1, workbookStructure.sheets.term2, workbookStructure.sheets.term3, workbookStructure.sheets.summary];
 

@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
-const { parseClassRecord } = require("./classRecordParser");
-const { validateClassRecord } = require("./classRecordValidator");
-const { persistLearnerGradeRecords } = require("./gradeRecordPersistence");
-const { compareHeader, checkGradeLevel, checkRoster, checkApprovedLearners } = require("./rosterCheck");
+const { parseClassRecord } = require("../services/classRecord/classRecordParser");
+const { validateClassRecord } = require("../services/classRecord/classRecordValidator");
+const { persistLearnerGradeRecords } = require("../services/classRecord/gradeRecordPersistence");
+const { compareHeader, checkGradeLevel, checkRoster, checkApprovedLearners } = require("../services/classRecord/rosterCheck");
 const pool = require("../db");
 
 const removeUploadedFile = (filePath) => {

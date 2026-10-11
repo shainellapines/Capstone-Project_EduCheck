@@ -1,6 +1,6 @@
 const pool = require("../db");
 const { recordAuditLog } = require("../utils/auditLog");
-const { checkGradeLevel } = require("./rosterCheck");
+const { checkGradeLevel } = require("../services/classRecord/rosterCheck");
 
 // GET all assignments (admin view - joined with readable names)
 const getAssignments = async (req, res) => {
