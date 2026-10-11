@@ -160,12 +160,14 @@ function Dashboard() {
                 <header className="dashboard-header">
 
                     <div>
-                        <h1>
-                            Dashboard
-                        </h1>
+                        <p className="dashboard-eyebrow">
+                            Class Adviser · {getDisplayName(user)}
+                        </p>
+
+                        <h1>Dashboard</h1>
 
                         <p>
-                            Class Adviser · {getDisplayName(user)}
+                            Track your academic records and student performance
                         </p>
                     </div>
 
@@ -195,13 +197,6 @@ function Dashboard() {
                 </header>
 
                 <section className="dashboard-content">
-
-                    <div className="section-heading">
-                        <h2>Dashboard Overview</h2>
-                        <p>
-                            Track your academic records and student performance
-                        </p>
-                    </div>
 
                     {error && (
                         <div className="error-banner">
@@ -380,7 +375,7 @@ function Dashboard() {
                                             </strong>
 
                                             <span>
-                                                {upload.teacher_name} •{" "}
+                                                {upload.teacher_name} ·{" "}
                                                 {new Date(upload.upload_date).toLocaleDateString()}
                                             </span>
                                         </div>

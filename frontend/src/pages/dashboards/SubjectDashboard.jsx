@@ -135,12 +135,14 @@ function SubjectDashboard() {
                 <header className="dashboard-header">
 
                     <div>
-                        <h1>
-                            Dashboard
-                        </h1>
+                        <p className="dashboard-eyebrow">
+                            Subject Teacher · {getDisplayName(user)}
+                        </p>
+
+                        <h1>Dashboard</h1>
 
                         <p>
-                            Subject Teacher · {getDisplayName(user)}
+                            Manage your e-Class Record submissions and monitor validation status
                         </p>
                     </div>
 
@@ -152,15 +154,6 @@ function SubjectDashboard() {
                 </header>
 
                 <section className="dashboard-content">
-
-                    <div className="section-heading">
-                        <h2>Dashboard Overview</h2>
-
-                        <p>
-                            Manage your e-Class Record submissions and
-                            monitor validation status
-                        </p>
-                    </div>
 
                     {/* OVERVIEW CARDS */}
                     <div className="overview-grid">
@@ -354,7 +347,7 @@ function SubjectDashboard() {
                                         </strong>
 
                                         <span>
-                                            {record.school_year} • {record.file_name}
+                                            {record.school_year} · {record.file_name}
                                         </span>
 
                                         {record.status?.toLowerCase() === "needs revision" &&

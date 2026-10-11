@@ -502,7 +502,7 @@ function ConsolidatedRecords() {
                                                     </div>
 
                                                     <div className="meta">
-                                                        LRN: {student.lrn} • Grade {student.grade_level}
+                                                        LRN <span className="record-lrn">{student.lrn}</span> · Grade {student.grade_level}
                                                     </div>
                                                 </div>
                                             </button>
