@@ -14,9 +14,9 @@ import Sidebar from "../../components/Sidebar";
 import { API_URL } from "../../config";
 
 
-// sf10Mode: the same search, opened from the "SF10 Permanent Records" nav
-// item - each result's main action opens that learner's permanent record.
-function RecordsRepository({ sf10Mode = false }) {
+// Each result opens the learner's permanent record (SF10) or one of their
+// recorded school years.
+function RecordsRepository() {
     const navigate = useNavigate();
 
     const [query, setQuery] = useState("");
@@ -115,17 +115,15 @@ function RecordsRepository({ sf10Mode = false }) {
     return (
         <div className="dashboard-layout">
 
-            <Sidebar activeKey={sf10Mode ? "permanent-records" : "records-repository"} />
+            <Sidebar activeKey="records-repository" />
 
             <main className="dashboard-main">
 
                 <header className="dashboard-header">
                     <div>
-                        <h1>{sf10Mode ? "SF10 Permanent Records" : "Records Repository"}</h1>
+                        <h1>Records &amp; SF10</h1>
                         <p>
-                            {sf10Mode
-                                ? "Find a learner by LRN, name, grade level or school year, then open their Grade 1-6 permanent record to review, complete and generate the SF10."
-                                : "Look up any learner by LRN, name, grade level or school year. Leave the school year on \"All\" to search every year."}
+                            Find a learner by LRN, name, grade level or school year. Open a school year to see its grades, or open the Permanent Record (SF10) to review, complete and generate it. Leave the school year on "All" to search every year.
                         </p>
                     </div>
                 </header>
@@ -247,13 +245,13 @@ function RecordsRepository({ sf10Mode = false }) {
                                             Permanent Record (SF10)
                                         </button>
 
-                                        {!sf10Mode && student.school_years.length === 0 && (
+                                        {student.school_years.length === 0 && (
                                             <span className="rr-empty-years">
                                                 No recorded grades yet
                                             </span>
                                         )}
 
-                                        {!sf10Mode && student.school_years.map(({ school_year_id, grade_level }) => (
+                                        {student.school_years.map(({ school_year_id, grade_level }) => (
                                             <button
                                                 key={school_year_id}
                                                 type="button"

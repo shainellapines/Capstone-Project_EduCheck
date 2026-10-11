@@ -16,7 +16,6 @@ import {
     PieChart,
     Eye,
     History,
-    ScrollText,
 } from "lucide-react";
 
 import "../styles/Dashboard.css";
@@ -42,8 +41,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "upload-files", label: "Upload Files", icon: Upload, path: "/class-record-upload", uploadOnly: true },
         { key: "consolidated-records", label: "Consolidated Records", icon: FileText, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
-        { key: "records-repository", label: "Records Repository", icon: Database, path: "/records-repository" },
-        { key: "permanent-records", label: "SF10 Permanent Records", icon: ScrollText, path: "/permanent-record" },
+        { key: "records-repository", label: "Records & SF10", icon: Database, path: "/records-repository" },
         { key: "analytics", label: "Performance Analytics", icon: BarChart3, path: "/analytics" },
     ],
     admin: [
@@ -54,8 +52,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "audit-log", label: "Audit Log", icon: History, path: "/audit-log" },
         { key: "consolidated-records", label: "Submission Review", icon: ClipboardCheck, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
-        { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },
-        { key: "permanent-records", label: "SF10 Permanent Records", icon: ScrollText, path: "/permanent-record" },
+        { key: "records-repository", label: "Records & SF10", icon: Database, path: "/records-repository" },
         { key: "analytics", label: "Academic Analytics", icon: BarChart3, path: "/analytics" },
     ],
     subject: [
@@ -71,8 +68,7 @@ const NAV_ITEMS_BY_ROLE = {
         { key: "consolidated-records", label: "Submission Review", icon: Eye, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "analytics", label: "Academic Analytics", icon: BarChart3, path: "/analytics" },
-        { key: "records-repository", label: "Digital Repository", icon: Database, path: "/records-repository" },
-        { key: "permanent-records", label: "SF10 Permanent Records", icon: ScrollText, path: "/permanent-record" },
+        { key: "records-repository", label: "Records & SF10", icon: Database, path: "/records-repository" },
     ],
 };
 

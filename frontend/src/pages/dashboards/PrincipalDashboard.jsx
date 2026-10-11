@@ -312,7 +312,7 @@ function PrincipalDashboard() {
                                 <Database size={24} />
 
                                 <strong>
-                                    Digital Repository
+                                    Records &amp; SF10
                                 </strong>
 
                                 <span>

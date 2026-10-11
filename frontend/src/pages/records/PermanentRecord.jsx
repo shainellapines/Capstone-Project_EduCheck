@@ -294,13 +294,13 @@ function PermanentRecord() {
 
     return (
         <div className="dashboard-layout">
-            <Sidebar activeKey="permanent-records" />
+            <Sidebar activeKey="records-repository" />
 
             <main className="dashboard-main">
                 <header className="dashboard-header pr-header">
                     <div className="pr-header-main">
-                        <button type="button" className="pr-back" onClick={() => navigate("/permanent-record")}>
-                            <ArrowLeft size={15} /> SF10 Permanent Records
+                        <button type="button" className="pr-back" onClick={() => navigate("/records-repository")}>
+                            <ArrowLeft size={15} /> Records &amp; SF10
                         </button>
 
                         <div className="pr-identity">

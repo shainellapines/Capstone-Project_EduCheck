@@ -165,13 +165,11 @@ function App() {
                     }
                 />
 
+                {/* The SF10 search was the Repository search under a second
+                    menu item; SF10 is now opened from each Repository result. */}
                 <Route
                     path="/permanent-record"
-                    element={
-                        <ProtectedRoute allowedRoles={["adviser", "admin", "principal"]}>
-                            <RecordsRepository sf10Mode />
-                        </ProtectedRoute>
-                    }
+                    element={<Navigate to="/records-repository" replace />}
                 />
 
                 <Route

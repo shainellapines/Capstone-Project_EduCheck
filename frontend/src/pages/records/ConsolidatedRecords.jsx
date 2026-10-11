@@ -27,7 +27,7 @@ function ConsolidatedRecords() {
     const storedUser = localStorage.getItem("educheck_user");
     const user = storedUser ? JSON.parse(storedUser) : { role: "" };
 
-    // Support deep links from the Records Repository search
+    // Support deep links from the Records & SF10 search
     // (/consolidated-records?year=<id>&lrn=<lrn>) — preselect that school
     // year and auto-expand + scroll to that student once loaded, instead
     // of making the user find them again in the full list.
