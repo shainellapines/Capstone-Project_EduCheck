@@ -8,11 +8,11 @@ import {
     TrendingUp,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./Analytics.css";
-import Sidebar from "../components/Sidebar";
-import { getToken, getStoredUser } from "../utils/session";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { getToken, getStoredUser } from "../../utils/session";
+import { API_URL } from "../../config";
 
 
 // Grade bands are ORDINAL (position in a performance sequence), not

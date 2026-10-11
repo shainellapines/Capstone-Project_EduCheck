@@ -12,10 +12,10 @@ import {
     XCircle,
 } from "lucide-react";
 
-import "./Dashboard.css";
-import Sidebar from "../components/Sidebar";
-import { getToken, getStoredUser, getDisplayName } from "../utils/session";
-import { API_URL } from "../config";
+import "../../styles/Dashboard.css";
+import Sidebar from "../../components/Sidebar";
+import { getToken, getStoredUser, getDisplayName } from "../../utils/session";
+import { API_URL } from "../../config";
 
 
 // SPMP v1.0 US-008 (Should, Sprint 8): a School Principal is view-only —

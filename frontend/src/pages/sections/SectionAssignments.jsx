@@ -8,11 +8,11 @@ import {
     UserCheck,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./SectionAssignments.css";
-import Sidebar from "../components/Sidebar";
-import { getToken } from "../utils/session";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { getToken } from "../../utils/session";
+import { API_URL } from "../../config";
 
 
 // Per SPMP v1.0 US-009/US-011: the Administrator configures each

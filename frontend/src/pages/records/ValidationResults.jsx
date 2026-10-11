@@ -13,11 +13,11 @@ import {
     Undo2,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./ValidationResults.css";
-import Sidebar from "../components/Sidebar";
-import { SeverityBadge } from "../components/StatusBadge";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { SeverityBadge } from "../../components/StatusBadge";
+import { API_URL } from "../../config";
 
 
 // Groups the validator's real issue codes (classRecordValidator.js) into

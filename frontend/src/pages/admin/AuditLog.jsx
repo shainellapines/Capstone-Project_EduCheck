@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, ClipboardList, Loader2 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./AuditLog.css";
-import Sidebar from "../components/Sidebar";
-import { getToken } from "../utils/session";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { getToken } from "../../utils/session";
+import { API_URL } from "../../config";
 
 
 const ENTITY_TYPE_LABEL = {

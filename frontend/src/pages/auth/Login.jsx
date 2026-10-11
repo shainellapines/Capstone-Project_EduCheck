@@ -2,10 +2,10 @@ import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, CircleAlert, Eye, EyeOff, LockKeyhole, UserRound } from "lucide-react";
-import logo from "../assets/educheck-logo-white.png";
-import logoOnPage from "../assets/educheck-logo.png";
-import schoolPhoto from "../assets/login-photo.jpg";
-import { API_URL } from "../config";
+import logo from "../../assets/educheck-logo-white.png";
+import logoOnPage from "../../assets/educheck-logo.png";
+import schoolPhoto from "../../assets/login-photo.jpg";
+import { API_URL } from "../../config";
 // The school's name, set once per installation in frontend/.env
 // (VITE_SCHOOL_NAME=...). Hidden when not set.
 const SCHOOL_NAME = (import.meta.env.VITE_SCHOOL_NAME || "").trim();

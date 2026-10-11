@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 
 import "./TeacherManagement.css";
-import Sidebar from "../components/Sidebar";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { API_URL } from "../../config";
 
 function TeacherManagement() {
 

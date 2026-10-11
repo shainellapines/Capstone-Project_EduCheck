@@ -10,10 +10,10 @@ import {
     RefreshCcw,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./Notifications.css";
-import Sidebar from "../components/Sidebar";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { API_URL } from "../../config";
 
 
 // Icon/tone/category per notification title. Four titles actually exist

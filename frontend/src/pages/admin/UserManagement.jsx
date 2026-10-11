@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 
 import "./UserManagement.css";
-import Sidebar from "../components/Sidebar";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { API_URL } from "../../config";
 
 
 function UserManagement() {

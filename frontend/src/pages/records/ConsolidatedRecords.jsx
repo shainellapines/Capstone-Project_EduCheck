@@ -13,11 +13,11 @@ import {
     Undo2,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./ConsolidatedRecords.css";
-import Sidebar from "../components/Sidebar";
-import StatusBadge, { GradeCell } from "../components/StatusBadge";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import StatusBadge, { GradeCell } from "../../components/StatusBadge";
+import { API_URL } from "../../config";
 
 const PAGE_SIZE = 20;
 

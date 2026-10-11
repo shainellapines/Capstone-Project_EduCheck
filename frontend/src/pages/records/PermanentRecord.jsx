@@ -17,11 +17,11 @@ import {
     X,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./PermanentRecord.css";
-import Sidebar from "../components/Sidebar";
-import { getStoredUser } from "../utils/session";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { getStoredUser } from "../../utils/session";
+import { API_URL } from "../../config";
 
 
 const GRADES = ["1", "2", "3", "4", "5", "6"];

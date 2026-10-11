@@ -8,10 +8,10 @@ import {
     IdCard,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./RecordsRepository.css";
-import Sidebar from "../components/Sidebar";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { API_URL } from "../../config";
 
 
 // sf10Mode: the same search, opened from the "SF10 Permanent Records" nav

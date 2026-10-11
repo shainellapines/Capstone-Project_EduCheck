@@ -12,13 +12,13 @@ import {
     BookOpen,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./Settings.css";
-import Sidebar from "../components/Sidebar";
-import "../components/StatusBadge.css";
-import { getToken, getStoredUser, updateStoredUser } from "../utils/session";
-import { getStoredTheme, setTheme } from "../utils/theme";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import "../../components/StatusBadge.css";
+import { getToken, getStoredUser, updateStoredUser } from "../../utils/session";
+import { getStoredTheme, setTheme } from "../../utils/theme";
+import { API_URL } from "../../config";
 
 
 const ROLE_LABEL = {

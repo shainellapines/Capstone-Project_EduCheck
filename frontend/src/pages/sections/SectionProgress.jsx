@@ -8,11 +8,11 @@ import {
     Users,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./SectionProgress.css";
-import Sidebar from "../components/Sidebar";
-import { getToken } from "../utils/session";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { getToken } from "../../utils/session";
+import { API_URL } from "../../config";
 
 
 const EMPTY_SUBMISSION_COUNTS = {

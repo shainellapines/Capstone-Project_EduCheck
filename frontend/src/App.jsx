@@ -7,24 +7,24 @@ import {
     Navigate,
 } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import SubjectDashboard from "./pages/SubjectDashboard";
-import PrincipalDashboard from "./pages/PrincipalDashboard";
-import UserManagement from "./pages/UserManagement";
-import TeacherManagement from "./pages/TeacherManagement";
-import SectionAssignments from "./pages/SectionAssignments";
-import ClassRecordUpload from "./pages/ClassRecordUpload";
-import ValidationResults from "./pages/ValidationResults";
-import ConsolidatedRecords from "./pages/ConsolidatedRecords";
-import SectionProgress from "./pages/SectionProgress";
-import Analytics from "./pages/Analytics";
-import AuditLog from "./pages/AuditLog";
-import RecordsRepository from "./pages/RecordsRepository";
-import PermanentRecord from "./pages/PermanentRecord";
-import Notifications from "./pages/Notifications";
-import Settings from "./pages/Settings";
+import Login from "./pages/auth/Login";
+import Dashboard from "./pages/dashboards/Dashboard";
+import AdminDashboard from "./pages/dashboards/AdminDashboard";
+import SubjectDashboard from "./pages/dashboards/SubjectDashboard";
+import PrincipalDashboard from "./pages/dashboards/PrincipalDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import TeacherManagement from "./pages/admin/TeacherManagement";
+import SectionAssignments from "./pages/sections/SectionAssignments";
+import ClassRecordUpload from "./pages/records/ClassRecordUpload";
+import ValidationResults from "./pages/records/ValidationResults";
+import ConsolidatedRecords from "./pages/records/ConsolidatedRecords";
+import SectionProgress from "./pages/sections/SectionProgress";
+import Analytics from "./pages/dashboards/Analytics";
+import AuditLog from "./pages/admin/AuditLog";
+import RecordsRepository from "./pages/records/RecordsRepository";
+import PermanentRecord from "./pages/records/PermanentRecord";
+import Notifications from "./pages/account/Notifications";
+import Settings from "./pages/account/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { isSessionValid, getStoredUser, clearSession } from "./utils/session";
 

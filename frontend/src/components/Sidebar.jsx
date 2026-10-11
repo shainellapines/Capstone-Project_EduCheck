@@ -19,7 +19,7 @@ import {
     ScrollText,
 } from "lucide-react";
 
-import "../pages/Dashboard.css";
+import "../styles/Dashboard.css";
 import logo from "../assets/educheck-logo.png";
 import { getStoredUser, getToken, clearSession } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";

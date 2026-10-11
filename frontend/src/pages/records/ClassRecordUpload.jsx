@@ -13,11 +13,11 @@ import {
     FileCheck2,
 } from "lucide-react";
 
-import "./Dashboard.css";
+import "../../styles/Dashboard.css";
 import "./ClassRecordUpload.css";
-import Sidebar from "../components/Sidebar";
-import { getToken } from "../utils/session";
-import { API_URL } from "../config";
+import Sidebar from "../../components/Sidebar";
+import { getToken } from "../../utils/session";
+import { API_URL } from "../../config";
 
 
 // One option = one (subject, section, school year) combination this
