@@ -5,10 +5,11 @@ import { API_URL } from "../config";
 
 
 // Whether the signed-in user has any (subject, section) they may upload to.
-// Subject Teachers always see the upload page. An Adviser only uploads for a
-// Self-Contained section (SPMP v1.0 §6.2, US-011), and /uploads/options
-// returns nothing for an Adviser of a Departmentalized section, so the
-// upload entry points are hidden for them instead of opening an empty page.
+// Subject Teachers always see the upload page. An Adviser uploads every
+// subject of a Self-Contained section (SPMP v1.0 §6.2, US-011), or only the
+// subjects assigned to them in a Departmentalized section. /uploads/options
+// returns nothing for an Adviser with neither, so the upload entry points
+// are hidden for them instead of opening an empty page.
 // If the check itself fails, the entry stays visible: the backend still
 // enforces the assignment on every upload.
 export function useCanUpload() {

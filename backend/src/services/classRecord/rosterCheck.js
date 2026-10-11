@@ -13,9 +13,74 @@ const { isValidLrn } = require("./classRecordParser");
 
 const norm = (value) => String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 
+// Names a teacher may write in the header's subject cell (INPUT!Y7) for each
+// learning area. Pairs that never share a grade level are one group (ESP is
+// Grade 6's name for GMRC; TLE is Grade 6's EPP), so a header written for the
+// other name of the same area still matches. MAPEH accepts its components.
+const SUBJECT_ALIASES = {
+    filipino: ["filipino", "fil"],
+    english: ["english", "eng"],
+    mathematics: ["mathematics", "math", "maths"],
+    science: ["science", "sci"],
+    "araling panlipunan": ["araling panlipunan", "ap", "social studies"],
+    mapeh: ["mapeh", "music", "arts", "pe", "physical education", "health"],
+    gmrc: ["gmrc", "good manners and right conduct", "esp", "edukasyon sa pagpapakatao", "values education", "values ed"],
+    tle: ["tle", "technology and livelihood education", "epp", "edukasyong pantahanan at pangkabuhayan"],
+    "reading and literacy": ["reading and literacy", "reading", "literacy"],
+    language: ["language"],
+    makabansa: ["makabansa"],
+};
+
+const words = (value) => ` ${norm(value).replace(/[^a-z0-9]+/g, " ").trim()} `;
+
+// Learning areas named in a piece of text, matched on whole words, so
+// "MATHEMATICS 6" and "Math - Grade 6" both name mathematics, and "pe"
+// does not match inside "mapeh".
+const subjectGroupsIn = (value) => {
+    const text = words(value);
+    return new Set(
+        Object.keys(SUBJECT_ALIASES).filter((group) =>
+            SUBJECT_ALIASES[group].some((alias) => text.includes(` ${alias} `))
+        )
+    );
+};
+
+// Refuse a file whose header names a different learning area from the one
+// selected (an English record uploaded as Mathematics would save English
+// grades as Mathematics). A blank header, or one naming no known subject,
+// is left to compareHeader's warning so an unusual label never blocks a
+// teacher.
+const checkHeaderSubject = ({ header, subject }) => {
+    if (!header?.subject) return null;
+
+    const named = subjectGroupsIn(header.subject);
+    if (named.size === 0) return null;
+
+    const selected = subjectGroupsIn(subject.subject_name);
+    if ([...selected].some((group) => named.has(group))) return null;
+
+    return {
+        status: 409,
+        code: "HEADER_SUBJECT_MISMATCH",
+        message:
+            `This file is the e-Class Record for "${header.subject}", but you selected ${subject.subject_name}. ` +
+            `Upload the ${subject.subject_name} e-Class Record, or correct the subject in the file's header (cell Y7 of the INPUT sheet).`,
+    };
+};
+
+const headerSubjectMatches = (headerSubject, subjectName) => {
+    const named = subjectGroupsIn(headerSubject);
+    if ([...subjectGroupsIn(subjectName)].some((group) => named.has(group))) return true;
+
+    return norm(headerSubject).includes(norm(subjectName)) || norm(subjectName).includes(norm(headerSubject));
+};
+
 // Warn (never block) when the workbook's own header disagrees with the
-// form selection. Sample files are reused across sections, so a header
-// mismatch alone cannot be authoritative.
+// form selection on section or school year. Sample files are reused across
+// sections, so those mismatches alone cannot be authoritative; the roster
+// check is what refuses another section's learners. A subject the header
+// clearly names differently is refused by checkHeaderSubject first, so the
+// subject warning here only covers labels that name no known subject.
 const compareHeader = ({ header, section, subject, schoolYear }) => {
     const warnings = [];
     if (!header) return warnings;
@@ -31,11 +96,7 @@ const compareHeader = ({ header, section, subject, schoolYear }) => {
         }
     }
 
-    if (
-        header.subject &&
-        !norm(header.subject).includes(norm(subject.subject_name)) &&
-        !norm(subject.subject_name).includes(norm(header.subject))
-    ) {
+    if (header.subject && !headerSubjectMatches(header.subject, subject.subject_name)) {
         warnings.push({
             code: "HEADER_SUBJECT_MISMATCH",
             message: `The file's header says subject "${header.subject}" but you selected ${subject.subject_name}.`,
@@ -167,4 +228,4 @@ const checkApprovedLearners = async ({ parsedRecord, schoolYearId }) => {
     };
 };
 
-module.exports = { compareHeader, checkGradeLevel, checkRoster, checkApprovedLearners };
+module.exports = { compareHeader, checkHeaderSubject, checkGradeLevel, checkRoster, checkApprovedLearners };

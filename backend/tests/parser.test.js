@@ -4,7 +4,7 @@ const fs = require("fs");
 const { buildEcr, lrnGenerator } = require("./helpers/env");
 const { parseClassRecord } = require("../src/services/classRecord/classRecordParser");
 const { validateClassRecord } = require("../src/services/classRecord/classRecordValidator");
-const { compareHeader, checkGradeLevel } = require("../src/services/classRecord/rosterCheck");
+const { compareHeader, checkHeaderSubject, checkGradeLevel } = require("../src/services/classRecord/rosterCheck");
 
 // Parser / validator / integrity helpers (EPIC-02, EPIC-04) - no server or DB.
 describe("e-Class Record parser, validator and integrity helpers", () => {
@@ -17,7 +17,8 @@ describe("e-Class Record parser, validator and integrity helpers", () => {
     after(() => files.forEach((f) => fs.existsSync(f) && fs.unlinkSync(f)));
 
     it("PRS-01 reads 100 learners and the INPUT header", () => {
-        const { file } = make({ lrnFor: lrnGenerator("9999") });
+        // buildEcr blanks the subject cell unless asked, so name it here.
+        const { file } = make({ lrnFor: lrnGenerator("9999"), header: { subject: "English" } });
         const parsed = parseClassRecord(file);
         assert.equal(parsed.learners.length, 100);
         assert.equal(parsed.header.grade_section, "Grade 4 - Mabini");
@@ -66,6 +67,40 @@ describe("e-Class Record parser, validator and integrity helpers", () => {
             schoolYear: { school_year: "2026-2027" },
         });
         assert.deepEqual(warnings, []);
+    });
+
+    it("INT-H3 checkHeaderSubject accepts the selected subject under its common names", () => {
+        const accepted = [
+            ["Mathematics", "MATHEMATICS 6"],
+            ["Mathematics", "Math - Grade 6"],
+            ["Araling Panlipunan", "AP"],
+            ["ESP", "EsP"],
+            ["ESP", "Edukasyon sa Pagpapakatao"],
+            ["ESP", "GMRC"],
+            ["GMRC", "Values Education"],
+            ["TLE", "TLE/EPP"],
+            ["EPP", "TLE"],
+            ["MAPEH", "Music"],
+            ["Science", "Sci"],
+        ];
+        for (const [subjectName, headerSubject] of accepted) {
+            assert.equal(
+                checkHeaderSubject({ header: { subject: headerSubject }, subject: { subject_name: subjectName } }),
+                null,
+                `"${headerSubject}" should be accepted for ${subjectName}`
+            );
+        }
+    });
+
+    it("INT-H4 checkHeaderSubject refuses another subject, but not a blank or unknown label", () => {
+        const refusal = checkHeaderSubject({ header: { subject: "English" }, subject: { subject_name: "Mathematics" } });
+        assert.equal(refusal.status, 409);
+        assert.equal(refusal.code, "HEADER_SUBJECT_MISMATCH");
+        // "pe" is a MAPEH alias but must not match inside another word.
+        assert.ok(checkHeaderSubject({ header: { subject: "Filipino" }, subject: { subject_name: "Science" } }));
+        assert.equal(checkHeaderSubject({ header: { subject: "" }, subject: { subject_name: "Mathematics" } }), null);
+        assert.equal(checkHeaderSubject({ header: { subject: "Homeroom" }, subject: { subject_name: "Mathematics" } }), null);
+        assert.equal(checkHeaderSubject({ header: null, subject: { subject_name: "Mathematics" } }), null);
     });
 
     it("INT-H2 checkGradeLevel flags a mismatch and passes a match", () => {

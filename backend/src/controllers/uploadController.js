@@ -3,7 +3,7 @@ const path = require("path");
 const { parseClassRecord } = require("../services/classRecord/classRecordParser");
 const { validateClassRecord } = require("../services/classRecord/classRecordValidator");
 const { persistLearnerGradeRecords } = require("../services/classRecord/gradeRecordPersistence");
-const { compareHeader, checkGradeLevel, checkRoster, checkApprovedLearners } = require("../services/classRecord/rosterCheck");
+const { compareHeader, checkHeaderSubject, checkGradeLevel, checkRoster, checkApprovedLearners } = require("../services/classRecord/rosterCheck");
 const pool = require("../db");
 
 const removeUploadedFile = (filePath) => {
@@ -16,10 +16,11 @@ const removeUploadedFile = (filePath) => {
 // ==========================================
 // Per SPMP v1.0 US-009/US-011: a Subject Teacher may only upload the
 // subject(s) they're explicitly assigned to, for the section(s) they're
-// assigned to. A Class Adviser may only upload when their assigned
-// section is Self-Contained - in that case they can upload any subject
-// for that section's grade level, since they're the section's only
-// teacher. "options" below is a flat list of valid (section, subject)
+// assigned to. A Class Adviser of a Self-Contained section can upload any
+// subject for that section's grade level, since they're the section's only
+// teacher. In a Departmentalized section an Adviser uploads only the
+// subjects explicitly assigned to them, like a Subject Teacher (partial
+// departmentalization). "options" below is a flat list of valid (section, subject)
 // pairs this specific user is allowed to upload for right now; an empty
 // list means the Administrator hasn't assigned this person to anything
 // yet, not a system error.
@@ -630,6 +631,14 @@ const uploadClassRecord = async (req, res) => {
                 message: "The uploaded file is not a supported E-Class Record workbook.",
                 detail: error.message,
             });
+        }
+
+        const subjectError = checkHeaderSubject({ header: parsedRecord.header, subject });
+
+        if (subjectError) {
+            removeUploadedFile(file.path);
+
+            return res.status(subjectError.status).json(subjectError);
         }
 
         const approvedError = await checkApprovedLearners({

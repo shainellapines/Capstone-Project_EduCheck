@@ -66,16 +66,34 @@ describe("Upload integrity: roster, wrong-section, grade level (EPIC-02)", () =>
         assert.equal(await enrolled(t.ids.mabini), 12);
     });
 
-    it("INT-06 a header that disagrees with the selection is a warning only", async () => {
+    it("INT-06 a header whose section and school year disagree with the selection is a warning only", async () => {
         const { file } = buildEcr({
             lrnFor: lrnGenerator("5555"),
             limit: 3,
-            header: { gradeSection: "Grade 6 - Bonifacio", subject: "Science", schoolYear: "2020-2021" },
+            header: { gradeSection: "Grade 6 - Bonifacio", subject: "Homeroom", schoolYear: "2020-2021" },
         });
         const res = await uploadAs(file, t.ids.rizal);
         assert.equal(res.status, 201, JSON.stringify(res.body));
         const codes = res.body.integrity_warnings.map((w) => w.code).sort();
+        // "Homeroom" names no known subject, so it is a warning, not a refusal.
         assert.deepEqual(codes, ["HEADER_SCHOOL_YEAR_MISMATCH", "HEADER_SECTION_MISMATCH", "HEADER_SUBJECT_MISMATCH"]);
+    });
+
+    it("SUBJ-01 a file whose header names another subject is refused (409) and nothing is saved", async () => {
+        const before = (await t.pool.query("SELECT COUNT(*) FROM class_records")).rows[0].count;
+        const { file } = buildEcr({ lrnFor: lrnGenerator("5555"), limit: 3, header: { subject: "Mathematics" } });
+        const res = await uploadAs(file, t.ids.rizal); // selected: English
+        assert.equal(res.status, 409);
+        assert.equal(res.body.code, "HEADER_SUBJECT_MISMATCH");
+        assert.match(res.body.message, /Mathematics.*English/);
+        assert.equal((await t.pool.query("SELECT COUNT(*) FROM class_records")).rows[0].count, before);
+    });
+
+    it("SUBJ-02 an abbreviated header for the selected subject is accepted without a subject warning", async () => {
+        const { file } = buildEcr({ lrnFor: lrnGenerator("5555"), limit: 3, header: { subject: "ENG 4" } });
+        const res = await uploadAs(file, t.ids.rizal);
+        assert.equal(res.status, 201, JSON.stringify(res.body));
+        assert.ok(!res.body.integrity_warnings.some((w) => w.code === "HEADER_SUBJECT_MISMATCH"));
     });
 
     it("INT-07 a header that matches the selection produces no header warning", async () => {

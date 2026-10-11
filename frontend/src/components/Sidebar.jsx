@@ -35,9 +35,9 @@ const POLL_INTERVAL_MS = 30000;
 const NAV_ITEMS_BY_ROLE = {
     adviser: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-        // Only meaningful for a Self-Contained section's Adviser (see
-        // SectionAssignments). Hidden by useCanUpload when the Adviser has
-        // no upload options, i.e. their section is Departmentalized.
+        // For an Adviser of a Self-Contained section, or one assigned their
+        // own subjects in a Departmentalized section. Hidden by useCanUpload
+        // when the Adviser has no upload options.
         { key: "upload-files", label: "Upload Files", icon: Upload, path: "/class-record-upload", uploadOnly: true },
         { key: "consolidated-records", label: "Consolidated Records", icon: FileText, path: "/consolidated-records" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },

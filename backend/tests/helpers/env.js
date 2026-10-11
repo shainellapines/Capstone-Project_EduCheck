@@ -168,8 +168,11 @@ const buildEcr = ({ lrnFor, limit, header = {} }) => {
     workbook.Sheets.LRN = sheet;
     if (!workbook.SheetNames.includes("LRN")) workbook.SheetNames.push("LRN");
 
+    // The sample's header names English. Uploads here go to several subjects,
+    // and a header naming another subject is refused, so the subject cell is
+    // left blank unless a test sets it.
     const headerCells = { gradeSection: "J7", teacher: "Q7", subject: "Y7", schoolYear: "Y5" };
-    Object.entries(header).forEach(([key, value]) => {
+    Object.entries({ subject: "", ...header }).forEach(([key, value]) => {
         input[headerCells[key]] = { t: "s", v: value };
     });
 
