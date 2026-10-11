@@ -408,9 +408,16 @@
 }
 
 .card-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
     font-size: 17px;
     color: var(--ec-slate-900);
+}
+
+.card-header h3 svg {
+    flex-shrink: 0;
 }
 
 /* SUMMARY */

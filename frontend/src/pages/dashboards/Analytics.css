@@ -154,12 +154,6 @@
     border-left: 4px solid var(--ec-danger);
 }
 
-.an-intervention-panel .card-header h3 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 .an-header-icon {
     color: var(--ec-danger);
     flex-shrink: 0;
