@@ -28,6 +28,35 @@ const GRADE_BANDS = [
     { band: "Below 75", label: "Did Not Meet Expectations", min: -Infinity, max: 74.99 },
 ];
 
+// The three terms a grade_records row carries, in order, for the
+// term-by-term trend.
+const TERMS = [
+    { key: "term_1", label: "Term 1" },
+    { key: "term_2", label: "Term 2" },
+    { key: "term_3", label: "Term 3" },
+];
+
+const roundTo2 = (value) => Math.round(value * 100) / 100;
+
+// Average of one term across a set of rows. A term not graded yet (NULL,
+// e.g. mid-year) is left out rather than counted as 0; a term no row has a
+// grade for comes back as null so the chart can skip that point.
+const averageTerms = (rows) =>
+    TERMS.map((term) => {
+        const grades = rows
+            .map((row) => row[term.key])
+            .filter((grade) => grade !== null && grade !== undefined)
+            .map(Number);
+
+        return {
+            term: term.label,
+            average: grades.length > 0
+                ? roundTo2(grades.reduce((total, grade) => total + grade, 0) / grades.length)
+                : null,
+            graded_entries: grades.length,
+        };
+    });
+
 // Shared roll-up used for the school-wide overview and for each
 // section/subject group below it — same shape every time so the frontend
 // renders all three with one component.
@@ -100,6 +129,7 @@ const getAnalyticsForSchoolYear = async (req, res) => {
             .map((row) => ({ ...row, final_grade: Number(row.final_grade) }));
 
         const overview = summarizeGrades(gradedRows.map((row) => row.final_grade));
+        const termTrend = averageTerms(gradedRows);
 
         const gradeDistribution = GRADE_BANDS.map((bandDef) => ({
             band: bandDef.band,
@@ -206,10 +236,12 @@ const getAnalyticsForSchoolYear = async (req, res) => {
                     subject_name: row.subject_name,
                     grade_level: row.grade_level,
                     grades: [],
+                    rows: [],
                 });
             }
 
             subjectGroups.get(row.subject_id).grades.push(row.final_grade);
+            subjectGroups.get(row.subject_id).rows.push(row);
         });
 
         const subjectPerformance = Array.from(subjectGroups.values())
@@ -218,6 +250,9 @@ const getAnalyticsForSchoolYear = async (req, res) => {
                 subject_name: group.subject_name,
                 grade_level: group.grade_level,
                 ...summarizeGrades(group.grades),
+                lowest_final_grade: Math.min(...group.grades),
+                highest_final_grade: Math.max(...group.grades),
+                term_trend: averageTerms(group.rows),
             }))
             .sort((a, b) => {
                 if (a.grade_level !== b.grade_level) {
@@ -232,6 +267,7 @@ const getAnalyticsForSchoolYear = async (req, res) => {
             passing_grade: PASSING_GRADE,
             overview,
             grade_distribution: gradeDistribution,
+            term_trend: termTrend,
             section_performance: sectionPerformance,
             subject_performance: subjectPerformance,
             intervention_flags: interventionFlags,

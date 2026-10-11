@@ -131,6 +131,24 @@ describe("Adviser read scoping (CON-06, ANA-02)", () => {
         );
     });
 
+    it("analytics returns a three-term trend and each subject's grade range", async () => {
+        const res = await t.request("GET", `/api/analytics/school-years/${sy}`, { token: t.tokens.admin });
+        assert.equal(res.status, 200);
+
+        const isAverage = (value) => value === null || (value >= 0 && value <= 100);
+
+        assert.deepEqual(res.body.term_trend.map((point) => point.term), ["Term 1", "Term 2", "Term 3"]);
+        assert.ok(res.body.term_trend.every((point) => isAverage(point.average)));
+
+        assert.ok(res.body.subject_performance.length > 0);
+        res.body.subject_performance.forEach((subject) => {
+            assert.ok(subject.lowest_final_grade <= subject.average_final_grade);
+            assert.ok(subject.average_final_grade <= subject.highest_final_grade);
+            assert.equal(subject.term_trend.length, 3);
+            assert.ok(subject.term_trend.every((point) => isAverage(point.average)));
+        });
+    });
+
     it("repository search only returns the Adviser's own learners", async () => {
         const own = await t.request("GET", `/api/repository/search?q=${mabiniLrn}`, { token: t.tokens.adviser_a });
         assert.equal(own.body.result_count, 1);
