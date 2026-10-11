@@ -14,11 +14,6 @@ const auditLogRoutes = require("./routes/auditLogRoutes");
 const parserTestRoutes = require("./routes/parserTestRoutes");
 const sf10Routes = require("./routes/sf10Routes");
 
-const {
-    authenticateToken,
-    authorizeRoles
-} = require("./middleware/authMiddleware");
-
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -92,18 +87,6 @@ app.get("/api/health/db", async (req, res) => {
         });
     }
 });
-
-app.get(
-    "/api/test/adviser",
-    authenticateToken,
-    authorizeRoles("adviser"),
-    (req, res) => {
-        res.json({
-            message: "Adviser authorization successful.",
-            user: req.user
-        });
-    }
-);
 
 // Start server
 app.listen(PORT, () => {
