@@ -188,9 +188,141 @@
     color: var(--ec-primary-500);
 }
 
-.sa-adviser-tag {
-    color: var(--ec-slate-400);
+/* ASSIGNMENTS GROUPED BY SECTION */
+
+.sa-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 0 28px 24px;
+}
+
+.sa-groups .sa-hint {
+    margin: 0;
+}
+
+.sa-group {
+    border: 1px solid var(--ec-slate-200);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.sa-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 18px;
+    background: var(--ec-slate-50);
+    border-bottom: 1px solid var(--ec-slate-200);
+}
+
+.sa-group-header h4 {
+    margin: 0;
+    font-size: 15px;
+    color: var(--ec-slate-900);
+}
+
+.sa-group-header span {
+    font-size: 12.5px;
+    color: var(--ec-text-muted);
+}
+
+.sa-group-header .sa-group-count {
+    font-weight: 600;
+    color: var(--ec-slate-600);
+}
+
+.sa-teacher-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 220px) 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--ec-slate-100);
+}
+
+.sa-teacher-name strong {
+    font-size: 14px;
+    color: var(--ec-slate-800);
+}
+
+.sa-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sa-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 4px 4px 11px;
+    border: 1px solid var(--ec-slate-200);
+    border-radius: 999px;
+    background: var(--ec-surface);
+    color: var(--ec-slate-700);
     font-size: 13px;
+    line-height: 1.3;
+}
+
+.sa-chip-adviser {
+    border-color: var(--ec-primary-300);
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-700);
+    font-weight: 600;
+}
+
+.sa-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ec-slate-400);
+    cursor: pointer;
+}
+
+.sa-chip-remove:hover,
+.sa-chip-remove:focus-visible {
+    background: var(--ec-status-danger-bg);
+    color: var(--ec-danger);
+    outline: none;
+}
+
+.sa-gaps {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 18px;
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.sa-gaps svg {
+    flex-shrink: 0;
+}
+
+.sa-group > .sa-teacher-row:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 760px) {
+    .sa-teacher-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .sa-teacher-row .sa-delete-button {
+        justify-self: start;
+    }
 }
 
 .sa-delete-button {

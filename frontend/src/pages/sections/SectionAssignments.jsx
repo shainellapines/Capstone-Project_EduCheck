@@ -6,6 +6,7 @@ import {
     Trash2,
     Layers,
     UserCheck,
+    X,
 } from "lucide-react";
 
 import "../../styles/Dashboard.css";
@@ -336,6 +337,131 @@ function SectionAssignments() {
             setActionError(deleteError.message);
         }
     };
+
+    // Removes every slot one teacher holds in one section and school year,
+    // one DELETE per assignment (the same endpoint as a single removal).
+    const handleRemoveTeacherLoad = async (load) => {
+        const labels = load.slots.map((slot) => slot.subject_name || "Class Adviser");
+        const confirmed = window.confirm(
+            `Remove all of ${load.name}'s assignments in ${load.sectionName} (${load.schoolYear})?\n\n• ${labels.join("\n• ")}`
+        );
+
+        if (!confirmed) return;
+
+        setActionError("");
+        setActionMessage("");
+
+        let removed = 0;
+
+        try {
+            for (const slot of load.slots) {
+                const response = await fetch(`${API_URL}/assignments/${slot.assignment_id}`, {
+                    method: "DELETE",
+                    headers: authHeaders(),
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Failed to remove assignment.");
+                }
+
+                removed += 1;
+            }
+
+            setActionMessage(`${removed} assignment${removed === 1 ? "" : "s"} removed.`);
+        } catch (deleteError) {
+            setActionError(
+                removed > 0
+                    ? `${removed} of ${load.slots.length} removed, then: ${deleteError.message}`
+                    : deleteError.message
+            );
+        } finally {
+            await loadAll();
+        }
+    };
+
+    // One group per section and school year, each holding one entry per
+    // teacher with all of that teacher's slots, plus what is still unstaffed.
+    // Sections with no assignments at all are listed under the newest year.
+    const sectionGroups = (() => {
+        const groups = new Map();
+        const newestYear = schoolYears[0];
+
+        const groupFor = (section, schoolYearId, schoolYearLabel) => {
+            const key = `${section.section_id}:${schoolYearId}`;
+            if (!groups.has(key)) {
+                groups.set(key, { key, section, schoolYearId, schoolYear: schoolYearLabel, teachers: new Map() });
+            }
+            return groups.get(key);
+        };
+
+        assignments.forEach((assignment) => {
+            const section = sections.find((s) => s.section_id === assignment.section_id) || {
+                section_id: assignment.section_id,
+                section_name: assignment.section_name,
+                grade_level: assignment.grade_level,
+                staffing_mode: assignment.staffing_mode,
+            };
+            const group = groupFor(section, assignment.school_year_id, assignment.school_year);
+
+            if (!group.teachers.has(assignment.teacher_id)) {
+                group.teachers.set(assignment.teacher_id, {
+                    teacherId: assignment.teacher_id,
+                    name: `${assignment.first_name} ${assignment.last_name}`,
+                    role: assignment.teacher_role,
+                    sectionName: section.section_name,
+                    schoolYear: assignment.school_year,
+                    slots: [],
+                });
+            }
+            group.teachers.get(assignment.teacher_id).slots.push(assignment);
+        });
+
+        if (newestYear) {
+            sections.forEach((section) => {
+                const hasAny = [...groups.values()].some((group) => group.section.section_id === section.section_id);
+                if (!hasAny) groupFor(section, newestYear.school_year_id, newestYear.school_year);
+            });
+        }
+
+        return [...groups.values()]
+            .map((group) => {
+                const teachers = [...group.teachers.values()].map((teacher) => ({
+                    ...teacher,
+                    isAdviser: teacher.slots.some((slot) => slot.subject_id === null),
+                    // Class Adviser chip first, then subjects alphabetically.
+                    slots: [...teacher.slots].sort((a, b) =>
+                        a.subject_id === null ? -1 : b.subject_id === null ? 1 : a.subject_name.localeCompare(b.subject_name)
+                    ),
+                }));
+                teachers.sort((a, b) => Number(b.isAdviser) - Number(a.isAdviser) || a.name.localeCompare(b.name));
+
+                const gradeSubjects = subjects.filter(
+                    (subject) => String(subject.grade_level) === String(group.section.grade_level)
+                );
+                const assignedIds = new Set(
+                    teachers.flatMap((teacher) => teacher.slots.map((slot) => slot.subject_id)).filter(Boolean)
+                );
+                const hasAdviser = teachers.some((teacher) => teacher.isAdviser);
+                const selfContained = group.section.staffing_mode === "Self-Contained";
+
+                return {
+                    ...group,
+                    teachers,
+                    hasAdviser,
+                    selfContained,
+                    totalSubjects: gradeSubjects.length,
+                    assignedCount: gradeSubjects.filter((subject) => assignedIds.has(subject.subject_id)).length,
+                    unassigned: gradeSubjects.filter((subject) => !assignedIds.has(subject.subject_id)),
+                };
+            })
+            .sort(
+                (a, b) =>
+                    String(a.section.grade_level).localeCompare(String(b.section.grade_level), undefined, { numeric: true }) ||
+                    a.section.section_name.localeCompare(b.section.section_name) ||
+                    String(b.schoolYear).localeCompare(String(a.schoolYear))
+            );
+    })();
 
     return (
         <div className="dashboard-layout">
@@ -691,67 +817,88 @@ function SectionAssignments() {
                                     </form>
                                 )}
 
-                                <div className="table-container">
-                                    <table className="sa-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Teacher</th>
-                                                <th>Section</th>
-                                                <th>Subject</th>
-                                                <th>School Year</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
+                                <div className="sa-groups">
+                                    {sectionGroups.length === 0 && <p className="sa-hint">No assignments yet.</p>}
 
-                                        <tbody>
-                                            {assignments.length === 0 && (
-                                                <tr>
-                                                    <td colSpan="5" className="empty-state">
-                                                        No assignments yet.
-                                                    </td>
-                                                </tr>
-                                            )}
+                                    {sectionGroups.map((group) => (
+                                        <section key={group.key} className="sa-group">
+                                            <header className="sa-group-header">
+                                                <div>
+                                                    <h4>{group.section.section_name}</h4>
+                                                    <span>
+                                                        Grade {group.section.grade_level} · {group.section.staffing_mode} ·{" "}
+                                                        {group.schoolYear}
+                                                    </span>
+                                                </div>
+                                                <span className="sa-group-count">
+                                                    {group.selfContained && group.hasAdviser
+                                                        ? "Class Adviser teaches every subject"
+                                                        : `${group.assignedCount} of ${group.totalSubjects} subjects assigned`}
+                                                </span>
+                                            </header>
 
-                                            {assignments.map((assignment) => (
-                                                <tr key={assignment.assignment_id}>
-                                                    <td>
-                                                        <strong>
-                                                            {assignment.first_name} {assignment.last_name}
-                                                        </strong>
+                                            {group.teachers.map((teacher) => (
+                                                <div key={teacher.teacherId} className="sa-teacher-row">
+                                                    <div className="sa-teacher-name">
+                                                        <strong>{teacher.name}</strong>
                                                         <span className="sa-teacher-role">
-                                                            {assignment.teacher_role === "adviser"
-                                                                ? "Adviser"
-                                                                : "Subject Teacher"}
+                                                            {teacher.role === "adviser" ? "Adviser" : "Subject Teacher"}
                                                         </span>
-                                                    </td>
-                                                    <td>
-                                                        {assignment.section_name} (Grade {assignment.grade_level})
-                                                    </td>
-                                                    <td>
-                                                        {assignment.subject_name || (
-                                                            <span className="sa-adviser-tag">
-                                                                Adviser — all subjects
-                                                                {assignment.staffing_mode === "Self-Contained"
-                                                                    ? " (Self-Contained)"
-                                                                    : " (review only, Departmentalized)"}
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td>{assignment.school_year}</td>
-                                                    <td>
-                                                        <button
-                                                            type="button"
-                                                            className="sa-delete-button"
-                                                            onClick={() => handleDeleteAssignment(assignment)}
-                                                        >
-                                                            <Trash2 size={15} />
-                                                            Remove
-                                                        </button>
-                                                    </td>
-                                                </tr>
+                                                    </div>
+
+                                                    <div className="sa-chips">
+                                                        {teacher.slots.map((slot) => {
+                                                            const label = slot.subject_name || "Class Adviser";
+                                                            return (
+                                                                <span
+                                                                    key={slot.assignment_id}
+                                                                    className={`sa-chip${slot.subject_id === null ? " sa-chip-adviser" : ""}`}
+                                                                >
+                                                                    {label}
+                                                                    <button
+                                                                        type="button"
+                                                                        className="sa-chip-remove"
+                                                                        aria-label={`Remove ${label} from ${teacher.name}`}
+                                                                        title={`Remove ${label}`}
+                                                                        onClick={() => handleDeleteAssignment(slot)}
+                                                                    >
+                                                                        <X size={13} />
+                                                                    </button>
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        className="sa-delete-button"
+                                                        onClick={() => handleRemoveTeacherLoad(teacher)}
+                                                    >
+                                                        <Trash2 size={15} />
+                                                        Remove all
+                                                    </button>
+                                                </div>
                                             ))}
-                                        </tbody>
-                                    </table>
+
+                                            {(!group.hasAdviser || (!group.selfContained && group.unassigned.length > 0)) && (
+                                                <div className="sa-gaps">
+                                                    <AlertTriangle size={15} />
+                                                    <span>
+                                                        {[
+                                                            ...(!group.hasAdviser ? ["No Class Adviser yet"] : []),
+                                                            ...(!group.selfContained && group.unassigned.length > 0
+                                                                ? [
+                                                                      `Not yet assigned: ${group.unassigned
+                                                                          .map((subject) => subject.subject_name)
+                                                                          .join(", ")}`,
+                                                                  ]
+                                                                : []),
+                                                        ].join(" · ")}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </section>
+                                    ))}
                                 </div>
                             </div>
                         </>
