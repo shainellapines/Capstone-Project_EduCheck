@@ -21,6 +21,10 @@ const router = express.Router();
 // MULTER STORAGE
 // ==========================================
 
+// UPLOAD_DIR lets the test suite keep its uploads in a temporary folder
+// instead of the real one.
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, "../uploads");
+
 const storage = multer.diskStorage({
 
     destination: (
@@ -31,10 +35,7 @@ const storage = multer.diskStorage({
 
         cb(
             null,
-            path.join(
-                __dirname,
-                "../uploads"
-            )
+            UPLOAD_DIR
         );
 
     },

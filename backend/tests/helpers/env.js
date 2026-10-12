@@ -26,6 +26,28 @@ const dbConfig = (database) => ({
     database,
 });
 
+// One temporary folder per test file for generated workbooks and the
+// server's uploads, removed at teardown so test runs leave nothing behind
+// in backend/src/uploads.
+let currentRunDir = null;
+
+const runDir = () => {
+    if (!currentRunDir) currentRunDir = fs.mkdtempSync(path.join(os.tmpdir(), "educheck-test-"));
+    return currentRunDir;
+};
+
+const uploadDir = () => {
+    const dir = path.join(runDir(), "uploads");
+    fs.mkdirSync(dir, { recursive: true });
+    return dir;
+};
+
+const removeRunDir = () => {
+    if (!currentRunDir) return;
+    fs.rmSync(currentRunDir, { recursive: true, force: true, maxRetries: 3 });
+    currentRunDir = null;
+};
+
 const getFreePort = () =>
     new Promise((resolve, reject) => {
         const server = net.createServer();
@@ -176,7 +198,7 @@ const buildEcr = ({ lrnFor, limit, header = {} }) => {
         input[headerCells[key]] = { t: "s", v: value };
     });
 
-    const file = path.join(os.tmpdir(), `ecr-${Date.now()}-${Math.random().toString(36).slice(2)}.xlsx`);
+    const file = path.join(runDir(), `ecr-${Date.now()}-${Math.random().toString(36).slice(2)}.xlsx`);
     XLSX.writeFile(workbook, file);
     return { file, learnerCount: rows.length };
 };
@@ -190,7 +212,13 @@ const startServer = async () => {
 
     const child = spawn(process.execPath, ["src/server.js"], {
         cwd: BACKEND_DIR,
-        env: { ...process.env, PORT: String(port), DB_NAME: TEST_DB, JWT_SECRET: "test-secret-do-not-use" },
+        env: {
+            ...process.env,
+            PORT: String(port),
+            DB_NAME: TEST_DB,
+            JWT_SECRET: "test-secret-do-not-use",
+            UPLOAD_DIR: uploadDir(),
+        },
         stdio: ["ignore", "pipe", "pipe"],
     });
 
@@ -266,9 +294,10 @@ const setup = async () => {
     const teardown = async () => {
         server.child.kill();
         await pool.end();
+        removeRunDir();
     };
 
     return { baseUrl: server.baseUrl, pool, ids, tokens, request, upload, teardown, getLog: server.getLog };
 };
 
-module.exports = { setup, buildEcr, lrnGenerator, PASSWORD };
+module.exports = { setup, buildEcr, lrnGenerator, removeRunDir, PASSWORD };

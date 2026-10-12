@@ -15,7 +15,7 @@ const {
 const router = express.Router();
 
 const upload = multer({
-    dest: path.join(
+    dest: process.env.UPLOAD_DIR || path.join(
         __dirname,
         "../uploads"
     ),

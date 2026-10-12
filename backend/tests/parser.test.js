@@ -1,7 +1,7 @@
 const { describe, it, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const { buildEcr, lrnGenerator } = require("./helpers/env");
+const { buildEcr, lrnGenerator, removeRunDir } = require("./helpers/env");
 const { parseClassRecord } = require("../src/services/classRecord/classRecordParser");
 const { validateClassRecord } = require("../src/services/classRecord/classRecordValidator");
 const { compareHeader, checkHeaderSubject, checkGradeLevel } = require("../src/services/classRecord/rosterCheck");
@@ -9,12 +9,11 @@ const { compareHeader, checkHeaderSubject, checkGradeLevel } = require("../src/s
 // Parser / validator / integrity helpers (EPIC-02, EPIC-04) - no server or DB.
 describe("e-Class Record parser, validator and integrity helpers", () => {
     const files = [];
-    const make = (opts) => {
-        const built = buildEcr(opts);
-        files.push(built.file);
-        return built;
-    };
-    after(() => files.forEach((f) => fs.existsSync(f) && fs.unlinkSync(f)));
+    const make = (opts) => buildEcr(opts);
+    after(() => {
+        files.forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
+        removeRunDir();
+    });
 
     it("PRS-01 reads 100 learners and the INPUT header", () => {
         // buildEcr blanks the subject cell unless asked, so name it here.
