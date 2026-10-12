@@ -1,0 +1,207 @@
+/* Next steps panel (NextSteps.jsx): the stages side by side, split by
+   hairlines, each with a segmented progress bar. Tokens from App.css. */
+
+.ns-card {
+    margin-bottom: 24px;
+    background: var(--ec-surface);
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius-md);
+    box-shadow: var(--ec-shadow-xs);
+    overflow: hidden;
+}
+
+.ns-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--ec-border);
+}
+
+.ns-head h2 {
+    margin: 0;
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 600;
+    color: var(--ec-text);
+}
+
+.ns-context {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ec-text-muted);
+}
+
+.ns-steps {
+    display: grid;
+    grid-template-columns: repeat(var(--ns-count), minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ns-step {
+    display: flex;
+    flex-direction: column;
+    padding: 18px 24px 20px;
+}
+
+.ns-step + .ns-step {
+    border-left: 1px solid var(--ec-border);
+}
+
+.ns-step-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ns-step-index {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--ec-border-strong);
+    color: var(--ec-text-muted);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.ns-step.is-active .ns-step-index {
+    border-color: var(--ec-action);
+    color: var(--ec-link);
+}
+
+.ns-step.is-done .ns-step-index {
+    border-color: var(--ec-action);
+    background: var(--ec-action);
+    color: var(--ec-on-action);
+}
+
+.ns-step-top h3 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--ec-text);
+}
+
+/* State chip: icon + word, so it never relies on color alone. */
+.ns-state {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 22px;
+    padding: 0 8px 0 6px;
+    border-radius: var(--ec-radius-xs);
+    border: 1px solid var(--ec-status-neutral-border);
+    background: var(--ec-status-neutral-bg);
+    color: var(--ec-status-neutral-fg);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.ns-step.is-done .ns-state {
+    border-color: var(--ec-status-success-border);
+    background: var(--ec-status-success-bg);
+    color: var(--ec-status-success-fg);
+}
+
+.ns-step.is-active .ns-state {
+    border-color: var(--ec-status-revision-border);
+    background: var(--ec-status-revision-bg);
+    color: var(--ec-status-revision-fg);
+}
+
+.ns-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin: 14px 0 8px;
+}
+
+.ns-value strong {
+    font-size: 26px;
+    line-height: 30px;
+    font-weight: 600;
+    color: var(--ec-text);
+}
+
+.ns-value span {
+    font-size: 13px;
+    color: var(--ec-text-muted);
+}
+
+/* Segmented bar: done, then needs-fixing, then in-review; the empty
+   track is what's left. A 2px surface gap separates segments. */
+.ns-bar {
+    display: flex;
+    gap: 2px;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--ec-surface-sunken);
+    overflow: hidden;
+}
+
+.ns-bar-fill {
+    height: 100%;
+}
+
+.ns-bar-fill:last-child {
+    border-radius: 0 4px 4px 0;
+}
+
+.ns-bar-fill.tone-done { background: var(--ec-chart-1); }
+.ns-bar-fill.tone-warning { background: var(--ec-severity-warning-fg); }
+.ns-bar-fill.tone-pending { background: var(--ec-chart-2); opacity: 0.55; }
+
+.ns-detail {
+    flex: 1;
+    margin: 10px 0 0;
+    font-size: 13px;
+    line-height: 19px;
+    color: var(--ec-text-muted);
+}
+
+.ns-action {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ec-link);
+    font: 600 13px/18px var(--ec-font-sans);
+    cursor: pointer;
+}
+
+.ns-action:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.ns-action:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 3px;
+    border-radius: 2px;
+}
+
+@media (max-width: 1000px) {
+    .ns-steps {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ns-step + .ns-step {
+        border-left: 0;
+        border-top: 1px solid var(--ec-border);
+    }
+}

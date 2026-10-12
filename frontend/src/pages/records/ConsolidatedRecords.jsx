@@ -2,13 +2,13 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
     ChevronDown,
-    ChevronUp,
     AlertTriangle,
     CheckCircle,
     Loader2,
-    FileText,
+    Search,
     Users,
     Send,
+    X,
     XCircle,
     Undo2,
 } from "lucide-react";
@@ -58,6 +58,10 @@ function ConsolidatedRecords() {
     const [students, setStudents] = useState(null);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+
+    // List narrowing: free-text search (name or LRN) and a status tab.
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
 
     const [expandedLrns, setExpandedLrns] = useState(new Set());
     const [error, setError] = useState("");
@@ -343,10 +347,49 @@ function ConsolidatedRecords() {
         }
     };
 
-    const totalPages = students ? Math.max(1, Math.ceil(students.length / PAGE_SIZE)) : 1;
-    const pagedStudents = students
-        ? students.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-        : [];
+    // Display only: a learner not yet submitted who has every subject in
+    // and none in Needs Revision is shown as Ready (the same test as the
+    // bulk-submit eligibility count below).
+    const displayStatusOf = (student) =>
+        student.submission.status === "Not Submitted" &&
+        student.all_subjects_submitted &&
+        !student.subjects.some((subject) => subject.status === "Needs Revision")
+            ? "ready"
+            : student.submission.status;
+
+    // Status tabs above the list. Client-side only: every student is
+    // already loaded, the tabs just narrow what's shown.
+    const FILTERS = [
+        { key: "all", label: "All", test: () => true },
+        { key: "ready", label: "Ready", test: (student) => displayStatusOf(student) === "ready" },
+        { key: "incomplete", label: "Incomplete", test: (student) => !student.all_subjects_submitted },
+        {
+            key: "pending",
+            label: "Pending approval",
+            test: (student) => student.submission.status === "Pending Approval",
+        },
+        {
+            key: "returned",
+            label: "Returned",
+            test: (student) => ["Rejected", "Amendment Requested"].includes(student.submission.status),
+        },
+        { key: "approved", label: "Approved", test: (student) => student.submission.status === "Approved" },
+    ];
+
+    const activeFilter = FILTERS.find((filter) => filter.key === statusFilter) || FILTERS[0];
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    const filteredStudents = (students || []).filter(
+        (student) =>
+            activeFilter.test(student) &&
+            (!normalizedQuery ||
+                student.lrn.includes(normalizedQuery) ||
+                `${student.last_name}, ${student.first_name}`.toLowerCase().includes(normalizedQuery) ||
+                `${student.first_name} ${student.last_name}`.toLowerCase().includes(normalizedQuery))
+    );
+
+    const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
+    const pagedStudents = filteredStudents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const pageStartIndex = (currentPage - 1) * PAGE_SIZE;
 
     const eligibleForBulkSubmit =
@@ -357,6 +400,9 @@ function ConsolidatedRecords() {
                 !student.subjects.some((subject) => subject.status === "Needs Revision")
         ).length || 0;
 
+    const isAdviser = user.role === "adviser";
+    const subjectColumnCount = isAdviser ? 8 : 7;
+
     return (
         <div className="dashboard-layout">
 
@@ -366,10 +412,10 @@ function ConsolidatedRecords() {
 
                 <header className="dashboard-header">
                     <div>
-                        <h1>Consolidated Records</h1>
+                        <h1>{isAdviser ? "Consolidated Records" : "Submission Review"}</h1>
                         <p>
-                            Each student's grades merged across every subject uploaded
-                            for the selected school year.
+                            Each learner's grades merged across every subject uploaded for the selected
+                            school year.
                         </p>
                     </div>
 
@@ -398,33 +444,6 @@ function ConsolidatedRecords() {
                 </header>
 
                 <section className="dashboard-content">
-
-                    {sectionFilterId && (
-                        <div className="cr-section-filter-banner">
-                            <span>
-                                Filtered by section:{" "}
-                                <strong>{sectionFilterLabel || `Section #${sectionFilterId}`}</strong>
-                            </span>
-
-                            <button type="button" className="cr-btn cr-btn-cancel" onClick={clearSectionFilter}>
-                                Clear filter
-                            </button>
-                        </div>
-                    )}
-
-                    {user.role === "adviser" && students && students.length > 0 && (
-                        <div className="cr-toolbar">
-                            <button
-                                type="button"
-                                className="cr-btn cr-btn-primary"
-                                onClick={submitAllEligible}
-                                disabled={eligibleForBulkSubmit === 0}
-                            >
-                                <Send size={16} />
-                                Submit All Eligible ({eligibleForBulkSubmit})
-                            </button>
-                        </div>
-                    )}
 
                     {error && (
                         <div className="error-banner">
@@ -455,102 +474,159 @@ function ConsolidatedRecords() {
                     )}
 
                     {!loadingSchoolYears && !loadingStudents && students && students.length > 0 && (
-                        <div className="content-card">
+                        <div className="content-card cr-card">
 
-                            <div className="cr-list-count">
-                                Showing {pageStartIndex + 1}–{Math.min(pageStartIndex + PAGE_SIZE, students.length)}{" "}
-                                of {students.length} student{students.length === 1 ? "" : "s"}
+                            {/* TOOLBAR: search + bulk action, then the status tabs */}
+                            <div className="cr-toolbar">
+                                <div className="cr-toolbar-row">
+                                    <label className="cr-search">
+                                        <Search size={16} aria-hidden="true" />
+                                        <input
+                                            type="search"
+                                            value={searchQuery}
+                                            onChange={(e) => {
+                                                setSearchQuery(e.target.value);
+                                                setCurrentPage(1);
+                                            }}
+                                            placeholder="Search by name or LRN"
+                                            aria-label="Search learners by name or LRN"
+                                        />
+                                    </label>
+
+                                    {sectionFilterId && (
+                                        <span className="cr-filter-chip">
+                                            Section: {sectionFilterLabel || `#${sectionFilterId}`}
+                                            <button
+                                                type="button"
+                                                onClick={clearSectionFilter}
+                                                aria-label="Clear section filter"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </span>
+                                    )}
+
+                                    {isAdviser && (
+                                        <button
+                                            type="button"
+                                            className="cr-btn cr-btn-primary cr-bulk"
+                                            onClick={submitAllEligible}
+                                            disabled={eligibleForBulkSubmit === 0}
+                                        >
+                                            <Send size={15} />
+                                            Submit all eligible ({eligibleForBulkSubmit})
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="cr-tabs" role="tablist" aria-label="Filter by status">
+                                    {FILTERS.map((filter) => {
+                                        const count = students.filter(filter.test).length;
+
+                                        return (
+                                            <button
+                                                type="button"
+                                                role="tab"
+                                                aria-selected={statusFilter === filter.key}
+                                                key={filter.key}
+                                                className={`cr-tab${statusFilter === filter.key ? " is-active" : ""}`}
+                                                onClick={() => {
+                                                    setStatusFilter(filter.key);
+                                                    setCurrentPage(1);
+                                                }}
+                                            >
+                                                {filter.label}
+                                                <span className="cr-tab-count">{count}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
+
+                            {/* Column labels for the student rows */}
+                            <div className="cr-list-head" aria-hidden="true">
+                                <span />
+                                <span>Learner</span>
+                                <span>Subjects</span>
+                                <span>Status</span>
+                                <span className="cr-col-action">{filteredStudents.length > 0 ? "Action" : ""}</span>
+                            </div>
+
+                            {filteredStudents.length === 0 && (
+                                <p className="cr-no-match">
+                                    No learners match{normalizedQuery ? ` "${searchQuery.trim()}"` : ""}
+                                    {statusFilter !== "all" ? ` in ${activeFilter.label}` : ""}.
+                                </p>
+                            )}
 
                             {pagedStudents.map((student) => {
                                 const isExpanded = expandedLrns.has(student.lrn);
                                 const isPending = pendingLrns.has(student.lrn);
                                 const submissionStatus = student.submission.status;
-                                // Display only: a learner not yet submitted who has every
-                                // subject in and none in Needs Revision is shown as Ready
-                                // (the same test as the bulk-submit eligibility count).
-                                const displayStatus =
-                                    submissionStatus === "Not Submitted" &&
-                                    student.all_subjects_submitted &&
-                                    !student.subjects.some((subject) => subject.status === "Needs Revision")
-                                        ? "ready"
-                                        : submissionStatus;
-
+                                const displayStatus = displayStatusOf(student);
                                 const isHighlighted = student.lrn === highlightedLrn;
+                                const canSubmit =
+                                    isAdviser &&
+                                    student.all_subjects_submitted &&
+                                    ["Not Submitted", "Rejected", "Amendment Requested"].includes(submissionStatus);
 
                                 return (
                                     <div
                                         key={student.lrn}
                                         ref={isHighlighted ? highlightedRowRef : undefined}
-                                        className={isHighlighted ? "cr-student-row highlighted" : "cr-student-row"}
+                                        className={`cr-student-row${isHighlighted ? " highlighted" : ""}${isExpanded ? " is-open" : ""}`}
                                     >
                                         <div className="cr-row-summary">
                                             <button
                                                 type="button"
                                                 className="cr-row-toggle"
                                                 onClick={() => toggleExpanded(student.lrn)}
+                                                aria-expanded={isExpanded}
                                             >
-                                                {isExpanded ? (
-                                                    <ChevronUp size={18} style={{ color: "var(--ec-text-muted)" }} />
-                                                ) : (
-                                                    <ChevronDown size={18} style={{ color: "var(--ec-text-muted)" }} />
-                                                )}
+                                                <ChevronDown size={18} className="cr-chevron" aria-hidden="true" />
 
-                                                <div>
-                                                    <div className="name">
+                                                <span className="cr-learner">
+                                                    <span className="name">
                                                         {student.last_name}, {student.first_name}
-                                                    </div>
-
-                                                    <div className="meta">
+                                                    </span>
+                                                    <span className="meta">
                                                         LRN <span className="record-lrn">{student.lrn}</span> · Grade {student.grade_level}
-                                                    </div>
-                                                </div>
+                                                    </span>
+                                                </span>
                                             </button>
 
-                                            <div className="cr-row-actions">
-                                                <span className="cr-subject-count">
-                                                    {student.subjects_recorded}
-                                                    {student.subjects_expected !== null
-                                                        ? ` / ${student.subjects_expected}`
-                                                        : ""}{" "}
-                                                    subjects
+                                            <span
+                                                className={`cr-subject-count${student.all_subjects_submitted ? " is-complete" : " is-incomplete"}`}
+                                                title={student.all_subjects_submitted ? "Every subject has a grade" : "Some subjects are still missing"}
+                                            >
+                                                {student.all_subjects_submitted ? (
+                                                    <CheckCircle size={15} aria-hidden="true" />
+                                                ) : (
+                                                    <AlertTriangle size={15} aria-hidden="true" />
+                                                )}
+                                                {student.subjects_recorded}
+                                                {student.subjects_expected !== null ? ` / ${student.subjects_expected}` : ""}
+                                                <span className="cr-sr-only">
+                                                    {student.all_subjects_submitted ? " subjects, complete" : " subjects, incomplete"}
                                                 </span>
+                                            </span>
 
-                                                <span
-                                                    className={
-                                                        student.all_subjects_submitted
-                                                            ? "pill-badge complete"
-                                                            : "pill-badge incomplete"
-                                                    }
-                                                >
-                                                    {student.all_subjects_submitted ? (
-                                                        <CheckCircle size={14} />
-                                                    ) : (
-                                                        <AlertTriangle size={14} />
-                                                    )}
-                                                    {student.all_subjects_submitted
-                                                        ? "Complete"
-                                                        : "Incomplete"}
-                                                </span>
-
+                                            <span className="cr-col-status">
                                                 <StatusBadge status={displayStatus} />
+                                            </span>
 
-                                                {user.role === "adviser" &&
-                                                    student.all_subjects_submitted &&
-                                                    (submissionStatus === "Not Submitted" ||
-                                                        submissionStatus === "Rejected" ||
-                                                        submissionStatus === "Amendment Requested") && (
-                                                        <button
-                                                            type="button"
-                                                            className="cr-btn cr-btn-primary"
-                                                            style={{ padding: "8px 14px", fontSize: "13px" }}
-                                                            onClick={() => submitForApproval(student.lrn)}
-                                                            disabled={isPending}
-                                                        >
-                                                            <Send size={14} />
-                                                            Submit for Approval
-                                                        </button>
-                                                    )}
+                                            <div className="cr-row-actions">
+                                                {canSubmit && (
+                                                    <button
+                                                        type="button"
+                                                        className="cr-btn cr-btn-outline"
+                                                        onClick={() => submitForApproval(student.lrn)}
+                                                        disabled={isPending}
+                                                    >
+                                                        <Send size={14} />
+                                                        Submit
+                                                    </button>
+                                                )}
 
                                                 {user.role === "admin" && submissionStatus === "Pending Approval" && (
                                                     <>
@@ -615,16 +691,22 @@ function ConsolidatedRecords() {
                                         )}
 
                                         {submissionStatus === "Rejected" && student.submission.remarks && (
-                                            <div className="cr-rejection-reason">
-                                                Rejection reason: {student.submission.remarks}
+                                            <div className="cr-note is-danger">
+                                                <XCircle size={15} aria-hidden="true" />
+                                                <span>
+                                                    <strong>Returned by the Administrator:</strong> {student.submission.remarks}
+                                                </span>
                                             </div>
                                         )}
 
                                         {submissionStatus === "Amendment Requested" && (
-                                            <div className="cr-amendment-note">
-                                                This record was previously approved, but a subject below was
-                                                flagged for revision and reopened it. Once the teacher's
-                                                correction is in, resolve the flag and submit again.
+                                            <div className="cr-note is-warning">
+                                                <AlertTriangle size={15} aria-hidden="true" />
+                                                <span>
+                                                    This record was previously approved, but a subject below was
+                                                    flagged for revision and reopened it. Once the teacher's
+                                                    correction is in, resolve the flag and submit again.
+                                                </span>
                                             </div>
                                         )}
 
@@ -635,12 +717,12 @@ function ConsolidatedRecords() {
                                                         <tr>
                                                             <th>Subject</th>
                                                             <th>Teacher</th>
-                                                            <th>Term 1</th>
-                                                            <th>Term 2</th>
-                                                            <th>Term 3</th>
-                                                            <th>Final</th>
+                                                            <th className="cr-num">Term 1</th>
+                                                            <th className="cr-num">Term 2</th>
+                                                            <th className="cr-num">Term 3</th>
+                                                            <th className="cr-num">Final</th>
                                                             <th>Status</th>
-                                                            {user.role === "adviser" && <th>Actions</th>}
+                                                            {isAdviser && <th className="cr-col-action"><span className="cr-sr-only">Actions</span></th>}
                                                         </tr>
                                                     </thead>
 
@@ -656,28 +738,25 @@ function ConsolidatedRecords() {
 
                                                             return (
                                                                 <Fragment key={subject.subject_id}>
-                                                                    <tr>
-                                                                        <td>
-                                                                            <FileText size={14} className="subject-icon" />
-                                                                            {subject.subject_name}
-                                                                        </td>
-                                                                        <td>{subject.teacher_name}</td>
-                                                                        <td><GradeCell value={subject.term_1} /></td>
-                                                                        <td><GradeCell value={subject.term_2} /></td>
-                                                                        <td><GradeCell value={subject.term_3} /></td>
-                                                                        <td className="final-grade">
+                                                                    <tr className={isRevisionPanelOpen ? "is-revising" : undefined}>
+                                                                        <td className="cr-subject-name">{subject.subject_name}</td>
+                                                                        <td className="cr-teacher">{subject.teacher_name}</td>
+                                                                        <td className="cr-num"><GradeCell value={subject.term_1} /></td>
+                                                                        <td className="cr-num"><GradeCell value={subject.term_2} /></td>
+                                                                        <td className="cr-num"><GradeCell value={subject.term_3} /></td>
+                                                                        <td className="cr-num final-grade">
                                                                             <GradeCell value={subject.final_grade} />
                                                                         </td>
                                                                         <td>
                                                                             <StatusBadge status={subject.status || "Uploaded"} />
                                                                         </td>
 
-                                                                        {user.role === "adviser" && (
-                                                                            <td>
+                                                                        {isAdviser && (
+                                                                            <td className="cr-col-action">
                                                                                 {!isRevisionRequested && (
                                                                                     <button
                                                                                         type="button"
-                                                                                        className="cr-btn cr-btn-revision"
+                                                                                        className="cr-btn cr-btn-link"
                                                                                         onClick={() => {
                                                                                             setRevisingClassRecordId(
                                                                                                 isRevisionPanelOpen
@@ -689,7 +768,7 @@ function ConsolidatedRecords() {
                                                                                         disabled={isRevisionPending}
                                                                                     >
                                                                                         <Undo2 size={14} />
-                                                                                        Request Revision
+                                                                                        Request revision
                                                                                     </button>
                                                                                 )}
                                                                             </td>
@@ -699,20 +778,18 @@ function ConsolidatedRecords() {
                                                                     {isRevisionRequested && subject.revision_remarks && (
                                                                         <tr>
                                                                             <td
-                                                                                colSpan={user.role === "adviser" ? 8 : 7}
+                                                                                colSpan={subjectColumnCount}
                                                                                 className="cr-revision-remarks-cell"
                                                                             >
-                                                                                Revision reason: {subject.revision_remarks}
+                                                                                <strong>Revision reason:</strong> {subject.revision_remarks}
                                                                             </td>
                                                                         </tr>
                                                                     )}
 
                                                                     {isRevisionPanelOpen && (
-                                                                        <tr>
-                                                                            <td
-                                                                                colSpan={user.role === "adviser" ? 8 : 7}
-                                                                            >
-                                                                                <div className="cr-reject-panel">
+                                                                        <tr className="is-revising">
+                                                                            <td colSpan={subjectColumnCount}>
+                                                                                <div className="cr-reject-panel is-inline">
                                                                                     <textarea
                                                                                         className="cr-reject-textarea"
                                                                                         value={revisionReason}
@@ -761,31 +838,40 @@ function ConsolidatedRecords() {
                                 );
                             })}
 
-                            {totalPages > 1 && (
-                                <div className="cr-pagination">
-                                    <button
-                                        type="button"
-                                        className="cr-btn cr-btn-cancel"
-                                        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                                        disabled={currentPage === 1}
-                                    >
-                                        Previous
-                                    </button>
+                            {/* FOOTER: count + pagination */}
+                            <div className="cr-list-foot">
+                                <span>
+                                    {filteredStudents.length === 0
+                                        ? `0 of ${students.length} learners`
+                                        : `Showing ${pageStartIndex + 1}–${Math.min(pageStartIndex + PAGE_SIZE, filteredStudents.length)} of ${filteredStudents.length}${filteredStudents.length !== students.length ? ` (of ${students.length})` : ""} learners`}
+                                </span>
 
-                                    <span className="cr-pagination-status">
-                                        Page {currentPage} of {totalPages}
-                                    </span>
+                                {totalPages > 1 && (
+                                    <div className="cr-pagination">
+                                        <button
+                                            type="button"
+                                            className="cr-btn cr-btn-cancel"
+                                            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                                            disabled={currentPage === 1}
+                                        >
+                                            Previous
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        className="cr-btn cr-btn-cancel"
-                                        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                                        disabled={currentPage === totalPages}
-                                    >
-                                        Next
-                                    </button>
-                                </div>
-                            )}
+                                        <span className="cr-pagination-status">
+                                            Page {currentPage} of {totalPages}
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            className="cr-btn cr-btn-cancel"
+                                            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 

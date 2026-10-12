@@ -1,347 +1,616 @@
 /* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
    dashboard-header, dashboard-content, content-card, error-banner,
-   loading-state, school-year-select, etc.) for everything generic — this
-   file only covers what's specific to the consolidated-records list. */
+   loading-state, school-year-select, etc.) and StatusBadge.css for
+   everything generic — this file only covers the consolidated-records
+   list: toolbar + tabs, the learner rows, and each learner's subject table. */
 
-.cr-section-filter-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    background: var(--ec-primary-50);
-    color: var(--ec-primary-600);
-    border-radius: 8px;
-    font-size: 14px;
+/* One grid for the column labels and every learner row, so the subject
+   count, status and action line up down the whole list. */
+.cr-card {
+    --cr-columns: 22px minmax(0, 1fr) 110px 200px 220px;
+    --cr-gap: 14px;
+    --cr-pad-x: 24px;
 }
 
-.cr-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 20px;
-}
+/* ---------- Buttons ---------- */
 
 .cr-btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 18px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    font-family: inherit;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: var(--ec-radius);
+    font: 600 13px/18px var(--ec-font-sans);
     cursor: pointer;
-    transition: background 0.15s ease, box-shadow 0.15s ease;
     white-space: nowrap;
+    transition: background var(--ec-duration) ease-out, border-color var(--ec-duration) ease-out,
+        color var(--ec-duration) ease-out;
+}
+
+.cr-btn:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
 }
 
 .cr-btn:disabled {
-    background: var(--ec-slate-400) !important;
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
 .cr-btn-primary {
-    background: var(--ec-primary-500);
+    height: 38px;
+    padding: 0 16px;
+    background: var(--ec-action);
     color: var(--ec-on-action);
+    font-size: 14px;
 }
 
 .cr-btn-primary:hover:not(:disabled) {
-    background: var(--ec-primary-600);
+    background: var(--ec-action-hover);
+}
+
+/* Per-row submit: present but quieter than the one bulk primary action. */
+.cr-btn-outline {
+    background: var(--ec-surface);
+    border-color: var(--ec-action);
+    color: var(--ec-link);
+}
+
+.cr-btn-outline:hover:not(:disabled) {
+    background: var(--ec-selected);
 }
 
 .cr-btn-approve {
-    background: var(--ec-success);
+    background: var(--ec-status-success-solid, var(--ec-success));
     color: var(--ec-on-status-solid);
-    padding: 8px 14px;
-    font-size: 13px;
 }
 
 .cr-btn-approve:hover:not(:disabled) {
-    background: var(--ec-success);
+    filter: brightness(0.94);
 }
 
 .cr-btn-reject {
-    background: var(--ec-danger);
-    color: var(--ec-on-status-solid);
-    padding: 8px 14px;
-    font-size: 13px;
+    background: var(--ec-surface);
+    border-color: var(--ec-status-danger-border);
+    color: var(--ec-status-danger-fg);
 }
 
 .cr-btn-reject:hover:not(:disabled) {
-    background: var(--ec-danger);
+    background: var(--ec-status-danger-bg);
 }
 
 .cr-btn-cancel {
     background: var(--ec-surface);
-    color: var(--ec-slate-700);
-    border: 1px solid var(--ec-slate-300);
-    padding: 8px 14px;
+    border-color: var(--ec-border-strong);
+    color: var(--ec-text);
+}
+
+.cr-btn-cancel:hover:not(:disabled) {
+    background: var(--ec-hover);
+}
+
+.cr-btn-revision {
+    background: var(--ec-status-revision-fg);
+    color: var(--ec-on-status-solid);
+}
+
+.cr-btn-revision:hover:not(:disabled) {
+    filter: brightness(0.94);
+}
+
+/* A text-weight action for the subject rows (Request revision). */
+.cr-btn-link {
+    height: 28px;
+    padding: 0 8px;
+    background: transparent;
+    color: var(--ec-text-muted);
+    font-size: 12.5px;
+}
+
+.cr-btn-link:hover:not(:disabled) {
+    background: var(--ec-status-revision-bg);
+    color: var(--ec-status-revision-fg);
+}
+
+/* ---------- Toolbar + tabs ---------- */
+
+.cr-toolbar {
+    padding: 16px var(--cr-pad-x) 0;
+    border-bottom: 1px solid var(--ec-border);
+}
+
+.cr-toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cr-search {
+    position: relative;
+    flex: 0 1 340px;
+    display: flex;
+    align-items: center;
+}
+
+.cr-search svg {
+    position: absolute;
+    left: 12px;
+    color: var(--ec-text-muted);
+    pointer-events: none;
+}
+
+.cr-search input {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px 0 36px;
+    border: 1px solid var(--ec-border-strong);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    color: var(--ec-text);
+    font: 400 14px/20px var(--ec-font-sans);
+}
+
+.cr-search input::placeholder {
+    color: var(--ec-text-muted);
+}
+
+.cr-search input:focus {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 1px;
+    border-color: var(--ec-action);
+}
+
+.cr-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 30px;
+    padding: 0 4px 0 12px;
+    border-radius: var(--ec-radius-pill);
+    background: var(--ec-selected);
+    color: var(--ec-link);
     font-size: 13px;
-}
-
-.cr-btn-cancel:hover {
-    background: var(--ec-slate-50);
-}
-
-.cr-list-count {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--ec-slate-200);
-    color: var(--ec-slate-700);
     font-weight: 600;
 }
 
-.cr-pagination {
+.cr-filter-chip button {
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    padding: 18px 20px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
 }
 
-.cr-pagination-status {
-    font-size: 14px;
+.cr-filter-chip button:hover {
+    background: var(--ec-hover);
+}
+
+.cr-bulk {
+    margin-left: auto;
+}
+
+.cr-tabs {
+    display: flex;
+    gap: 4px;
+    margin-top: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.cr-tab {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 10px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--ec-text-muted);
+    font: 500 13.5px/18px var(--ec-font-sans);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cr-tab:hover {
+    color: var(--ec-text);
+}
+
+.cr-tab:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: -2px;
+    border-radius: var(--ec-radius-xs);
+}
+
+.cr-tab.is-active {
+    color: var(--ec-text);
     font-weight: 600;
-    color: var(--ec-slate-700);
+}
+
+.cr-tab.is-active::after {
+    content: "";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: var(--ec-action);
+}
+
+.cr-tab-count {
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: var(--ec-radius-pill);
+    background: var(--ec-surface-sunken);
+    color: var(--ec-text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.cr-tab.is-active .cr-tab-count {
+    background: var(--ec-selected);
+    color: var(--ec-link);
+}
+
+/* ---------- List ---------- */
+
+.cr-list-head {
+    display: grid;
+    grid-template-columns: var(--cr-columns);
+    gap: var(--cr-gap);
+    padding: 10px var(--cr-pad-x);
+    border-bottom: 1px solid var(--ec-border);
+    background: var(--ec-surface-sunken);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ec-text-muted);
+}
+
+.cr-no-match {
+    margin: 0;
+    padding: 28px var(--cr-pad-x);
+    text-align: center;
+    font-size: 14px;
+    color: var(--ec-text-muted);
 }
 
 .cr-student-row {
-    border-bottom: 1px solid var(--ec-slate-100);
-    transition: background 0.15s ease;
-}
-
-.cr-student-row:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid var(--ec-border);
 }
 
 .cr-student-row.highlighted {
-    background: var(--ec-primary-50);
+    background: var(--ec-selected);
 }
 
 .cr-row-summary {
-    display: flex;
+    display: grid;
+    grid-template-columns: var(--cr-columns);
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 16px 20px;
-    flex-wrap: wrap;
+    gap: var(--cr-gap);
+    padding: 10px var(--cr-pad-x);
+    transition: background var(--ec-duration) ease-out;
 }
 
+.cr-row-summary:hover,
+.cr-student-row.is-open .cr-row-summary {
+    background: var(--ec-hover);
+}
+
+/* The toggle spans the chevron and learner columns. */
 .cr-row-toggle {
-    display: flex;
+    grid-column: 1 / span 2;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
     align-items: center;
-    gap: 12px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    text-align: left;
-    flex: 1 1 260px;
+    gap: var(--cr-gap);
+    min-width: 0;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: inherit;
     font-family: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
-.cr-row-toggle .name {
-    font-weight: 600;
-    color: var(--ec-slate-900);
+.cr-row-toggle:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
+    border-radius: var(--ec-radius-xs);
 }
 
-.cr-row-toggle .meta {
-    font-size: 13px;
-    color: var(--ec-slate-500);
-    margin-top: 2px;
+.cr-chevron {
+    color: var(--ec-text-muted);
+    transition: transform var(--ec-duration) ease-out;
 }
 
-.cr-row-actions {
+.cr-student-row.is-open .cr-chevron {
+    transform: rotate(180deg);
+}
+
+.cr-learner {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cr-learner .name {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--ec-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cr-learner .meta {
+    font-size: 12.5px;
+    line-height: 18px;
+    color: var(--ec-text-muted);
 }
 
 .cr-subject-count {
-    font-size: 13px;
-    color: var(--ec-slate-500);
-}
-
-.pill-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 600;
+    color: var(--ec-text);
+    font-variant-numeric: tabular-nums;
 }
 
-.pill-badge.complete {
-    background: var(--ec-success-bg);
-    color: var(--ec-success);
+.cr-subject-count.is-complete svg {
+    color: var(--ec-status-success-fg);
 }
 
-.pill-badge.incomplete {
-    background: var(--ec-warning-bg);
-    color: var(--ec-warning);
+.cr-subject-count.is-incomplete {
+    color: var(--ec-severity-warning-fg);
 }
 
-.submission-badge {
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
+.cr-col-status {
+    min-width: 0;
 }
 
-.submission-badge.not-submitted {
-    background: var(--ec-slate-100);
-    color: var(--ec-slate-600);
-}
-
-.submission-badge.pending-approval {
-    background: var(--ec-warning-bg);
-    color: var(--ec-warning);
-}
-
-.submission-badge.approved {
-    background: var(--ec-success-bg);
-    color: var(--ec-success);
-}
-
-.submission-badge.rejected {
-    background: var(--ec-danger-bg);
-    color: var(--ec-danger);
-}
-
-.submission-badge.amendment-requested {
-    background: var(--ec-revision-bg);
-    color: var(--ec-revision);
-}
-
-.cr-reject-panel {
-    padding: 0 20px 16px 50px;
+.cr-row-actions,
+.cr-col-action {
     display: flex;
-    gap: 10px;
+    justify-content: flex-end;
+    gap: 8px;
+    text-align: right;
+}
+
+/* Notes under a learner (returned by Admin, amendment reopened) */
+.cr-note {
+    display: flex;
+    gap: 8px;
+    margin: 0 var(--cr-pad-x) 12px calc(var(--cr-pad-x) + 22px + var(--cr-gap));
+    padding: 9px 12px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    font-size: 13px;
+    line-height: 19px;
+    color: var(--ec-text);
+}
+
+.cr-note svg {
+    flex: none;
+    margin-top: 2px;
+}
+
+.cr-note.is-danger {
+    border-left: 3px solid var(--ec-status-danger-fg);
+}
+
+.cr-note.is-danger svg {
+    color: var(--ec-status-danger-fg);
+}
+
+.cr-note.is-warning {
+    border-left: 3px solid var(--ec-severity-warning-fg);
+}
+
+.cr-note.is-warning svg {
+    color: var(--ec-severity-warning-fg);
+}
+
+/* Reject (Admin) / revision (Adviser) reason form */
+.cr-reject-panel {
+    display: flex;
+    gap: 8px;
     align-items: flex-start;
     flex-wrap: wrap;
+    padding: 0 var(--cr-pad-x) 14px calc(var(--cr-pad-x) + 22px + var(--cr-gap));
+}
+
+.cr-reject-panel.is-inline {
+    padding: 4px 0;
 }
 
 .cr-reject-textarea {
     flex: 1 1 300px;
     padding: 8px 10px;
-    border: 1px solid var(--ec-slate-300);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 13px;
+    border: 1px solid var(--ec-border-strong);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    color: var(--ec-text);
+    font: 400 13px/19px var(--ec-font-sans);
     resize: vertical;
 }
 
 .cr-reject-textarea:focus {
-    outline: none;
-    border-color: var(--ec-primary-500);
-    box-shadow: 0 0 0 2px var(--ec-focus);
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 1px;
+    border-color: var(--ec-action);
 }
 
-.cr-rejection-reason {
-    margin: 0 20px 16px 50px;
-    padding: 10px 12px;
-    background: var(--ec-danger-bg);
-    color: var(--ec-danger);
-    border-radius: 8px;
-    font-size: 13px;
-}
-
-.cr-amendment-note {
-    margin: 0 20px 16px 50px;
-    padding: 10px 12px;
-    background: var(--ec-revision-bg);
-    color: var(--ec-revision);
-    border-radius: 8px;
-    font-size: 13px;
-}
+/* ---------- Subject table (expanded learner) ---------- */
 
 .cr-subjects-panel {
-    padding: 0 20px 20px 50px;
+    padding: 4px var(--cr-pad-x) 18px calc(var(--cr-pad-x) + 22px + var(--cr-gap));
+    background: var(--ec-hover);
     overflow-x: auto;
 }
 
 .cr-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--ec-surface);
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    overflow: hidden;
 }
 
 .cr-table th {
     text-align: left;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--ec-slate-200);
-    background: var(--ec-slate-50);
-    font-size: 13px;
-    color: var(--ec-slate-600);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--ec-border);
+    background: var(--ec-surface-sunken);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ec-text-muted);
+    white-space: nowrap;
 }
 
 .cr-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--ec-slate-100);
-    font-size: 14px;
-    color: var(--ec-slate-700);
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--ec-border);
+    font-size: 13.5px;
+    line-height: 20px;
+    color: var(--ec-text);
+    vertical-align: middle;
+}
+
+.cr-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.cr-table tbody tr:hover td {
+    background: color-mix(in srgb, var(--ec-hover) 60%, transparent);
+}
+
+.cr-table tr.is-revising td {
+    background: var(--ec-status-revision-bg);
+}
+
+.cr-table .cr-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.cr-table .cr-subject-name {
+    font-weight: 500;
+}
+
+.cr-table .cr-teacher {
+    color: var(--ec-text-muted);
 }
 
 .cr-table td.final-grade {
     font-weight: 700;
 }
 
-.cr-table .subject-icon {
-    vertical-align: middle;
-    margin-right: 6px;
-    color: var(--ec-slate-500);
-}
-
-.subject-status-badge {
-    display: inline-flex;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.subject-status-badge.subject-uploaded {
-    background: var(--ec-slate-100);
-    color: var(--ec-slate-600);
-}
-
-.subject-status-badge.subject-validated {
-    background: var(--ec-success-bg);
-    color: var(--ec-success);
-}
-
-.subject-status-badge.subject-needs-attention {
-    background: var(--ec-danger-bg);
-    color: var(--ec-danger);
-}
-
-.subject-status-badge.subject-needs-revision {
-    background: var(--ec-revision-bg);
-    color: var(--ec-revision);
-}
-
-.cr-btn-revision {
-    background: var(--ec-revision);
-    color: var(--ec-on-status-solid);
-    padding: 6px 10px;
-    font-size: 12px;
-}
-
-.cr-btn-revision:hover:not(:disabled) {
-    background: var(--ec-revision);
+.cr-table th.cr-col-action,
+.cr-table td.cr-col-action {
+    display: table-cell;
 }
 
 .cr-revision-remarks-cell {
-    background: var(--ec-revision-bg);
-    color: var(--ec-revision);
+    background: var(--ec-status-revision-bg);
+    color: var(--ec-status-revision-fg);
     font-size: 13px;
-    font-style: italic;
 }
 
-@media (max-width: 700px) {
+/* ---------- Footer ---------- */
+
+.cr-list-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px var(--cr-pad-x);
+    font-size: 13px;
+    color: var(--ec-text-muted);
+}
+
+.cr-pagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cr-pagination-status {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ec-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.cr-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1100px) {
+    .cr-card {
+        --cr-columns: 22px minmax(0, 1fr) 90px 180px 170px;
+        --cr-pad-x: 18px;
+    }
+}
+
+@media (max-width: 800px) {
+    .cr-list-head {
+        display: none;
+    }
+
     .cr-row-summary {
-        align-items: flex-start;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        row-gap: 8px;
+    }
+
+    .cr-subject-count {
+        grid-column: 2;
+    }
+
+    .cr-col-status {
+        grid-column: 3;
+        grid-row: 1;
+    }
+
+    .cr-row-actions {
+        grid-column: 2 / -1;
+        justify-content: flex-start;
+    }
+
+    .cr-bulk {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .cr-search {
+        flex: 1 1 100%;
     }
 }

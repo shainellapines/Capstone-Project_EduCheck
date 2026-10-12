@@ -177,6 +177,7 @@ const getMyClassRecords = async (req, res) => {
                 cr.class_record_id,
                 cr.teacher_id,
                 cr.subject_id,
+                cr.section_id,
                 cr.school_year_id,
                 cr.upload_date,
                 cr.file_name,

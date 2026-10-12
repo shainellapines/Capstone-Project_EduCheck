@@ -404,6 +404,22 @@ const getSectionProgressForSchoolYear = async (req, res) => {
             expectedCounts.rows.map((row) => [row.grade_level, Number(row.subject_count)])
         );
 
+        // Subject names per grade level, so a section can list WHICH
+        // subjects are still missing or flagged, not only how many.
+        const subjectListResult = await pool.query(
+            "SELECT subject_id, subject_name, grade_level FROM subjects ORDER BY subject_name"
+        );
+
+        const subjectsByGradeLevel = new Map();
+
+        subjectListResult.rows.forEach((row) => {
+            if (!subjectsByGradeLevel.has(row.grade_level)) {
+                subjectsByGradeLevel.set(row.grade_level, []);
+            }
+
+            subjectsByGradeLevel.get(row.grade_level).push(row);
+        });
+
         // Latest class_record per (section, subject) for this school year —
         // same "latest upload wins" ranking buildRankedGradesQuery uses, just
         // keyed by section+subject instead of student+subject, since one
@@ -496,6 +512,8 @@ const getSectionProgressForSchoolYear = async (req, res) => {
         const sections = sectionsResult.rows.map((section) => {
             const subjectsExpected = expectedByGradeLevel.get(section.grade_level) ?? 0;
             const subjectRows = subjectRowsBySection.get(section.section_id) || [];
+            const statusBySubjectId = new Map(subjectRows.map((row) => [row.subject_id, row.status]));
+            const gradeSubjects = subjectsByGradeLevel.get(section.grade_level) || [];
 
             return {
                 section_id: section.section_id,
@@ -507,6 +525,18 @@ const getSectionProgressForSchoolYear = async (req, res) => {
                 subjects_needs_revision: subjectRows.filter((row) => row.status === "Needs Revision").length,
                 subjects_needs_attention: subjectRows.filter((row) => row.status === "Needs Attention").length,
                 subjects_not_started: Math.max(subjectsExpected - subjectRows.length, 0),
+                missing_subjects: gradeSubjects
+                    .filter((subject) => !statusBySubjectId.has(subject.subject_id))
+                    .map(({ subject_id, subject_name }) => ({ subject_id, subject_name })),
+                flagged_subjects: gradeSubjects
+                    .filter((subject) =>
+                        ["Needs Revision", "Needs Attention"].includes(statusBySubjectId.get(subject.subject_id))
+                    )
+                    .map(({ subject_id, subject_name }) => ({
+                        subject_id,
+                        subject_name,
+                        status: statusBySubjectId.get(subject_id),
+                    })),
                 student_count: studentCountBySection.get(section.section_id) || 0,
                 submission_status_counts:
                     submissionCountsBySection.get(section.section_id) || emptySubmissionCounts(),

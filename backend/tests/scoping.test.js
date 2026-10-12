@@ -113,6 +113,15 @@ describe("Adviser read scoping (CON-06, ANA-02)", () => {
         );
         assert.equal(res.body.sections[0].student_count, 5);
 
+        // Names behind the counts, for the dashboard's Next steps panel.
+        const section = res.body.sections[0];
+        assert.equal(section.missing_subjects.length, section.subjects_not_started);
+        assert.equal(
+            section.flagged_subjects.length,
+            section.subjects_needs_revision + section.subjects_needs_attention
+        );
+        assert.ok(section.missing_subjects.every((subject) => subject.subject_id && subject.subject_name));
+
         const admin = await t.request("GET", `/api/consolidation/school-years/${sy}/sections`, {
             token: t.tokens.admin,
         });
