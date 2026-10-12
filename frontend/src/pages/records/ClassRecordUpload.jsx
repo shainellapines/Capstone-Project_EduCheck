@@ -1,22 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-    Upload,
-    FileSpreadsheet,
-    CheckCircle,
     AlertTriangle,
-    Loader2,
-    ChevronDown,
-    ListChecks,
-    ShieldCheck,
+    ArrowRight,
+    Check,
+    CheckCircle2,
     FileCheck2,
+    FileSpreadsheet,
+    Loader2,
+    RotateCcw,
+    ShieldCheck,
+    TriangleAlert,
+    Upload,
+    X,
 } from "lucide-react";
 
 import "../../styles/Dashboard.css";
+import "../../components/StatusBadge.css";
 import "./ClassRecordUpload.css";
 import Sidebar from "../../components/Sidebar";
-import { getToken } from "../../utils/session";
+import StatusBadge from "../../components/StatusBadge";
+import { getStoredUser, getToken } from "../../utils/session";
 import { API_URL } from "../../config";
 
 
@@ -26,8 +31,19 @@ import { API_URL } from "../../config";
 // section_id/subject_id/school_year_id alone is unique across options.
 const optionKey = (option) => `${option.section_id}-${option.subject_id}-${option.school_year_id}`;
 
+function formatFileSize(bytes) {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatShortDate(isoString) {
+    return new Date(isoString).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 function ClassRecordUpload() {
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
+    const isAdviser = getStoredUser()?.role === "adviser";
 
     const [selectedFile, setSelectedFile] = useState(null);
     const [isDragActive, setIsDragActive] = useState(false);
@@ -36,9 +52,11 @@ function ClassRecordUpload() {
     const [selectedOptionKey, setSelectedOptionKey] = useState("");
     const [loadingOptions, setLoadingOptions] = useState(true);
 
+    // This user's earlier uploads, only to show "Last uploaded" on a tile.
+    const [previousUploads, setPreviousUploads] = useState([]);
+
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
-    const [successMessage, setSuccessMessage] = useState("");
     const [result, setResult] = useState(null);
 
     const selectedOption = options.find((option) => optionKey(option) === selectedOptionKey) || null;
@@ -73,15 +91,51 @@ function ClassRecordUpload() {
         }
     };
 
+    // Best effort: without it the tiles simply don't show a last-upload date.
+    const fetchPreviousUploads = async () => {
+        try {
+            const token = getToken();
+            if (!token) return;
+
+            const response = await fetch(`${API_URL}/uploads/my-records`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            setPreviousUploads(data.records || []);
+        } catch {
+            setPreviousUploads([]);
+        }
+    };
+
     useEffect(() => {
         fetchUploadOptions();
+        fetchPreviousUploads();
     }, []);
+
+    // my-records has no section, so a last-upload date is only shown when
+    // the subject + school year points at exactly one of this user's options.
+    const lastUploadFor = (option) => {
+        const sameSubjectOptions = options.filter(
+            (other) => other.subject_id === option.subject_id && other.school_year_id === option.school_year_id
+        );
+        if (sameSubjectOptions.length !== 1) return null;
+
+        const latest = previousUploads.find(
+            (record) => record.subject_id === option.subject_id && record.school_year_id === option.school_year_id
+        );
+        return latest ? latest.upload_date : null;
+    };
+
+    const schoolYears = Array.from(new Set(options.map((option) => option.school_year)));
+    const singleSchoolYear = schoolYears.length === 1 ? schoolYears[0] : null;
 
     // Shared by both the file picker and drag-and-drop — same acceptance
     // rule (.xlsx/.xls only) either way a file arrives.
     const applySelectedFile = (file) => {
         setError("");
-        setSuccessMessage("");
         setResult(null);
 
         if (!file) {
@@ -103,6 +157,8 @@ function ClassRecordUpload() {
 
     const handleFileChange = (e) => {
         applySelectedFile(e.target.files[0]);
+        // Lets the same file be picked again after Remove.
+        e.target.value = "";
     };
 
     const handleDrop = (e) => {
@@ -112,6 +168,10 @@ function ClassRecordUpload() {
         if (uploading) return;
 
         applySelectedFile(e.dataTransfer.files?.[0]);
+    };
+
+    const openFilePicker = () => {
+        if (!uploading) fileInputRef.current?.click();
     };
 
     const handleUpload = async () => {
@@ -127,7 +187,6 @@ function ClassRecordUpload() {
 
         setUploading(true);
         setError("");
-        setSuccessMessage("");
         setResult(null);
 
         try {
@@ -163,8 +222,8 @@ function ClassRecordUpload() {
                 throw new Error(data.message || "Failed to upload Excel file.");
             }
 
-            setSuccessMessage("Excel file uploaded and class record created successfully.");
             setResult(data);
+            fetchPreviousUploads();
         } catch (uploadError) {
             console.error("Upload error:", uploadError);
             setError(uploadError.message || "Something went wrong while uploading the file.");
@@ -173,7 +232,18 @@ function ClassRecordUpload() {
         }
     };
 
+    const startAnotherUpload = () => {
+        setResult(null);
+        setSelectedFile(null);
+        setSelectedOptionKey("");
+        setError("");
+    };
+
     const isSubmitDisabled = !selectedFile || !selectedOption || uploading || loadingOptions;
+
+    const record = result?.class_record;
+    const validation = result?.validation;
+    const isReady = Boolean(validation?.ready_for_submission ?? record?.ready_for_submission);
 
     return (
         <div className="dashboard-layout">
@@ -185,7 +255,10 @@ function ClassRecordUpload() {
                 <header className="dashboard-header">
                     <div>
                         <h1>Upload e-Class Record</h1>
-                        <p>Upload an Excel academic record for processing and validation.</p>
+                        <p>
+                            Upload one subject's DepEd e-Class Record. EduCheck reads the grades and
+                            checks them against DepEd rules as soon as it's uploaded.
+                        </p>
                     </div>
                 </header>
 
@@ -193,320 +266,371 @@ function ClassRecordUpload() {
 
                     <div className="cru-layout">
 
-                    <div className="cru-card">
+                        {/* ---------- RESULT ---------- */}
+                        {result ? (
+                            <div className="cru-card">
+                                <div className={`cru-result-head ${isReady ? "is-ready" : "needs-fixes"}`}>
+                                    <span className="cru-result-icon">
+                                        {isReady ? <CheckCircle2 size={24} /> : <TriangleAlert size={24} />}
+                                    </span>
 
-                        <div className="cru-card-header">
-                            <div className="cru-icon-badge">
-                                <FileSpreadsheet size={24} />
-                            </div>
-
-                            <div>
-                                <h2>Class Record Information</h2>
-                                <p>Select which subject and section you're uploading for.</p>
-                            </div>
-                        </div>
-
-                        <div className="cru-field">
-                            <label htmlFor="assignment">Subject &amp; Section</label>
-
-                            <div className="cru-select-wrap">
-                                <select
-                                    id="assignment"
-                                    value={selectedOptionKey}
-                                    onChange={(e) => setSelectedOptionKey(e.target.value)}
-                                    disabled={loadingOptions || uploading || options.length === 0}
-                                >
-                                    <option value="">
-                                        {loadingOptions
-                                            ? "Loading your assignments..."
-                                            : "Select a subject and section"}
-                                    </option>
-
-                                    {options.map((option) => (
-                                        <option key={optionKey(option)} value={optionKey(option)}>
-                                            {option.subject_name} — {option.section_name} (Grade{" "}
-                                            {option.grade_level}) · {option.school_year}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <ChevronDown size={18} className="cru-select-chevron" />
-                            </div>
-
-                            {!loadingOptions && options.length === 0 && (
-                                <small className="cru-no-assignments">
-                                    You don't have any subject/section assignments yet. Contact your Administrator
-                                    to be assigned before you can upload.
-                                </small>
-                            )}
-                        </div>
-
-                        <div
-                            className={isDragActive ? "cru-dropzone drag-active" : "cru-dropzone"}
-                            onDragOver={(e) => {
-                                e.preventDefault();
-                                if (!uploading) setIsDragActive(true);
-                            }}
-                            onDragLeave={() => setIsDragActive(false)}
-                            onDrop={handleDrop}
-                        >
-                            <div className="cru-dropzone-icon">
-                                <Upload size={26} />
-                            </div>
-
-                            <h3>Choose an Excel file</h3>
-                            <p>Drag and drop the e-Class Record here, or browse your files.</p>
-                            <span className="cru-dropzone-hint">.XLSX or .XLS — official DepEd template</span>
-
-                            <input
-                                id="class_record_file"
-                                className="cru-file-input"
-                                type="file"
-                                accept=".xlsx,.xls"
-                                onChange={handleFileChange}
-                                disabled={uploading}
-                            />
-
-                            <label
-                                htmlFor="class_record_file"
-                                className={uploading ? "cru-browse-button disabled" : "cru-browse-button"}
-                            >
-                                Browse File
-                            </label>
-                        </div>
-
-                        {selectedFile && (
-                            <div className="cru-selected-file">
-                                <FileSpreadsheet size={22} style={{ color: "var(--ec-status-success-fg)" }} />
-
-                                <div>
-                                    <strong>{selectedFile.name}</strong>
-                                    <div className="file-size">
-                                        {(selectedFile.size / 1024).toFixed(1)} KB
+                                    <div>
+                                        <h2>
+                                            {isReady ? "Uploaded and validated" : "Uploaded — corrections needed"}
+                                        </h2>
+                                        <p>
+                                            {isReady
+                                                ? "No errors were found. The grades are ready to consolidate."
+                                                : "EduCheck found issues to fix in the file. Review them, correct the e-Class Record, and upload it again."}
+                                        </p>
                                     </div>
                                 </div>
-                            </div>
-                        )}
 
-                        {error && (
-                            <div className="error-banner">
-                                <AlertTriangle size={20} />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        {successMessage && (
-                            <div className="success-banner">
-                                <CheckCircle size={20} />
-                                <span>{successMessage}</span>
-                            </div>
-                        )}
-
-                        <button
-                            type="button"
-                            className="cru-submit-button"
-                            onClick={handleUpload}
-                            disabled={isSubmitDisabled}
-                        >
-                            {uploading ? (
-                                <>
-                                    <Loader2 size={18} className="spin-icon" />
-                                    Uploading...
-                                </>
-                            ) : (
-                                <>
-                                    <Upload size={18} />
-                                    Upload e-Class Record
-                                </>
-                            )}
-                        </button>
-
-                    </div>
-
-                    <aside className="cru-guide">
-
-                        <div className="cru-guide-card">
-                            <h3>How it works</h3>
-
-                            <ol className="cru-steps">
-                                <li>
-                                    <span className="cru-step-number">1</span>
-                                    <div>
-                                        <strong>Select your assignment</strong>
-                                        <p>Only subjects and sections you're actually assigned to appear here.</p>
-                                    </div>
-                                </li>
-
-                                <li>
-                                    <span className="cru-step-number">2</span>
-                                    <div>
-                                        <strong>Upload the file</strong>
-                                        <p>Your grades are parsed and checked automatically on upload.</p>
-                                    </div>
-                                </li>
-
-                                <li>
-                                    <span className="cru-step-number">3</span>
-                                    <div>
-                                        <strong>Review the results</strong>
-                                        <p>Fix anything flagged, then it's ready for your Adviser to consolidate.</p>
-                                    </div>
-                                </li>
-                            </ol>
-                        </div>
-
-                        <div className="cru-guide-card">
-                            <h3>
-                                <ListChecks size={17} />
-                                Before you upload
-                            </h3>
-
-                            <ul className="cru-checklist">
-                                <li>
-                                    <FileCheck2 size={16} />
-                                    Official DepEd E-Class Record template, unmodified in structure
-                                </li>
-                                <li>
-                                    <ShieldCheck size={16} />
-                                    Correct subject and section selected for this file
-                                </li>
-                                <li>
-                                    <CheckCircle size={16} />
-                                    Saved as .xlsx or .xls
-                                </li>
-                            </ul>
-                        </div>
-
-                    </aside>
-
-                    </div>
-
-                    {result && (
-                        <div className="cru-card">
-                            <h2 className="cru-result-title">Class Record Created</h2>
-
-                            {result.class_record && (
-                                <div className="cru-result-block">
-                                    <h3>Record Information</h3>
-
-                                    <div className="cru-info-row">
-                                        Class Record ID: <strong>{result.class_record.class_record_id}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Teacher: <strong>{result.class_record.teacher_name}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Subject: <strong>{result.class_record.subject_name}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Section: <strong>{result.class_record.section_name}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Grade Level: <strong>{result.class_record.grade_level}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        School Year: <strong>{result.class_record.school_year}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        File: <strong>{result.class_record.file_name}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Status: <strong>{result.class_record.status}</strong>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        className="cru-view-results-button"
-                                        onClick={() =>
-                                            navigate(`/validation-results/${result.class_record.class_record_id}`)
-                                        }
-                                    >
-                                        <CheckCircle size={16} />
-                                        View Validation Results
-                                    </button>
-                                </div>
-                            )}
-
-                            {result.integrity_warnings?.length > 0 && (
-                                <div className="cru-result-block cru-integrity-warnings">
-                                    <h3>Please double-check</h3>
-
-                                    {result.integrity_warnings.map((warning) => (
-                                        <div className="cru-info-row" key={warning.code}>
-                                            {warning.message}
+                                {record && (
+                                    <dl className="cru-summary">
+                                        <div>
+                                            <dt>Subject</dt>
+                                            <dd>{record.subject_name}</dd>
                                         </div>
-                                    ))}
+                                        <div>
+                                            <dt>Section</dt>
+                                            <dd>
+                                                Grade {record.grade_level} · {record.section_name}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt>School year</dt>
+                                            <dd>{record.school_year}</dd>
+                                        </div>
+                                        <div>
+                                            <dt>Status</dt>
+                                            <dd>
+                                                <StatusBadge status={record.status} />
+                                            </dd>
+                                        </div>
+                                        <div className="cru-summary-wide">
+                                            <dt>File</dt>
+                                            <dd className="cru-summary-file">
+                                                <FileSpreadsheet size={16} aria-hidden="true" />
+                                                <span>{record.file_name}</span>
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                )}
+
+                                <div className="cru-stats">
+                                    <div className="cru-stat">
+                                        <span>Learners read</span>
+                                        <strong>{result.workbook?.learner_count ?? "—"}</strong>
+                                    </div>
+                                    <div className="cru-stat">
+                                        <span>Grade records saved</span>
+                                        <strong>{result.grade_records?.persisted_count ?? "—"}</strong>
+                                    </div>
+                                    <div className={`cru-stat${validation?.error_count > 0 ? " is-error" : ""}`}>
+                                        <span>Errors</span>
+                                        <strong>{validation?.error_count ?? record?.validation_error_count ?? 0}</strong>
+                                    </div>
+                                    <div className={`cru-stat${validation?.warning_count > 0 ? " is-warning" : ""}`}>
+                                        <span>Warnings</span>
+                                        <strong>{validation?.warning_count ?? record?.validation_warning_count ?? 0}</strong>
+                                    </div>
                                 </div>
-                            )}
 
-                            {result.workbook && (
-                                <div className="cru-result-block">
-                                    <h3>Workbook</h3>
+                                {result.grade_records?.skipped_no_lrn_count > 0 && (
+                                    <p className="cru-note">
+                                        {result.grade_records.skipped_no_lrn_count} row
+                                        {result.grade_records.skipped_no_lrn_count === 1 ? " was" : "s were"} skipped
+                                        because the learner has no LRN in the file.
+                                    </p>
+                                )}
 
-                                    <div className="cru-info-row">
-                                        Sheets: <strong>{result.workbook.sheet_count}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Sheet Names: <strong>{result.workbook.sheet_names?.join(", ")}</strong>
-                                    </div>
-                                </div>
-                            )}
-
-                            {result.worksheet && (
-                                <div className="cru-result-block">
-                                    <h3>Worksheet</h3>
-
-                                    <div className="cru-info-row">
-                                        Name: <strong>{result.worksheet.name}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Rows: <strong>{result.worksheet.row_count}</strong>
-                                    </div>
-
-                                    <div className="cru-info-row">
-                                        Columns: <strong>{result.worksheet.columns?.join(", ")}</strong>
-                                    </div>
-                                </div>
-                            )}
-
-                            {result.preview && result.preview.length > 0 && (
-                                <div>
-                                    <h3 className="cru-result-title">Data Preview</h3>
-
-                                    <div className="cru-preview-scroll">
-                                        <table className="cru-table">
-                                            <thead>
-                                                <tr>
-                                                    {Object.keys(result.preview[0]).map((column) => (
-                                                        <th key={column}>{column}</th>
-                                                    ))}
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                {result.preview.map((row, rowIndex) => (
-                                                    <tr key={rowIndex}>
-                                                        {Object.keys(result.preview[0]).map((column) => (
-                                                            <td key={column}>{row[column]}</td>
-                                                        ))}
-                                                    </tr>
+                                {result.integrity_warnings?.length > 0 && (
+                                    <div className="cru-callout">
+                                        <AlertTriangle size={18} aria-hidden="true" />
+                                        <div>
+                                            <strong>Please double-check</strong>
+                                            <ul>
+                                                {result.integrity_warnings.map((warning) => (
+                                                    <li key={warning.code}>{warning.message}</li>
                                                 ))}
-                                            </tbody>
-                                        </table>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="cru-actions">
+                                    <button type="button" className="cru-button secondary" onClick={startAnotherUpload}>
+                                        <RotateCcw size={16} aria-hidden="true" />
+                                        Upload another file
+                                    </button>
+
+                                    {record && (
+                                        <button
+                                            type="button"
+                                            className="cru-button primary"
+                                            onClick={() => navigate(`/validation-results/${record.class_record_id}`)}
+                                        >
+                                            View validation results
+                                            <ArrowRight size={16} aria-hidden="true" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+
+                        /* ---------- FORM ---------- */
+                        <div className="cru-card">
+
+                            {/* Step 1: assignment */}
+                            <div className="cru-step">
+                                <div className="cru-step-head">
+                                    <span className={`cru-step-badge${selectedOption ? " is-done" : ""}`}>
+                                        {selectedOption ? <Check size={14} strokeWidth={2.5} /> : "1"}
+                                    </span>
+                                    <div>
+                                        <h2>Subject and section</h2>
+                                        <p>Only the subjects and sections you're assigned to are listed.</p>
+                                    </div>
+                                    {singleSchoolYear && (
+                                        <span className="cru-chip">School year {singleSchoolYear}</span>
+                                    )}
+                                </div>
+
+                                {loadingOptions ? (
+                                    <div className="cru-tiles" aria-busy="true">
+                                        {[0, 1, 2, 3].map((index) => (
+                                            <div className="cru-tile is-skeleton" key={index} />
+                                        ))}
+                                    </div>
+                                ) : options.length === 0 ? (
+                                    <div className="cru-empty">
+                                        <AlertTriangle size={18} aria-hidden="true" />
+                                        <span>
+                                            You don't have any subject or section assignments yet. Ask your
+                                            School Administrator to assign you before you upload.
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="cru-tiles" role="radiogroup" aria-label="Subject and section">
+                                        {options.map((option) => {
+                                            const key = optionKey(option);
+                                            const isSelected = key === selectedOptionKey;
+                                            const lastUpload = lastUploadFor(option);
+
+                                            return (
+                                                <button
+                                                    type="button"
+                                                    role="radio"
+                                                    aria-checked={isSelected}
+                                                    key={key}
+                                                    className={`cru-tile${isSelected ? " is-selected" : ""}`}
+                                                    onClick={() => {
+                                                        setSelectedOptionKey(key);
+                                                        setError("");
+                                                    }}
+                                                    disabled={uploading}
+                                                >
+                                                    <span className="cru-tile-check" aria-hidden="true">
+                                                        {isSelected && <Check size={12} strokeWidth={3} />}
+                                                    </span>
+                                                    <strong>{option.subject_name}</strong>
+                                                    <span className="cru-tile-meta">
+                                                        Grade {option.grade_level} · {option.section_name}
+                                                        {!singleSchoolYear && ` · ${option.school_year}`}
+                                                    </span>
+                                                    <span className="cru-tile-foot">
+                                                        {lastUpload
+                                                            ? `Last uploaded ${formatShortDate(lastUpload)}`
+                                                            : "Not uploaded yet"}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Step 2: file */}
+                            <div className="cru-step">
+                                <div className="cru-step-head">
+                                    <span className={`cru-step-badge${selectedFile ? " is-done" : ""}`}>
+                                        {selectedFile ? <Check size={14} strokeWidth={2.5} /> : "2"}
+                                    </span>
+                                    <div>
+                                        <h2>e-Class Record file</h2>
+                                        <p>The official DepEd template, saved as .xlsx or .xls.</p>
                                     </div>
                                 </div>
+
+                                <input
+                                    ref={fileInputRef}
+                                    id="class_record_file"
+                                    className="cru-file-input"
+                                    type="file"
+                                    accept=".xlsx,.xls"
+                                    onChange={handleFileChange}
+                                    disabled={uploading}
+                                />
+
+                                {selectedFile ? (
+                                    <div className="cru-file">
+                                        <span className="cru-file-icon">
+                                            <FileSpreadsheet size={22} aria-hidden="true" />
+                                        </span>
+                                        <div className="cru-file-text">
+                                            <strong>{selectedFile.name}</strong>
+                                            <span>{formatFileSize(selectedFile.size)} · Ready to upload</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="cru-button ghost"
+                                            onClick={openFilePicker}
+                                            disabled={uploading}
+                                        >
+                                            Replace
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="cru-icon-button"
+                                            onClick={() => setSelectedFile(null)}
+                                            disabled={uploading}
+                                            aria-label="Remove file"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div
+                                        className={`cru-dropzone${isDragActive ? " drag-active" : ""}`}
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={openFilePicker}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                openFilePicker();
+                                            }
+                                        }}
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                            if (!uploading) setIsDragActive(true);
+                                        }}
+                                        onDragLeave={() => setIsDragActive(false)}
+                                        onDrop={handleDrop}
+                                    >
+                                        <span className="cru-dropzone-icon">
+                                            <Upload size={22} aria-hidden="true" />
+                                        </span>
+                                        <p className="cru-dropzone-title">
+                                            Drag the e-Class Record here, or <span>browse files</span>
+                                        </p>
+                                        <p className="cru-dropzone-hint">Excel workbook · .xlsx or .xls</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {error && (
+                                <div className="error-banner cru-error">
+                                    <AlertTriangle size={18} />
+                                    <span>{error}</span>
+                                </div>
                             )}
+
+                            {/* Footer: what will be uploaded, and the action */}
+                            <div className="cru-footer">
+                                <p className="cru-footer-summary">
+                                    {selectedOption ? (
+                                        <>
+                                            <strong>{selectedOption.subject_name}</strong>
+                                            <span>
+                                                Grade {selectedOption.grade_level} · {selectedOption.section_name}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span>Choose a subject and a file to continue.</span>
+                                    )}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    className="cru-button primary"
+                                    onClick={handleUpload}
+                                    disabled={isSubmitDisabled}
+                                >
+                                    {uploading ? (
+                                        <>
+                                            <Loader2 size={16} className="spin-icon" aria-hidden="true" />
+                                            Uploading and validating…
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload size={16} aria-hidden="true" />
+                                            Upload and validate
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
                         </div>
-                    )}
+                        )}
+
+                        {/* ---------- GUIDE ---------- */}
+                        <aside className="cru-guide">
+                            <div className="cru-guide-card">
+                                <h3>How it works</h3>
+
+                                <ol className="cru-steps">
+                                    <li>
+                                        <span className="cru-step-number">1</span>
+                                        <div>
+                                            <strong>Choose the subject</strong>
+                                            <p>Pick the subject and section this file is for.</p>
+                                        </div>
+                                    </li>
+
+                                    <li>
+                                        <span className="cru-step-number">2</span>
+                                        <div>
+                                            <strong>Upload the file</strong>
+                                            <p>Grades are read and checked automatically.</p>
+                                        </div>
+                                    </li>
+
+                                    <li>
+                                        <span className="cru-step-number">3</span>
+                                        <div>
+                                            <strong>Review the results</strong>
+                                            <p>
+                                                Fix anything flagged, then it's ready
+                                                {isAdviser ? " to consolidate." : " for your Adviser to consolidate."}
+                                            </p>
+                                        </div>
+                                    </li>
+                                </ol>
+
+                                <div className="cru-guide-divider" />
+
+                                <h3>Before you upload</h3>
+
+                                <ul className="cru-checklist">
+                                    <li>
+                                        <FileCheck2 size={16} aria-hidden="true" />
+                                        Use the official DepEd e-Class Record template, with its structure unchanged.
+                                    </li>
+                                    <li>
+                                        <ShieldCheck size={16} aria-hidden="true" />
+                                        The subject in the file's header matches the one you picked.
+                                    </li>
+                                    <li>
+                                        <CheckCircle2 size={16} aria-hidden="true" />
+                                        Every learner row has an LRN.
+                                    </li>
+                                </ul>
+                            </div>
+                        </aside>
+
+                    </div>
 
                 </section>
 
