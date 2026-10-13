@@ -12,6 +12,7 @@ import {
 import "../../styles/Dashboard.css";
 import "./SectionAssignments.css";
 import Sidebar from "../../components/Sidebar";
+import TeacherPicker from "../../components/TeacherPicker";
 import { getToken } from "../../utils/session";
 import { API_URL } from "../../config";
 
@@ -212,10 +213,23 @@ function SectionAssignments() {
 
     // Changing the teacher, section or school year changes which slots are
     // valid and which are already taken, so the ticked boxes start over.
+    // A Self-Contained section takes an Adviser only, so switching to one
+    // also drops a Subject Teacher picked earlier.
     const handleAssignmentFormChange = (e) => {
         const { name, value } = e.target;
-        setAssignmentForm((previous) => ({ ...previous, [name]: value, class_adviser: false, subject_ids: [] }));
+        setAssignmentForm((previous) => {
+            const next = { ...previous, [name]: value, class_adviser: false, subject_ids: [] };
+            if (name === "section_id") {
+                const section = sections.find((s) => String(s.section_id) === String(value));
+                const teacher = teachers.find((t) => String(t.teacher_id) === String(previous.teacher_id));
+                if (isSelfContained(section) && teacher && teacher.role !== "adviser") next.teacher_id = "";
+            }
+            return next;
+        });
     };
+
+    const handleTeacherPick = (teacherId) =>
+        setAssignmentForm((previous) => ({ ...previous, teacher_id: teacherId, class_adviser: false, subject_ids: [] }));
 
     const toggleAssignmentSubject = (subjectId) => {
         setAssignmentForm((previous) => ({
@@ -260,6 +274,12 @@ function SectionAssignments() {
 
         const teacherLabel = formTeacher ? `${formTeacher.first_name} ${formTeacher.last_name}` : "this teacher";
         const sectionLabel = formSection ? formSection.section_name : "this section";
+
+        if (!formTeacher) {
+            setActionMessage("");
+            setActionError("Choose a teacher.");
+            return;
+        }
 
         if (formSelfContained && slotHolder(null)) {
             setActionMessage("");
@@ -696,35 +716,6 @@ function SectionAssignments() {
                                 {showAssignmentForm && (
                                     <form className="sa-inline-form" onSubmit={handleCreateAssignment}>
                                         <div className="sa-field">
-                                            <label htmlFor="teacher_id">Teacher</label>
-                                            <select
-                                                id="teacher_id"
-                                                name="teacher_id"
-                                                value={assignmentForm.teacher_id}
-                                                onChange={handleAssignmentFormChange}
-                                                required
-                                            >
-                                                <option value="" disabled>
-                                                    Select a teacher
-                                                </option>
-                                                {teachers.map((teacher) => {
-                                                    const blocked = formSelfContained && teacher.role !== "adviser";
-                                                    return (
-                                                        <option
-                                                            key={teacher.teacher_id}
-                                                            value={teacher.teacher_id}
-                                                            disabled={blocked}
-                                                        >
-                                                            {teacher.first_name} {teacher.last_name} (
-                                                            {teacher.role === "adviser" ? "Adviser" : "Subject Teacher"})
-                                                            {blocked ? " - not for Self-Contained sections" : ""}
-                                                        </option>
-                                                    );
-                                                })}
-                                            </select>
-                                        </div>
-
-                                        <div className="sa-field">
                                             <label htmlFor="section_id">Section</label>
                                             <select
                                                 id="section_id"
@@ -736,20 +727,12 @@ function SectionAssignments() {
                                                 <option value="" disabled>
                                                     Select a section
                                                 </option>
-                                                {sections.map((section) => {
-                                                    const blocked = formTeacherIsSubjectTeacher && isSelfContained(section);
-                                                    return (
-                                                        <option
-                                                            key={section.section_id}
-                                                            value={section.section_id}
-                                                            disabled={blocked}
-                                                        >
-                                                            {section.section_name} (Grade {section.grade_level} -{" "}
-                                                            {section.staffing_mode})
-                                                            {blocked ? " - Adviser only" : ""}
-                                                        </option>
-                                                    );
-                                                })}
+                                                {sections.map((section) => (
+                                                    <option key={section.section_id} value={section.section_id}>
+                                                        {section.section_name} (Grade {section.grade_level} -{" "}
+                                                        {section.staffing_mode})
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
 
@@ -771,6 +754,18 @@ function SectionAssignments() {
                                                     </option>
                                                 ))}
                                             </select>
+                                        </div>
+
+                                        <div className="sa-field sa-field-wide">
+                                            <label htmlFor="teacher_search">Teacher</label>
+                                            <TeacherPicker
+                                                id="teacher_search"
+                                                teachers={teachers}
+                                                value={assignmentForm.teacher_id}
+                                                onChange={handleTeacherPick}
+                                                lockedRole={formSelfContained ? "adviser" : null}
+                                                lockedReason="Self-Contained sections take an Adviser only."
+                                            />
                                         </div>
 
                                         <fieldset className="sa-slot-picker">
