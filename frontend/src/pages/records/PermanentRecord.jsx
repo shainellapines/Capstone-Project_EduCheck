@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     AlertTriangle,
@@ -13,6 +13,7 @@ import {
     Plus,
     Save,
     Trash2,
+    Upload,
     UserRound,
     X,
 } from "lucide-react";
@@ -47,7 +48,7 @@ const READINESS = {
     NOT_READY: {
         label: "Not ready",
         tone: "danger",
-        hint: "No grade can be placed on the form yet. Add an earlier year graded in 4 quarters to generate.",
+        hint: "No grade can be placed on the form yet. Add or import an earlier year, or have this year's record approved.",
     },
 };
 
@@ -97,6 +98,8 @@ function PermanentRecord() {
     const [profile, setProfile] = useState({ middle_name: "", name_extension: "", sex: "", birth_date: "" });
     const [yearForm, setYearForm] = useState(null);
     const [settings, setSettings] = useState(null);
+    const [importPreview, setImportPreview] = useState(null);
+    const importInput = useRef(null);
 
     const load = useCallback(async () => {
         try {
@@ -126,13 +129,17 @@ function PermanentRecord() {
         load();
     }, [load]);
 
-    // Escape closes the year dialog.
+    // Escape closes the year dialog and the import preview.
     useEffect(() => {
-        if (!yearForm) return undefined;
-        const onKey = (event) => event.key === "Escape" && setYearForm(null);
+        if (!yearForm && !importPreview) return undefined;
+        const onKey = (event) => {
+            if (event.key !== "Escape") return;
+            setYearForm(null);
+            setImportPreview(null);
+        };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [yearForm]);
+    }, [yearForm, importPreview]);
 
     const catalog = data?.template.subject_catalog ?? {};
 
@@ -277,6 +284,61 @@ function PermanentRecord() {
         }, "Year saved.");
     };
 
+    // Import from an existing SF10 file: the server only reads it and returns
+    // the years it found; each ticked year is then saved like a typed one.
+    const readImportFile = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+
+        try {
+            setBusy(true);
+            setError("");
+            setNotice("");
+            const form = new FormData();
+            form.append("file", file);
+            const response = await fetch(`${API_URL}/sf10/students/${lrn}/import-preview`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: form,
+            });
+            const body = await response.json();
+            if (!response.ok) throw new Error(body.message || "Failed to read the SF10 file.");
+            if (body.years.length === 0) throw new Error("No filled Grade 1-6 year was found in that SF10 file.");
+
+            setImportPreview({
+                fileName: file.name,
+                lrnChecked: body.lrn_checked,
+                years: body.years.map((year) => ({
+                    ...year,
+                    selected: year.importable && !year.superseded_by_educheck,
+                })),
+            });
+        } catch (importError) {
+            setError(importError.message);
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const toggleImportYear = (index) =>
+        setImportPreview((preview) => ({
+            ...preview,
+            years: preview.years.map((year, i) => (i === index ? { ...year, selected: !year.selected } : year)),
+        }));
+
+    const saveImport = () => {
+        const chosen = importPreview.years.filter((year) => year.selected);
+        run(async () => {
+            for (const year of chosen) {
+                // eslint-disable-next-line no-unused-vars
+                const { issues, importable, replaces_existing, superseded_by_educheck, selected, ...payload } = year;
+                await send("PUT", `/sf10/students/${lrn}/history`, payload);
+            }
+            setImportPreview(null);
+        }, `${chosen.length} year${chosen.length === 1 ? "" : "s"} imported from the SF10 file.`);
+    };
+
     const setRating = (key, index, value) =>
         setYearForm((form) => {
             const entry = form.ratings[key] ?? { r: ["", "", "", ""], final: "" };
@@ -336,7 +398,7 @@ function PermanentRecord() {
                                 Generate SF10
                             </button>
                             {data.readiness.status === "NOT_READY" && (
-                                <span className="pr-header-hint">Add a 4-quarter year to enable</span>
+                                <span className="pr-header-hint">Add or import a year to enable</span>
                             )}
                         </div>
                     )}
@@ -395,7 +457,7 @@ function PermanentRecord() {
                                     <div className="pr-meter-legend">
                                         <span><i className="pr-dot pr-seg-complete" />Complete {completeCount}</span>
                                         <span><i className="pr-dot pr-seg-partial" />Partial {gradeCards.filter((c) => c.status === "Partial").length}</span>
-                                        <span><i className="pr-dot pr-seg-unsupported" />3-term / awaiting approval {gradeCards.filter((c) => c.status === "Unsupported" || c.status === "Pending").length}</span>
+                                        <span><i className="pr-dot pr-seg-unsupported" />Awaiting approval {gradeCards.filter((c) => c.status === "Unsupported" || c.status === "Pending").length}</span>
                                         <span><i className="pr-dot pr-seg-missing" />No record {gradeCards.filter((c) => c.status === "Missing").length}</span>
                                     </div>
 
@@ -424,9 +486,26 @@ function PermanentRecord() {
                                         <p>Grades 1 to 6, as they will appear on the form.</p>
                                     </div>
                                     {canEdit && (
-                                        <button type="button" className="pr-btn pr-btn-ghost" onClick={() => setYearForm(emptyYearForm())}>
-                                            <Plus size={16} /> Add earlier year
-                                        </button>
+                                        <div className="pr-section-actions">
+                                            <button
+                                                type="button"
+                                                className="pr-btn pr-btn-ghost"
+                                                onClick={() => importInput.current?.click()}
+                                                disabled={busy}
+                                            >
+                                                <Upload size={16} /> Import from SF10
+                                            </button>
+                                            <button type="button" className="pr-btn pr-btn-ghost" onClick={() => setYearForm(emptyYearForm())}>
+                                                <Plus size={16} /> Add earlier year
+                                            </button>
+                                            <input
+                                                ref={importInput}
+                                                type="file"
+                                                accept=".xlsx,.xls"
+                                                hidden
+                                                onChange={readImportFile}
+                                            />
+                                        </div>
                                     )}
                                 </div>
 
@@ -459,7 +538,7 @@ function PermanentRecord() {
                                                         <div className="pr-grade-meta">
                                                             <span>
                                                                 {year.source === "EDUCHECK" ? <FileSpreadsheet size={13} /> : <Pencil size={13} />}
-                                                                {year.source === "EDUCHECK" ? "EduCheck (approved)" : "Entered manually"}
+                                                                {year.source === "EDUCHECK" ? "EduCheck (approved)" : "Entered or imported"}
                                                             </span>
                                                             {year.section_name && <span>Section {year.section_name}</span>}
                                                             {year.school?.school_name && (
@@ -474,6 +553,13 @@ function PermanentRecord() {
                                                             <p className="pr-grade-note">
                                                                 Graded in 3 terms. Kept as recorded; it will be placed on the
                                                                 form once DepEd releases a 3-term SF10.
+                                                            </p>
+                                                        )}
+
+                                                        {status !== "Unsupported" && year?.grading_scheme === "TERM_3" && (
+                                                            <p className="pr-grade-note">
+                                                                Graded in 3 terms: printed as Term 1-3 in the first three
+                                                                rating columns; the fourth column is left blank.
                                                             </p>
                                                         )}
 
@@ -674,7 +760,7 @@ function PermanentRecord() {
                                 )}
 
                                 <p className="pr-footnote">
-                                    {data.template.name}. 3-term years are never converted into quarters.
+                                    {data.template.name}. 3-term years are printed as Term 1-3 and never converted into quarters.
                                 </p>
                             </aside>
                         </div>
@@ -835,6 +921,100 @@ function PermanentRecord() {
                             <button type="button" className="pr-btn pr-btn-primary" onClick={saveYear} disabled={busy}>
                                 {busy ? <Loader2 size={16} className="spin-icon" /> : <Save size={16} />}
                                 Save record
+                            </button>
+                        </footer>
+                    </div>
+                </div>
+            )}
+
+            {importPreview && (
+                <div className="pr-modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setImportPreview(null)}>
+                    <div className="pr-modal" role="dialog" aria-modal="true" aria-labelledby="pr-import-title">
+                        <header className="pr-modal-head">
+                            <div>
+                                <h2 id="pr-import-title">Import from SF10</h2>
+                                <p>
+                                    Years found in <strong>{importPreview.fileName}</strong>. Tick the ones to add; nothing is
+                                    saved until you import.
+                                </p>
+                            </div>
+                            <button type="button" className="pr-modal-close" onClick={() => setImportPreview(null)} aria-label="Close">
+                                <X size={18} />
+                            </button>
+                        </header>
+
+                        <div className="pr-modal-body">
+                            {!importPreview.lrnChecked && (
+                                <p className="pr-grade-note">
+                                    The file has no LRN, so it could not be matched to this learner. Make sure it is their SF10.
+                                </p>
+                            )}
+
+                            <ul className="pr-import-list">
+                                {importPreview.years.map((year, index) => {
+                                    const blocked = !year.importable;
+                                    return (
+                                        <li
+                                            key={`${year.grade_level}-${year.school_year}`}
+                                            className={`pr-import-item${blocked ? " is-blocked" : ""}`}
+                                        >
+                                            <label className="pr-import-pick">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={year.selected}
+                                                    disabled={blocked}
+                                                    onChange={() => toggleImportYear(index)}
+                                                />
+                                                <span className="pr-import-title">
+                                                    Grade {year.grade_level} &middot; {year.school_year || "no school year"}
+                                                </span>
+                                            </label>
+                                            <div className="pr-import-meta">
+                                                <span>{year.grading_scheme === "TERM_3" ? "3 terms" : "4 quarters"}</span>
+                                                <span>
+                                                    {year.subjects.length} learning area{year.subjects.length === 1 ? "" : "s"}
+                                                </span>
+                                                {year.general_average !== null && <span>General average {year.general_average}</span>}
+                                                {year.school_name && <span>{year.school_name}</span>}
+                                                <span
+                                                    className={`pr-badge pr-badge-${year.record_status === "Complete" ? "success" : "warning"}`}
+                                                >
+                                                    {year.record_status === "Complete" ? "Complete" : "Partially filled"}
+                                                </span>
+                                            </div>
+                                            {year.replaces_existing && (
+                                                <p className="pr-import-note">Replaces the {year.school_year} year already on this record.</p>
+                                            )}
+                                            {year.superseded_by_educheck && (
+                                                <p className="pr-import-note">
+                                                    EduCheck already has this year approved; that record is the one printed.
+                                                </p>
+                                            )}
+                                            {year.issues.map((issue) => (
+                                                <p key={issue} className="pr-import-note is-error">
+                                                    {blocked ? "Cannot import: " : ""}
+                                                    {issue}
+                                                </p>
+                                            ))}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+
+                        <footer className="pr-modal-foot">
+                            <button type="button" className="pr-btn pr-btn-secondary" onClick={() => setImportPreview(null)}>
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="pr-btn pr-btn-primary"
+                                onClick={saveImport}
+                                disabled={busy || !importPreview.years.some((year) => year.selected)}
+                            >
+                                {busy ? <Loader2 size={16} className="spin-icon" /> : <Upload size={16} />}
+                                Import {importPreview.years.filter((year) => year.selected).length} year
+                                {importPreview.years.filter((year) => year.selected).length === 1 ? "" : "s"}
                             </button>
                         </footer>
                     </div>

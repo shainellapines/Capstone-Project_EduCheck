@@ -3,6 +3,7 @@ const { recordAuditLog } = require("../utils/auditLog");
 const { subjectKeysForGrade } = require("../services/sf10/subjects");
 const { SCHOOL_SETTING_KEYS, getSchoolSettings } = require("../services/sf10/cumulativeRecord");
 const { previewSf10, generateSf10 } = require("../services/sf10/generator");
+const { readSf10Workbook } = require("../services/sf10/importer");
 
 // ==========================================
 // SF10 (Learner's Permanent Academic Record)
@@ -361,6 +362,64 @@ const upsertHistoricalRecord = async (req, res) => {
     }
 };
 
+// ---------- import from an existing SF10 file ----------
+
+// Reads an uploaded SF10-ES workbook and returns the Grade 1-6 years found
+// in it as a preview. Nothing is saved: the page lets the user tick the
+// years to keep and saves each through upsertHistoricalRecord.
+const previewSf10Import = async (req, res) => {
+    try {
+        const lrn = await guardLearner(req, res, "write");
+        if (!lrn) return;
+
+        if (!req.file) return res.status(400).json({ message: "Choose an SF10 Excel file to import." });
+
+        let parsed;
+        try {
+            parsed = readSf10Workbook(req.file.buffer);
+        } catch (error) {
+            return res.status(400).json({ message: error.message });
+        }
+
+        // Importing another learner's SF10 would put their grades on this record.
+        if (parsed.learner.lrn && parsed.learner.lrn !== lrn) {
+            return res.status(400).json({
+                message: `This SF10 belongs to LRN ${parsed.learner.lrn}, not ${lrn}. Open that learner's record to import it.`,
+            });
+        }
+
+        const existing = new Map(
+            (
+                await pool.query("SELECT school_year, grade_level FROM historical_academic_records WHERE lrn = $1", [lrn])
+            ).rows.map((row) => [row.school_year, row.grade_level])
+        );
+        const { record } = await previewSf10(lrn);
+        const officialEduCheckYears = new Set(
+            record.years.filter((year) => year.source === "EDUCHECK" && year.official).map((year) => year.school_year)
+        );
+
+        const years = parsed.years.map(({ issues, ...payload }) => {
+            const error = validateHistoricalPayload(payload);
+            return {
+                ...payload,
+                issues: error ? [...issues, error] : issues,
+                importable: !error,
+                replaces_existing: existing.has(payload.school_year),
+                superseded_by_educheck: officialEduCheckYears.has(payload.school_year),
+            };
+        });
+
+        return res.json({
+            learner: parsed.learner,
+            lrn_checked: Boolean(parsed.learner.lrn),
+            years,
+        });
+    } catch (error) {
+        console.error("SF10 import preview error:", error);
+        return res.status(500).json({ message: "Failed to read the SF10 file." });
+    }
+};
+
 const deleteHistoricalRecord = async (req, res) => {
     try {
         const lrn = await guardLearner(req, res, "write");
@@ -398,5 +457,6 @@ module.exports = {
     updateLearnerProfile,
     upsertHistoricalRecord,
     deleteHistoricalRecord,
+    previewSf10Import,
     validateHistoricalPayload,
 };

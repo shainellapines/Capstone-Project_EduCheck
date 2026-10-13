@@ -27,7 +27,7 @@ permission to create a database.
 | EPIC-02, EPIC-04, US-004 | Parser reads learners, LRNs and header; validator marks a clean record ready | `parser.test.js` | PRS-01 to PRS-03, VAL-01, VAL-02, INT-H1, INT-H2 |
 | EPIC-06, US-006, US-007 | Adviser submit, Admin approve/reject, state rules, ownership, revision requests, notifications | `workflow.test.js`, `completeness.test.js` | WF-01 to WF-14, COMP-05 (Administrators notified of every submission, one summary for submit-all) |
 | EPIC-06 / §11 risk table | Approval freezes a snapshot; approved records cannot be silently re-uploaded until the Adviser reopens them | `workflow.test.js` | WF-04, WF-06, WF-09, WF-10 |
-| EPIC-05, US-005 | SF10: historical entry (own learners, validation, audit log), cumulative record, readiness report, generation onto the official SF10-ES template, 3-term years never converted | `sf10.test.js` | SF-01 to SF-13 |
+| EPIC-05, US-005, US-014 | SF10: historical entry (own learners, validation, audit log), cumulative record, readiness report, generation onto the official SF10-ES template, 3-term years printed as Terms 1-3 (never converted), import of earlier years from an existing SF10 file (round trip, LRN check, access) | `sf10.test.js` | SF-01 to SF-16 |
 | §6.5 M-02, US-010 | The uploader is alerted when validation flags errors ("Upload Needs Correction") or only warnings ("Upload Has Warnings"); a clean upload sends nothing | `upload-alerts.test.js` | NTF-01 to NTF-03 |
 | Security (ISO 25010) | `/api/parser-test` is Admin-only and deletes its temp upload (SEC-07) | `rolematrix.test.js` | POST /api/parser-test |
 

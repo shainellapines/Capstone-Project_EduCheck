@@ -118,7 +118,7 @@ describe("SF10 permanent record", () => {
         assert.equal(year.general_average, 84);
     });
 
-    it("SF-07 a TERM_3 year is kept as-is, never converted, and flagged unsupported", async () => {
+    it("SF-07 a TERM_3 year is kept as recorded (never converted) and placed on the form", async () => {
         const res = await saveHistory(OWN, {
             school_year: "2022-2023",
             grade_level: 2,
@@ -129,10 +129,11 @@ describe("SF10 permanent record", () => {
 
         const view = await preview(OWN);
         const g2 = view.body.readiness.blocks.find((b) => b.grade_level === "2");
-        assert.equal(g2.status, "Unsupported");
-        assert.ok(view.body.readiness.issues.some((i) => i.code === "SCHEME_NOT_SUPPORTED" && i.grade_level === "2"));
+        assert.equal(g2.status, "Partial"); // only English entered
+        assert.ok(!view.body.readiness.issues.some((i) => i.code === "SCHEME_NOT_SUPPORTED"));
         const year = view.body.record.years.find((y) => y.school_year === "2022-2023");
         assert.deepEqual(year.subjects[0].ratings, [85, 86, 87, null]);
+        assert.equal(year.subjects[0].final_rating, 86); // round((85+86+87)/3)
     });
 
     it("SF-08 learner details: validation and save", async () => {
@@ -172,7 +173,7 @@ describe("SF10 permanent record", () => {
         assert.equal(read.body.settings.school_name, "EduCheck Elementary School");
     });
 
-    it("SF-10 download fills the official template: personal info + the Grade 3 block only", async () => {
+    it("SF-10 download fills the official template: personal info, the 4-quarter Grade 3 and 3-term Grade 2 blocks", async () => {
         const res = await download(OWN, "adviser_a");
         assert.equal(res.status, 200);
         assert.match(res.headers.get("content-disposition"), /SF10-ES_111100000001_/);
@@ -196,8 +197,17 @@ describe("SF10 permanent record", () => {
         assert.deepEqual(["K60", "L60", "N60", "O60", "P60", "S60"].map(v), [80, 82, 84, 86, 83, "Passed"]);
         assert.equal(v("P75"), 84);
 
-        // Grade 2 (TERM_3) and Grade 4 (not approved) blocks stay blank.
-        assert.equal(v("AJ31"), undefined);
+        // The 4-quarter Grade 3 block keeps its printed quarter labels.
+        assert.deepEqual(["K59", "L59", "N59", "O59"].map(v), [1, 2, 3, 4]);
+
+        // Grade 2 (TERM_3): Terms 1-3 in the first three columns, relabelled;
+        // the fourth column stays empty.
+        assert.equal(v("AJ28"), "Term Rating");
+        assert.deepEqual(["AJ29", "AM29", "AO29", "AR29"].map(v), ["T1", "T2", "T3", "–"]);
+        assert.deepEqual(["AJ31", "AM31", "AO31", "AT31", "AW31"].map(v), [85, 86, 87, 86, "Passed"]);
+        assert.equal(v("AR31"), undefined);
+
+        // Grade 4 (not approved) stays blank.
         assert.equal(v("AJ61"), undefined);
 
         // The template itself is intact.
@@ -205,7 +215,7 @@ describe("SF10 permanent record", () => {
         assert.deepEqual(wb.SheetNames, ["Front", "Back", "Sir Wedz Helper Table"]);
     });
 
-    it("SF-11 an approved EduCheck (3-term) year is official but not written onto the 4-quarter form", async () => {
+    it("SF-11 an approved EduCheck (3-term) year is official and printed as Terms 1-3", async () => {
         const snapshot = {
             lrn: OWN,
             grade_level: "4",
@@ -223,11 +233,15 @@ describe("SF10 permanent record", () => {
         assert.equal(year.official, true);
         assert.equal(year.grading_scheme, "TERM_3");
         assert.equal(year.school.school_name, "EduCheck Elementary School");
-        assert.equal(view.body.readiness.blocks.find((b) => b.grade_level === "4").status, "Unsupported");
+        assert.equal(view.body.readiness.blocks.find((b) => b.grade_level === "4").status, "Partial");
 
         const file = await download(OWN);
         const front = XLSX.read(file.buffer).Sheets.Front;
-        assert.equal(front.AJ61?.v, undefined, "3-term grades must not be placed in quarter columns");
+        const v = (cell) => front[cell]?.v;
+        assert.deepEqual(["AJ59", "AM59", "AO59", "AR59"].map(v), ["T1", "T2", "T3", "–"]);
+        assert.deepEqual(["AJ61", "AM61", "AO61", "AT61"].map(v), [85, 86, 87, 86]);
+        assert.equal(v("AR61"), undefined, "the fourth rating column stays empty for a 3-term year");
+        assert.equal(v("X52"), "EduCheck Elementary School"); // school details from Settings
     });
 
     it("SF-12 deleting a historical year removes it (and only the owner's learner)", async () => {
@@ -249,5 +263,117 @@ describe("SF10 permanent record", () => {
     it("SF-13 fillUnderscores fills runs in order and keeps a run when its value is blank", () => {
         assert.equal(fillUnderscores("District: _____ Division: _____", ["North", "Cebu"]), "District: North Division: Cebu");
         assert.equal(fillUnderscores("District: _____ Division: _____", [null, "Cebu"]), "District: _____ Division: Cebu");
+    });
+
+    // ---------- import from an existing SF10 file ----------
+
+    const importPreview = async (lrn, buffer, role = "adviser_a", name = "sf10.xlsx") => {
+        const form = new FormData();
+        form.append("file", new Blob([buffer]), name);
+        const res = await fetch(`${t.baseUrl}/api/sf10/students/${lrn}/import-preview`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${t.tokens[role]}` },
+            body: form,
+        });
+        return { status: res.status, body: await res.json() };
+    };
+
+    const GRADE5_QUARTER4 = {
+        school_year: "2020-2021",
+        grade_level: 5,
+        grading_scheme: "QUARTER_4",
+        school_name: "Back Sheet Elementary School",
+        school_id: "333444",
+        district: "South",
+        division: "Davao City",
+        region: "XI",
+        section_name: "Narra",
+        adviser_name: "Ramon Cruz",
+        subjects: [{ subject_key: "english", ratings: [78, 79, 81, 83] }],
+    };
+
+    it("SF-14 import reads back every year of a generated SF10 (round trip)", async () => {
+        assert.equal((await saveHistory(OWN, GRADE5_QUARTER4)).status, 201);
+        const file = await download(OWN);
+        assert.equal(file.status, 200);
+
+        const res = await importPreview(OWN, file.buffer);
+        assert.equal(res.status, 200, JSON.stringify(res.body));
+        assert.equal(res.body.learner.lrn, OWN);
+        assert.equal(res.body.lrn_checked, true);
+
+        const byGrade = Object.fromEntries(res.body.years.map((y) => [y.grade_level, y]));
+        assert.deepEqual(Object.keys(byGrade).sort(), ["3", "4", "5"]);
+
+        // Grade 3: 4 quarters, Front-sheet header cells.
+        const g3 = byGrade[3];
+        assert.equal(g3.grading_scheme, "QUARTER_4");
+        assert.equal(g3.school_year, "2023-2024");
+        assert.equal(g3.school_name, "Previous Elementary School");
+        assert.equal(g3.section_name, "Rosal");
+        assert.equal(g3.adviser_name, "Lorna Reyes");
+        const filipino = g3.subjects.find((s) => s.subject_key === "filipino");
+        assert.deepEqual(filipino.ratings, [80, 82, 84, 86]);
+        assert.equal(filipino.final_rating, 83);
+        assert.equal(g3.general_average, 84);
+        assert.equal(g3.importable, true);
+        assert.equal(g3.replaces_existing, true);
+
+        // Grade 4: the approved 3-term EduCheck year, detected from its T1-T3 labels.
+        const g4 = byGrade[4];
+        assert.equal(g4.grading_scheme, "TERM_3");
+        assert.deepEqual(g4.subjects.find((s) => s.subject_key === "english").ratings, [85, 86, 87]);
+        assert.equal(g4.superseded_by_educheck, true);
+
+        // Grade 5: Back-sheet header written inside the label text.
+        const g5 = byGrade[5];
+        assert.equal(g5.school_name, "Back Sheet Elementary School");
+        assert.equal(g5.school_id, "333444");
+        assert.equal(g5.district, "South");
+        assert.equal(g5.division, "Davao City");
+        assert.equal(g5.section_name, "Narra");
+        assert.equal(g5.adviser_name, "Ramon Cruz");
+        assert.equal(g5.school_year, "2020-2021");
+        assert.deepEqual(g5.subjects[0].ratings, [78, 79, 81, 83]);
+        assert.equal(g5.record_status, "Partial");
+        assert.deepEqual(g5.issues, []);
+    });
+
+    it("SF-15 an imported year saved through the normal entry is placed on the SF10", async () => {
+        const file = await download(OWN);
+        const g5 = (await importPreview(OWN, file.buffer)).body.years.find((y) => y.grade_level === 5);
+
+        const id = (
+            await t.pool.query("SELECT historical_record_id FROM historical_academic_records WHERE school_year='2020-2021'")
+        ).rows[0].historical_record_id;
+        assert.equal((await t.request("DELETE", `/api/sf10/students/${OWN}/history/${id}`, { token: t.tokens.adviser_a })).status, 200);
+
+        const { issues, importable, replaces_existing, superseded_by_educheck, ...payload } = g5;
+        const saved = await saveHistory(OWN, payload);
+        assert.equal(saved.status, 201, JSON.stringify(saved.body));
+
+        const back = XLSX.read((await download(OWN)).buffer).Sheets.Back;
+        assert.deepEqual(["H11", "I11", "J11", "K11"].map((c) => back[c]?.v), [78, 79, 81, 83]);
+        assert.equal(back.O5?.v, "2020-2021");
+    });
+
+    it("SF-16 import is refused for another learner's SF10, a non-SF10 workbook, a non-Excel file, and read-only roles", async () => {
+        const own = (await download(OWN)).buffer;
+
+        const otherLearner = await importPreview(OTHER, own, "adviser_b");
+        assert.equal(otherLearner.status, 400);
+        assert.match(otherLearner.body.message, /belongs to LRN 111100000001/);
+
+        const { file: ecr } = buildEcr({ lrnFor: lrnGenerator("1111"), limit: 1 });
+        const notSf10 = await importPreview(OWN, require("fs").readFileSync(ecr));
+        assert.equal(notSf10.status, 400);
+        assert.match(notSf10.body.message, /does not look like an SF10-ES file/);
+
+        const text = await importPreview(OWN, Buffer.from("hello"), "adviser_a", "notes.txt");
+        assert.equal(text.status, 400);
+
+        assert.equal((await importPreview(OWN, own, "principal")).status, 403);
+        assert.equal((await importPreview(OWN, own, "subject_t")).status, 403);
+        assert.equal((await importPreview(OWN, own, "adviser_b")).status, 403);
     });
 });
