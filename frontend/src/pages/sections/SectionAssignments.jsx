@@ -236,6 +236,13 @@ function SectionAssignments() {
         ? subjects.filter((subject) => String(subject.grade_level) === String(formSection.grade_level))
         : [];
 
+    // A Self-Contained section only has the Class Adviser slot: its Adviser
+    // teaches every subject, so the subjects show as covered, not pickable,
+    // and Subject Teacher accounts cannot be assigned there at all.
+    const isSelfContained = (section) => Boolean(section) && section.staffing_mode === "Self-Contained";
+    const formSelfContained = isSelfContained(formSection);
+    const formTeacherIsSubjectTeacher = Boolean(formTeacher) && formTeacher.role !== "adviser";
+
     // Who already holds a slot in the chosen section and school year
     // (subjectId null = the Class Adviser slot).
     const slotHolder = (subjectId) => {
@@ -253,11 +260,21 @@ function SectionAssignments() {
 
         const teacherLabel = formTeacher ? `${formTeacher.first_name} ${formTeacher.last_name}` : "this teacher";
         const sectionLabel = formSection ? formSection.section_name : "this section";
-        const chosenSubjects = formSubjects.filter((subject) =>
-            assignmentForm.subject_ids.includes(subject.subject_id)
-        );
+
+        if (formSelfContained && slotHolder(null)) {
+            setActionMessage("");
+            setActionError(`${sectionLabel} already has a Class Adviser (${slotHolder(null)}) for this school year.`);
+            return;
+        }
+
+        // Self-Contained: the Class Adviser slot alone, which covers every subject.
+        const classAdviser = formSelfContained || assignmentForm.class_adviser;
+        const subjectIds = formSelfContained ? [] : assignmentForm.subject_ids;
+        const chosenSubjects = formSubjects.filter((subject) => subjectIds.includes(subject.subject_id));
         const roleLabels = [
-            ...(assignmentForm.class_adviser ? ["Class Adviser"] : []),
+            ...(classAdviser
+                ? [formSelfContained ? "Class Adviser (teaches every subject)" : "Class Adviser"]
+                : []),
             ...chosenSubjects.map((subject) => subject.subject_name),
         ];
 
@@ -285,8 +302,8 @@ function SectionAssignments() {
                     teacher_id: Number(assignmentForm.teacher_id),
                     section_id: Number(assignmentForm.section_id),
                     school_year_id: Number(assignmentForm.school_year_id),
-                    class_adviser: assignmentForm.class_adviser,
-                    subject_ids: assignmentForm.subject_ids,
+                    class_adviser: classAdviser,
+                    subject_ids: subjectIds,
                 }),
             });
 
@@ -690,12 +707,20 @@ function SectionAssignments() {
                                                 <option value="" disabled>
                                                     Select a teacher
                                                 </option>
-                                                {teachers.map((teacher) => (
-                                                    <option key={teacher.teacher_id} value={teacher.teacher_id}>
-                                                        {teacher.first_name} {teacher.last_name} (
-                                                        {teacher.role === "adviser" ? "Adviser" : "Subject Teacher"})
-                                                    </option>
-                                                ))}
+                                                {teachers.map((teacher) => {
+                                                    const blocked = formSelfContained && teacher.role !== "adviser";
+                                                    return (
+                                                        <option
+                                                            key={teacher.teacher_id}
+                                                            value={teacher.teacher_id}
+                                                            disabled={blocked}
+                                                        >
+                                                            {teacher.first_name} {teacher.last_name} (
+                                                            {teacher.role === "adviser" ? "Adviser" : "Subject Teacher"})
+                                                            {blocked ? " - not for Self-Contained sections" : ""}
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
                                         </div>
 
@@ -711,12 +736,20 @@ function SectionAssignments() {
                                                 <option value="" disabled>
                                                     Select a section
                                                 </option>
-                                                {sections.map((section) => (
-                                                    <option key={section.section_id} value={section.section_id}>
-                                                        {section.section_name} (Grade {section.grade_level} -{" "}
-                                                        {section.staffing_mode})
-                                                    </option>
-                                                ))}
+                                                {sections.map((section) => {
+                                                    const blocked = formTeacherIsSubjectTeacher && isSelfContained(section);
+                                                    return (
+                                                        <option
+                                                            key={section.section_id}
+                                                            value={section.section_id}
+                                                            disabled={blocked}
+                                                        >
+                                                            {section.section_name} (Grade {section.grade_level} -{" "}
+                                                            {section.staffing_mode})
+                                                            {blocked ? " - Adviser only" : ""}
+                                                        </option>
+                                                    );
+                                                })}
                                             </select>
                                         </div>
 
@@ -753,13 +786,17 @@ function SectionAssignments() {
                                                 <>
                                                     {(() => {
                                                         const holder = slotHolder(null);
-                                                        const notAdviser = formTeacher && formTeacher.role !== "adviser";
+                                                        const notAdviser = formTeacherIsSubjectTeacher;
                                                         return (
                                                             <label className={`sa-slot${holder || notAdviser ? " is-disabled" : ""}`}>
                                                                 <input
                                                                     type="checkbox"
-                                                                    checked={assignmentForm.class_adviser}
-                                                                    disabled={Boolean(holder) || notAdviser}
+                                                                    checked={
+                                                                        formSelfContained
+                                                                            ? !holder && !notAdviser
+                                                                            : assignmentForm.class_adviser
+                                                                    }
+                                                                    disabled={Boolean(holder) || notAdviser || formSelfContained}
                                                                     onChange={(event) =>
                                                                         setAssignmentForm((previous) => ({
                                                                             ...previous,
@@ -778,8 +815,25 @@ function SectionAssignments() {
 
                                                     <p className="sa-slot-group">Subjects (Grade {formSection.grade_level})</p>
 
+                                                    {formSelfContained && (
+                                                        <p className="sa-slot-hint">
+                                                            Self-Contained: the Class Adviser teaches every subject below
+                                                            automatically.
+                                                        </p>
+                                                    )}
+
                                                     <div className="sa-slot-grid">
-                                                        {formSubjects.map((subject) => {
+                                                        {formSelfContained && formSubjects.map((subject) => (
+                                                            <label key={subject.subject_id} className="sa-slot is-disabled">
+                                                                <input type="checkbox" checked readOnly disabled />
+                                                                <span className="sa-slot-name">{subject.subject_name}</span>
+                                                                {slotHolder(null) && (
+                                                                    <span className="sa-slot-note">covered by {slotHolder(null)}</span>
+                                                                )}
+                                                            </label>
+                                                        ))}
+
+                                                        {!formSelfContained && formSubjects.map((subject) => {
                                                             const holder = slotHolder(subject.subject_id);
                                                             return (
                                                                 <label
@@ -818,8 +872,9 @@ function SectionAssignments() {
                                                 disabled={savingAssignment}
                                             >
                                                 {(() => {
-                                                    const count =
-                                                        assignmentForm.subject_ids.length + (assignmentForm.class_adviser ? 1 : 0);
+                                                    const count = formSelfContained
+                                                        ? 1
+                                                        : assignmentForm.subject_ids.length + (assignmentForm.class_adviser ? 1 : 0);
                                                     if (savingAssignment) return "Saving...";
                                                     return count > 1 ? `Save ${count} Assignments` : "Save Assignment";
                                                 })()}

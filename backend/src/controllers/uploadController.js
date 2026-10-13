@@ -78,8 +78,18 @@ const getUploadOptions = async (req, res) => {
             [teacherId]
         );
 
+        // Both paths can name the same slot (a subject row left over in a
+        // section later made Self-Contained); list each slot once.
+        const seen = new Set();
+        const options = [...subjectTeacherOptions.rows, ...adviserOptions.rows].filter((option) => {
+            const key = `${option.section_id}:${option.subject_id}:${option.school_year_id}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
         res.json({
-            options: [...subjectTeacherOptions.rows, ...adviserOptions.rows],
+            options,
             school_years: schoolYearsResult.rows
         });
 
