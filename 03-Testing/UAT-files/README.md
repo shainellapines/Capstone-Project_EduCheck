@@ -39,6 +39,7 @@ example the Adviser's own subjects in TC-030.
 Use the files as they are. Do not open and re-save them in Excel before
 uploading, because that can change them.
 
-Upload the Rizal files **before** any record is approved (TC-039). Once one Rizal
-learner is Approved, every upload for Rizal is refused until the Adviser
+Learners whose record is Approved or Pending Approval are locked: an upload
+still saves the rest of the class, but leaves those learners' grades unchanged
+and lists them on the result page. Their grades change only after the Adviser
 requests a revision (Known Limitations D-04).

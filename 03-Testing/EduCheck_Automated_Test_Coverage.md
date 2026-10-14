@@ -1,6 +1,6 @@
 # EduCheck - Automated Backend Test Coverage
 
-Run: `cd backend && npm test` (123 tests, about 60 s).
+Run: `cd backend && npm test` (147 tests, about 90 s).
 
 The suite uses its own PostgreSQL database `educheck_test`, dropped and rebuilt from
 `02-Product Design/06-Database/SQL/educheck_schema.sql` on every file, and spawns the
