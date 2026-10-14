@@ -428,6 +428,70 @@
     margin-bottom: 16px;
 }
 
+.pr-section-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Import from SF10: one row per year found in the file. */
+.pr-import-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pr-import-item {
+    padding: 12px 14px;
+    border: 1px solid var(--ec-slate-200);
+    border-radius: var(--ec-radius-sm);
+    background: var(--ec-surface);
+}
+
+.pr-import-item.is-blocked {
+    background: var(--ec-slate-50);
+}
+
+.pr-import-pick {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.pr-import-item.is-blocked .pr-import-pick {
+    cursor: default;
+}
+
+.pr-import-title {
+    font-family: var(--ec-font-heading);
+    font-weight: 600;
+    color: var(--ec-slate-900);
+}
+
+.pr-import-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    margin: 6px 0 0 26px;
+    font-size: 12.5px;
+    color: var(--ec-text-muted);
+}
+
+.pr-import-note {
+    margin: 6px 0 0 26px;
+    font-size: 12.5px;
+    color: var(--ec-slate-600);
+}
+
+.pr-import-note.is-error {
+    color: var(--ec-danger);
+}
+
 .pr-section-head h2 {
     margin: 0 0 4px;
     font-family: var(--ec-font-heading);

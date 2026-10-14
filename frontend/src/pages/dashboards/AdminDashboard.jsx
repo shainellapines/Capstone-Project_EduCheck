@@ -159,12 +159,14 @@ function AdminDashboard() {
                 <header className="dashboard-header">
 
                     <div>
-                        <h1>
-                            Dashboard
-                        </h1>
+                        <p className="dashboard-eyebrow">
+                            School Administrator · {getDisplayName(user)}
+                        </p>
+
+                        <h1>Dashboard</h1>
 
                         <p>
-                            School Administrator · {getDisplayName(user)}
+                            Monitor users, submissions, records, and academic system activity
                         </p>
                     </div>
 
@@ -194,15 +196,6 @@ function AdminDashboard() {
                 </header>
 
                 <section className="dashboard-content">
-
-                    <div className="section-heading">
-                        <h2>Administration Overview</h2>
-
-                        <p>
-                            Monitor users, submissions, records, and
-                            academic system activity
-                        </p>
-                    </div>
 
                     {error && (
                         <div className="error-banner">
@@ -341,7 +334,7 @@ function AdminDashboard() {
                                             </strong>
 
                                             <span>
-                                                LRN: {student.lrn} • Grade {student.grade_level}
+                                                LRN <span className="record-lrn">{student.lrn}</span> · Grade {student.grade_level}
                                             </span>
                                         </div>
 

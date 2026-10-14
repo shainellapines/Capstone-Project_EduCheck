@@ -95,6 +95,35 @@ const updateSection = async (req, res) => {
             });
         }
 
+        // A Self-Contained section's Class Adviser covers every subject, so
+        // existing subject assignments would let two teachers upload the
+        // same subject (see assignmentController). They go first.
+        if (staffing_mode === "Self-Contained" && beforeResult.rows[0].staffing_mode !== "Self-Contained") {
+            const subjectSlots = await pool.query(
+                `
+                SELECT sub.subject_name, t.first_name, t.last_name, sy.school_year
+                FROM teacher_assignments ta
+                INNER JOIN subjects sub ON sub.subject_id = ta.subject_id
+                INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+                INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
+                WHERE ta.section_id = $1
+                ORDER BY sy.school_year, sub.subject_name
+                `,
+                [id]
+            );
+
+            if (subjectSlots.rows.length > 0) {
+                const held = subjectSlots.rows.map(
+                    (row) => `${row.subject_name} (${row.first_name} ${row.last_name}, ${row.school_year})`
+                );
+                return res.status(409).json({
+                    message:
+                        `${beforeResult.rows[0].section_name} still has subject assignments: ${held.join(", ")}. ` +
+                        "In a Self-Contained section the Class Adviser teaches every subject, so remove these first."
+                });
+            }
+        }
+
         const result = await pool.query(
             `UPDATE sections
              SET section_name = COALESCE($1, section_name),

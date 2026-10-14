@@ -11,6 +11,7 @@ import {
 import "../../styles/Dashboard.css";
 import "./Analytics.css";
 import Sidebar from "../../components/Sidebar";
+import { SubjectRangeChart, TermTrendChart } from "./AnalyticsCharts";
 import { getToken, getStoredUser } from "../../utils/session";
 import { API_URL } from "../../config";
 
@@ -52,6 +53,11 @@ function Analytics() {
     const [analytics, setAnalytics] = useState(null);
     const [loadingAnalytics, setLoadingAnalytics] = useState(false);
     const [error, setError] = useState("");
+
+    // Chart controls: the subject drawn against the overall term trend, and
+    // the grade level the subject chart shows (Admin/Principal span several).
+    const [compareSubjectId, setCompareSubjectId] = useState("");
+    const [subjectGradeLevel, setSubjectGradeLevel] = useState("");
 
     const authHeaders = () => {
         const token = getToken();
@@ -114,6 +120,8 @@ function Analytics() {
                 }
 
                 setAnalytics(data);
+                setCompareSubjectId("");
+                setSubjectGradeLevel("");
             } catch (fetchError) {
                 setError(fetchError.message || "Failed to load analytics.");
                 setAnalytics(null);
@@ -134,6 +142,43 @@ function Analytics() {
     const maxBandCount = hasData
         ? Math.max(...analytics.grade_distribution.map((band) => band.count))
         : 0;
+
+    const scopeLabel = isAdviser ? "Your section" : "All sections";
+    const termTrend = analytics?.term_trend || [];
+    const hasTermData = termTrend.some((point) => point.average !== null);
+    const subjects = analytics?.subject_performance || [];
+
+    const gradeLevels = Array.from(new Set(subjects.map((subject) => String(subject.grade_level)))).sort(
+        (a, b) => Number(a) - Number(b)
+    );
+    const activeGradeLevel = subjectGradeLevel || gradeLevels[0] || "";
+    const visibleSubjects =
+        gradeLevels.length > 1
+            ? subjects.filter((subject) => String(subject.grade_level) === activeGradeLevel)
+            : subjects;
+
+    // Subject names repeat across grade levels, so name the grade when
+    // more than one is on the page.
+    const subjectOptionLabel = (subject) =>
+        gradeLevels.length > 1 ? `${subject.subject_name} (Grade ${subject.grade_level})` : subject.subject_name;
+
+    const compareSubject = subjects.find((subject) => String(subject.subject_id) === compareSubjectId);
+    const overallSeries = {
+        key: "overall",
+        label: isAdviser ? "Section average" : "School average",
+        points: termTrend,
+    };
+    const trendSeries = compareSubject
+        ? [
+            { ...overallSeries, tone: "context" },
+            {
+                key: "subject",
+                label: subjectOptionLabel(compareSubject),
+                tone: "accent",
+                points: compareSubject.term_trend,
+            },
+        ]
+        : [{ ...overallSeries, tone: "accent" }];
 
     return (
         <div className="dashboard-layout">
@@ -264,143 +309,237 @@ function Analytics() {
                                     </h3>
                                 </div>
 
-                                {analytics.intervention_flags.length === 0 ? (
-                                    <p className="an-empty-note">
-                                        No students are currently below the passing grade (
-                                        {analytics.passing_grade}) for this school year.
-                                    </p>
-                                ) : (
-                                    <div className="an-table-wrap">
-                                        <table className="an-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Student</th>
-                                                    <th>Section</th>
-                                                    <th>Failing Subjects</th>
-                                                    <th>Lowest Grade</th>
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                {analytics.intervention_flags.map((student) => (
-                                                    <tr
-                                                        key={student.lrn}
-                                                        className={`an-flag-row ${severityClass(student.lowest_grade)}`}
-                                                    >
-                                                        <td className="an-cell-strong">
-                                                            {student.last_name}, {student.first_name}
-                                                        </td>
-                                                        <td>
-                                                            {student.section_name
-                                                                ? `${student.section_name} (Grade ${student.grade_level})`
-                                                                : "Unassigned"}
-                                                        </td>
-                                                        <td>
-                                                            <div className="an-flag-subjects">
-                                                                {student.failing_subjects.map((subject) => (
-                                                                    <span
-                                                                        className="an-flag-subject-pill"
-                                                                        key={subject.subject_id}
-                                                                    >
-                                                                        {subject.subject_name} (
-                                                                        {subject.final_grade})
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        </td>
-                                                        <td>
-                                                            <span
-                                                                className={`an-severity-pill ${severityClass(student.lowest_grade)}`}
-                                                            >
-                                                                {student.lowest_grade}
-                                                            </span>
-                                                        </td>
+                                <div className="an-panel-body">
+                                    {analytics.intervention_flags.length === 0 ? (
+                                        <p className="an-empty-note">
+                                            No students are currently below the passing grade (
+                                            {analytics.passing_grade}) for this school year.
+                                        </p>
+                                    ) : (
+                                        <div className="an-table-wrap">
+                                            <table className="an-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Student</th>
+                                                        <th>Section</th>
+                                                        <th>Failing Subjects</th>
+                                                        <th>Lowest Grade</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+
+                                                <tbody>
+                                                    {analytics.intervention_flags.map((student) => (
+                                                        <tr
+                                                            key={student.lrn}
+                                                            className={`an-flag-row ${severityClass(student.lowest_grade)}`}
+                                                        >
+                                                            <td className="an-cell-strong">
+                                                                {student.last_name}, {student.first_name}
+                                                            </td>
+                                                            <td>
+                                                                {student.section_name
+                                                                    ? `${student.section_name} (Grade ${student.grade_level})`
+                                                                    : "Unassigned"}
+                                                            </td>
+                                                            <td>
+                                                                <div className="an-flag-subjects">
+                                                                    {student.failing_subjects.map((subject) => (
+                                                                        <span
+                                                                            className="an-flag-subject-pill"
+                                                                            key={subject.subject_id}
+                                                                        >
+                                                                            {subject.subject_name} (
+                                                                            {subject.final_grade})
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span
+                                                                    className={`an-severity-pill ${severityClass(student.lowest_grade)}`}
+                                                                >
+                                                                    {student.lowest_grade}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="an-chart-grid">
+
+                                {/* TERM TREND */}
+                                <div className="content-card an-panel">
+                                    <div className="card-header an-card-header">
+                                        <div>
+                                            <h3>Grade Trend by Term</h3>
+                                            <p className="an-card-subtitle">
+                                                Average grade in each term, {scopeLabel.toLowerCase()}
+                                            </p>
+                                        </div>
+
+                                        {analytics.subject_performance.length > 1 && (
+                                            <label className="an-control">
+                                                Compare
+                                                <select
+                                                    className="school-year-select"
+                                                    value={compareSubjectId}
+                                                    onChange={(e) => setCompareSubjectId(e.target.value)}
+                                                >
+                                                    <option value="">No subject</option>
+                                                    {analytics.subject_performance.map((subject) => (
+                                                        <option key={subject.subject_id} value={subject.subject_id}>
+                                                            {subjectOptionLabel(subject)}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        )}
                                     </div>
-                                )}
+
+                                    <div className="an-panel-body">
+                                        {hasTermData ? (
+                                            <TermTrendChart
+                                                series={trendSeries}
+                                                passingGrade={analytics.passing_grade}
+                                            />
+                                        ) : (
+                                            <p className="an-empty-note">
+                                                No term grades recorded yet for this school year.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* GRADE DISTRIBUTION */}
+                                <div className="content-card an-panel">
+                                    <div className="card-header an-card-header">
+                                        <div>
+                                            <h3>Grade Distribution</h3>
+                                            <p className="an-card-subtitle">
+                                                Final grades by DepEd descriptor
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="an-panel-body">
+                                        <div className="an-distribution">
+                                            {analytics.grade_distribution.map((band) => {
+                                                const barPercent =
+                                                    maxBandCount > 0 ? (band.count / maxBandCount) * 100 : 0;
+                                                const sharePercent =
+                                                    overview.graded_entries > 0
+                                                        ? Math.round((band.count / overview.graded_entries) * 100)
+                                                        : 0;
+                                                const tone = BAND_TONE[band.band] || "outstanding";
+
+                                                return (
+                                                    <div
+                                                        className={`an-band-row tone-${tone}`}
+                                                        key={band.band}
+                                                        title={`${band.band} ${band.label}: ${band.count} (${sharePercent}%)`}
+                                                    >
+                                                        <div className="an-band-label">
+                                                            <span className="an-band-range">{band.band}</span>
+                                                            <span className="an-band-descriptor">
+                                                                {band.label}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="an-band-bar-track">
+                                                            {band.count > 0 && (
+                                                                <div
+                                                                    className="an-band-bar-fill"
+                                                                    style={{ width: `${Math.max(barPercent, 1.5)}%` }}
+                                                                />
+                                                            )}
+                                                        </div>
+
+                                                        <span className="an-band-count">
+                                                            <strong>{band.count}</strong>
+                                                            <span>{sharePercent}%</span>
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
 
+                            {/* SUBJECT PERFORMANCE */}
                             <div className="content-card an-panel">
-                                <div className="card-header">
-                                    <h3>Grade Distribution</h3>
+                                <div className="card-header an-card-header">
+                                    <div>
+                                        <h3>Subject Performance</h3>
+                                        <p className="an-card-subtitle">
+                                            Average and spread of final grades per subject, highest first
+                                        </p>
+                                    </div>
+
+                                    {gradeLevels.length > 1 && (
+                                        <label className="an-control">
+                                            Grade level
+                                            <select
+                                                className="school-year-select"
+                                                value={activeGradeLevel}
+                                                onChange={(e) => setSubjectGradeLevel(e.target.value)}
+                                            >
+                                                {gradeLevels.map((level) => (
+                                                    <option key={level} value={level}>
+                                                        Grade {level}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </label>
+                                    )}
                                 </div>
 
-                                <div className="an-distribution">
-                                    {analytics.grade_distribution.map((band) => {
-                                        const barPercent =
-                                            maxBandCount > 0 ? (band.count / maxBandCount) * 100 : 0;
-                                        const tone = BAND_TONE[band.band] || "outstanding";
+                                <div className="an-panel-body">
+                                    <SubjectRangeChart
+                                        subjects={visibleSubjects}
+                                        passingGrade={analytics.passing_grade}
+                                    />
 
-                                        return (
-                                            <div className={`an-band-row tone-${tone}`} key={band.band}>
-                                                <div className="an-band-label">
-                                                    <span className="an-band-range">{band.band}</span>
-                                                    <span className="an-band-descriptor">
-                                                        {band.label}
-                                                    </span>
-                                                </div>
-
-                                                <div className="an-band-bar-track">
-                                                    {band.count > 0 ? (
-                                                        <div
-                                                            className="an-band-bar-fill"
-                                                            style={{ width: `${Math.max(barPercent, 2)}%` }}
-                                                        />
-                                                    ) : (
-                                                        <div className="an-band-bar-empty" />
-                                                    )}
-                                                </div>
-
-                                                <span className="an-band-count">{band.count}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            <div className="content-card an-panel">
-                                <div className="card-header">
-                                    <h3>Section Performance</h3>
-                                </div>
-
-                                {analytics.section_performance.length === 0 ? (
-                                    <p className="an-empty-note">
-                                        No graded entries are linked to an assigned section yet.
-                                    </p>
-                                ) : (
-                                    <div className="an-table-wrap">
+                                    <div className="an-table-wrap an-table-after-chart">
                                         <table className="an-table">
                                             <thead>
                                                 <tr>
-                                                    <th>Section</th>
+                                                    <th>Subject</th>
                                                     <th>Grade Level</th>
-                                                    <th>Graded Entries</th>
-                                                    <th>Average Grade</th>
-                                                    <th>Pass Rate</th>
-                                                    <th>At-Risk</th>
+                                                    <th className="an-num">Graded Entries</th>
+                                                    <th className="an-num">Average Grade</th>
+                                                    <th className="an-num">Lowest</th>
+                                                    <th className="an-num">Highest</th>
+                                                    <th className="an-num">Pass Rate</th>
+                                                    <th className="an-num">At-Risk</th>
                                                 </tr>
                                             </thead>
 
                                             <tbody>
-                                                {analytics.section_performance.map((section) => (
+                                                {visibleSubjects.map((subject) => (
                                                     <tr
-                                                        key={section.section_id}
-                                                        className={section.at_risk_count > 0 ? "an-row-flagged" : undefined}
+                                                        key={subject.subject_id}
+                                                        className={subject.at_risk_count > 0 ? "an-row-flagged" : undefined}
                                                     >
-                                                        <td>{section.section_name}</td>
-                                                        <td>Grade {section.grade_level}</td>
-                                                        <td>{section.graded_entries}</td>
-                                                        <td className="an-cell-strong">
-                                                            {section.average_final_grade}
+                                                        <td>{subject.subject_name}</td>
+                                                        <td>Grade {subject.grade_level}</td>
+                                                        <td className="an-num">{subject.graded_entries}</td>
+                                                        <td className="an-num an-cell-strong">
+                                                            {subject.average_final_grade}
                                                         </td>
-                                                        <td>{section.pass_rate}%</td>
-                                                        <td>
-                                                            {section.at_risk_count > 0 ? (
+                                                        <td className="an-num">{subject.lowest_final_grade}</td>
+                                                        <td className="an-num">{subject.highest_final_grade}</td>
+                                                        <td className="an-num">{subject.pass_rate}%</td>
+                                                        <td className="an-num">
+                                                            {subject.at_risk_count > 0 ? (
                                                                 <span className="an-at-risk-pill">
-                                                                    {section.at_risk_count}
+                                                                    {subject.at_risk_count}
                                                                 </span>
                                                             ) : (
                                                                 "0"
@@ -411,53 +550,64 @@ function Analytics() {
                                             </tbody>
                                         </table>
                                     </div>
-                                )}
+                                </div>
                             </div>
 
+                            {/* SECTION PERFORMANCE */}
                             <div className="content-card an-panel">
-                                <div className="card-header">
-                                    <h3>Subject Performance</h3>
+                                <div className="card-header an-card-header">
+                                    <div>
+                                        <h3>Section Performance</h3>
+                                    </div>
                                 </div>
 
-                                <div className="an-table-wrap">
-                                    <table className="an-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Subject</th>
-                                                <th>Grade Level</th>
-                                                <th>Graded Entries</th>
-                                                <th>Average Grade</th>
-                                                <th>Pass Rate</th>
-                                                <th>At-Risk</th>
-                                            </tr>
-                                        </thead>
+                                <div className="an-panel-body">
+                                    {analytics.section_performance.length === 0 ? (
+                                        <p className="an-empty-note">
+                                            No graded entries are linked to an assigned section yet.
+                                        </p>
+                                    ) : (
+                                        <div className="an-table-wrap">
+                                            <table className="an-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Section</th>
+                                                        <th>Grade Level</th>
+                                                        <th className="an-num">Graded Entries</th>
+                                                        <th className="an-num">Average Grade</th>
+                                                        <th className="an-num">Pass Rate</th>
+                                                        <th className="an-num">At-Risk</th>
+                                                    </tr>
+                                                </thead>
 
-                                        <tbody>
-                                            {analytics.subject_performance.map((subject) => (
-                                                <tr
-                                                    key={subject.subject_id}
-                                                    className={subject.at_risk_count > 0 ? "an-row-flagged" : undefined}
-                                                >
-                                                    <td>{subject.subject_name}</td>
-                                                    <td>Grade {subject.grade_level}</td>
-                                                    <td>{subject.graded_entries}</td>
-                                                    <td className="an-cell-strong">
-                                                        {subject.average_final_grade}
-                                                    </td>
-                                                    <td>{subject.pass_rate}%</td>
-                                                    <td>
-                                                        {subject.at_risk_count > 0 ? (
-                                                            <span className="an-at-risk-pill">
-                                                                {subject.at_risk_count}
-                                                            </span>
-                                                        ) : (
-                                                            "0"
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                <tbody>
+                                                    {analytics.section_performance.map((section) => (
+                                                        <tr
+                                                            key={section.section_id}
+                                                            className={section.at_risk_count > 0 ? "an-row-flagged" : undefined}
+                                                        >
+                                                            <td>{section.section_name}</td>
+                                                            <td>Grade {section.grade_level}</td>
+                                                            <td className="an-num">{section.graded_entries}</td>
+                                                            <td className="an-num an-cell-strong">
+                                                                {section.average_final_grade}
+                                                            </td>
+                                                            <td className="an-num">{section.pass_rate}%</td>
+                                                            <td className="an-num">
+                                                                {section.at_risk_count > 0 ? (
+                                                                    <span className="an-at-risk-pill">
+                                                                        {section.at_risk_count}
+                                                                    </span>
+                                                                ) : (
+                                                                    "0"
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </>

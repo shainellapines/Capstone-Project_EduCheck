@@ -22,50 +22,59 @@
     z-index: 10;
 }
 
+/* Logo + name as one lockup, the logo's left edge in line with the nav
+   icons below it. */
 .sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 26px 24px 20px;
+    gap: 11px;
+    padding: 24px 26px 20px;
 }
 
-/* The official logo is navy on light, so its tile stays light paper in
-   both themes (like the SF10 sheet) instead of following the dark surface. */
 .brand-logo {
     width: 40px;
     height: 40px;
     flex-shrink: 0;
-    border-radius: var(--ec-radius);
-    background: var(--ec-paper);
-    border: 1px solid var(--ec-border);
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    object-fit: contain;
 }
 
-.brand-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+.brand-logo-dark,
+:root[data-theme="dark"] .brand-logo-light {
+    display: none;
+}
+
+:root[data-theme="dark"] .brand-logo-dark {
+    display: block;
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
 }
 
 .sidebar-brand h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 19px;
+    line-height: 22px;
+    font-weight: 700;
     font-family: var(--ec-font-heading);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    color: var(--ec-text);
 }
 
 .sidebar-brand span {
-    font-size: 12px;
+    font-size: 11.5px;
+    line-height: 14px;
+    font-weight: 500;
     color: var(--ec-text-muted);
     letter-spacing: 0.01em;
 }
 
 /* Role is plain text, the same for every role: no color-coded pill. */
 .role-badge {
-    margin: 0 24px 16px;
+    margin: 0 26px 16px;
     width: fit-content;
     display: flex;
     align-items: center;
@@ -186,8 +195,20 @@
 
 .dashboard-header p {
     margin: 0;
+    max-width: 72ch;
     color: var(--ec-text-muted);
     font-size: 14.5px;
+    line-height: 22px;
+}
+
+/* Small context line above a dashboard's title: role · signed-in user. */
+.dashboard-header .dashboard-eyebrow {
+    margin: 0 0 4px;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ec-link);
 }
 
 .school-year {
@@ -290,21 +311,6 @@
 
 .dashboard-content {
     padding: 32px 36px 40px;
-}
-
-.section-heading {
-    margin-bottom: 24px;
-}
-
-.section-heading h2 {
-    margin: 0 0 6px;
-    font-size: 21px;
-    color: var(--ec-slate-900);
-}
-
-.section-heading p {
-    margin: 0;
-    color: var(--ec-text-muted);
 }
 
 /* OVERVIEW */
@@ -508,6 +514,12 @@
     margin: 0 0 12px;
     color: var(--ec-text-muted);
     font-family: var(--ec-font-body);
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.attention-card p:last-child {
+    margin-bottom: 0;
 }
 
 .class-alert {
@@ -579,18 +591,27 @@
     min-width: 0;
 }
 
-.record-row strong,
-.record-row .record-details span {
+/* The row's details block (first child): name on top, a muted meta line
+   under it. Every dashboard's rows share this, wrapper class or not. */
+.record-row > :first-child > strong,
+.record-row > :first-child > span {
     display: block;
 }
 
-.record-row .record-details span {
+.record-row > :first-child > span {
     color: var(--ec-slate-500);
     margin-top: 6px;
     font-size: 14px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* LRNs in the mono face, like the SF10 sheet and the record tables. */
+.record-lrn {
+    font-family: var(--ec-font-mono);
+    font-size: 0.93em;
+    letter-spacing: 0.01em;
 }
 
 .record-status,

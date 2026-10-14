@@ -14,6 +14,7 @@ import {
 import "../../styles/Dashboard.css";
 import Sidebar from "../../components/Sidebar";
 import StatusBadge from "../../components/StatusBadge";
+import NextSteps from "../../components/NextSteps";
 import { API_URL } from "../../config";
 import { getDisplayName } from "../../utils/session";
 
@@ -37,6 +38,10 @@ function SubjectDashboard() {
     const [recordsLoading, setRecordsLoading] = useState(true);
     const [recordsError, setRecordsError] = useState("");
     const [showAllRecords, setShowAllRecords] = useState(false);
+
+    // The (subject, section, school year) pairs this teacher is assigned,
+    // for the Next steps panel. Optional: the panel hides without them.
+    const [assignments, setAssignments] = useState([]);
 
     const [summary, setSummary] = useState({
         total_uploaded: 0,
@@ -108,9 +113,28 @@ function SubjectDashboard() {
         }
     };
 
+    const fetchAssignments = async () => {
+        try {
+            const token = localStorage.getItem("educheck_token");
+            if (!token) return;
+
+            const response = await fetch(`${API_URL}/uploads/options`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            setAssignments(data.options || []);
+        } catch {
+            setAssignments([]);
+        }
+    };
+
     useEffect(() => {
         fetchMyRecords();
         fetchMyRecordSummary();
+        fetchAssignments();
     }, []);
 
     // records comes back sorted by upload_date DESC (see getMyClassRecords),
@@ -122,6 +146,88 @@ function SubjectDashboard() {
     const flaggedRecords = records.filter((record) =>
         NEEDS_ATTENTION_STATUSES.includes(record.status?.toLowerCase())
     );
+
+    // ---- Next steps: upload each assignment -> pass validation ----
+    // Only the newest school year the teacher is assigned in counts.
+    const currentSchoolYearId = Math.max(0, ...assignments.map((option) => option.school_year_id));
+    const currentAssignments = assignments
+        .filter((option) => option.school_year_id === currentSchoolYearId)
+        .map((option) => ({
+            ...option,
+            // records is newest-first, so find() returns the upload that counts.
+            latest: records.find(
+                (record) =>
+                    record.subject_id === option.subject_id &&
+                    record.section_id === option.section_id &&
+                    record.school_year_id === option.school_year_id
+            ),
+        }));
+
+    const assignmentLabel = (option) =>
+        `${option.subject_name} (Grade ${option.grade_level} · ${option.section_name})`;
+    const listAssignments = (list) => {
+        const names = list.map(assignmentLabel);
+        return names.length > 2 ? `${names.slice(0, 2).join(", ")} +${names.length - 2} more` : names.join(", ");
+    };
+
+    const notUploaded = currentAssignments.filter((option) => !option.latest);
+    const uploaded = currentAssignments.filter((option) => option.latest);
+    const validated = uploaded.filter((option) => option.latest.status === "Validated");
+    const needsFixing = uploaded.filter((option) =>
+        NEEDS_ATTENTION_STATUSES.includes(option.latest.status?.toLowerCase())
+    );
+    const inReview = uploaded.length - validated.length - needsFixing.length;
+
+    const nextSteps = [
+        {
+            key: "uploads",
+            title: "Upload your subjects",
+            state: notUploaded.length === 0 ? "done" : "active",
+            value: uploaded.length,
+            total: currentAssignments.length,
+            unit: "uploaded",
+            segments: [{ value: uploaded.length, tone: "done" }],
+            detail:
+                notUploaded.length === 0
+                    ? "Every assigned subject has an upload."
+                    : `Not uploaded: ${listAssignments(notUploaded)}.`,
+            action:
+                notUploaded.length > 0
+                    ? { label: "Upload e-Class Record", onClick: () => navigate("/class-record-upload") }
+                    : null,
+        },
+        {
+            key: "validation",
+            title: "Pass validation",
+            state:
+                currentAssignments.length > 0 && validated.length === currentAssignments.length
+                    ? "done"
+                    : needsFixing.length > 0
+                        ? "active"
+                        : "waiting",
+            value: validated.length,
+            total: currentAssignments.length,
+            unit: "validated",
+            segments: [
+                { value: validated.length, tone: "done" },
+                { value: needsFixing.length, tone: "warning" },
+                { value: inReview, tone: "pending" },
+            ],
+            detail:
+                needsFixing.length > 0
+                    ? `Fix and re-upload: ${listAssignments(needsFixing)}.`
+                    : validated.length === currentAssignments.length && currentAssignments.length > 0
+                        ? "Every upload passed. Your Adviser can consolidate them."
+                        : "Upload your subjects to have them checked.",
+            action:
+                needsFixing.length > 0
+                    ? {
+                        label: "View validation results",
+                        onClick: () => navigate(`/validation-results/${needsFixing[0].latest.class_record_id}`),
+                    }
+                    : null,
+        },
+    ];
 
     return (
         <div className="dashboard-layout">
@@ -135,12 +241,14 @@ function SubjectDashboard() {
                 <header className="dashboard-header">
 
                     <div>
-                        <h1>
-                            Dashboard
-                        </h1>
+                        <p className="dashboard-eyebrow">
+                            Subject Teacher · {getDisplayName(user)}
+                        </p>
+
+                        <h1>Dashboard</h1>
 
                         <p>
-                            Subject Teacher · {getDisplayName(user)}
+                            Manage your e-Class Record submissions and monitor validation status
                         </p>
                     </div>
 
@@ -153,14 +261,13 @@ function SubjectDashboard() {
 
                 <section className="dashboard-content">
 
-                    <div className="section-heading">
-                        <h2>Dashboard Overview</h2>
-
-                        <p>
-                            Manage your e-Class Record submissions and
-                            monitor validation status
-                        </p>
-                    </div>
+                    {/* NEXT STEPS */}
+                    {currentAssignments.length > 0 && (
+                        <NextSteps
+                            context={`School year ${currentAssignments[0].school_year}`}
+                            steps={nextSteps}
+                        />
+                    )}
 
                     {/* OVERVIEW CARDS */}
                     <div className="overview-grid">
@@ -354,7 +461,7 @@ function SubjectDashboard() {
                                         </strong>
 
                                         <span>
-                                            {record.school_year} • {record.file_name}
+                                            {record.school_year} · {record.file_name}
                                         </span>
 
                                         {record.status?.toLowerCase() === "needs revision" &&

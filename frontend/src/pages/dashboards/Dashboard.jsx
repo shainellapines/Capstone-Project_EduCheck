@@ -12,6 +12,7 @@ import {
 import "../../styles/Dashboard.css";
 import Sidebar from "../../components/Sidebar";
 import StatusBadge from "../../components/StatusBadge";
+import NextSteps from "../../components/NextSteps";
 import { getToken, getStoredUser, getDisplayName } from "../../utils/session";
 import { useCanUpload } from "../../utils/uploadAccess";
 import { API_URL } from "../../config";
@@ -45,6 +46,9 @@ function Dashboard() {
     const [loadingSchoolYears, setLoadingSchoolYears] = useState(true);
 
     const [consolidatedData, setConsolidatedData] = useState(null);
+    // Per-section subject progress (which subjects are missing or flagged)
+    // for the Next steps panel. Optional: the panel hides without it.
+    const [sectionProgress, setSectionProgress] = useState(null);
     const [loadingData, setLoadingData] = useState(false);
     const [error, setError] = useState("");
 
@@ -109,6 +113,17 @@ function Dashboard() {
                 }
 
                 setConsolidatedData(data);
+
+                // Best effort: a failure here only hides the Next steps panel.
+                try {
+                    const progressResponse = await fetch(
+                        `${API_URL}/consolidation/school-years/${selectedSchoolYearId}/sections`,
+                        { headers: authHeaders() }
+                    );
+                    setSectionProgress(progressResponse.ok ? await progressResponse.json() : null);
+                } catch {
+                    setSectionProgress(null);
+                }
             } catch (fetchError) {
                 setError(fetchError.message || "Failed to load dashboard data.");
                 setConsolidatedData(null);
@@ -146,6 +161,116 @@ function Dashboard() {
         .slice(0, 4);
 
     const isLoading = loadingSchoolYears || loadingData;
+
+    // ---- Next steps: uploads -> complete records -> submission ----
+    const sections = sectionProgress?.sections || [];
+    const sum = (pick) => sections.reduce((total, section) => total + pick(section), 0);
+
+    const subjectsExpected = sum((section) => section.subjects_expected);
+    const subjectsValidated = sum((section) => section.subjects_submitted);
+    const flaggedSubjects = sections.flatMap((section) => section.flagged_subjects || []);
+    const missingSubjects = sections.flatMap((section) => section.missing_subjects || []);
+    const subjectsInReview = Math.max(
+        subjectsExpected - subjectsValidated - flaggedSubjects.length - missingSubjects.length,
+        0
+    );
+
+    const enrolledCount = sum((section) => section.student_count) || students.length;
+    const statusCount = (status) => sum((section) => section.submission_status_counts?.[status] || 0);
+    const approvedCount = statusCount("Approved");
+    const pendingCount = statusCount("Pending Approval");
+    const returnedCount = statusCount("Rejected") + statusCount("Amendment Requested");
+
+    // Ready records not yet sent (or sent back): what "Submit" acts on.
+    const readyToSubmitCount = students.filter(
+        (student) =>
+            student.ready_for_submission &&
+            ["Not Submitted", "Rejected", "Amendment Requested"].includes(student.submission?.status)
+    ).length;
+
+    const listNames = (subjects) => {
+        const names = subjects.map((subject) => subject.subject_name);
+        return names.length > 3 ? `${names.slice(0, 3).join(", ")} +${names.length - 3} more` : names.join(", ");
+    };
+
+    const uploadDetail = [
+        missingSubjects.length > 0 && `Not uploaded: ${listNames(missingSubjects)}.`,
+        flaggedSubjects.length > 0 && `Needs fixing: ${listNames(flaggedSubjects)}.`,
+    ].filter(Boolean).join(" ");
+
+    const nextSteps = [
+        {
+            key: "uploads",
+            title: "Upload subjects",
+            state: subjectsExpected > 0 && subjectsValidated >= subjectsExpected ? "done" : "active",
+            value: subjectsValidated,
+            total: subjectsExpected,
+            unit: "subjects validated",
+            segments: [
+                { value: subjectsValidated, tone: "done" },
+                { value: flaggedSubjects.length, tone: "warning" },
+                { value: subjectsInReview, tone: "pending" },
+            ],
+            detail: uploadDetail || "Every subject is uploaded and passed validation.",
+            action:
+                missingSubjects.length > 0 || flaggedSubjects.length > 0
+                    ? canUpload
+                        ? { label: "Upload files", onClick: () => navigate("/class-record-upload") }
+                        : { label: "View section progress", onClick: () => navigate("/section-progress") }
+                    : null,
+        },
+        {
+            key: "records",
+            title: "Complete learner records",
+            state: enrolledCount > 0 && completeCount >= enrolledCount ? "done" : "active",
+            value: completeCount,
+            total: enrolledCount,
+            unit: "learners complete",
+            segments: [{ value: completeCount, tone: "done" }],
+            detail:
+                completeCount >= enrolledCount
+                    ? "Every learner has a grade in every subject."
+                    : `${enrolledCount - completeCount} learner${enrolledCount - completeCount === 1 ? " is" : "s are"} still missing a subject grade.`,
+            action:
+                completeCount < enrolledCount
+                    ? { label: "Review records", onClick: () => navigate("/consolidated-records") }
+                    : null,
+        },
+        {
+            key: "submission",
+            title: "Submit for approval",
+            state:
+                enrolledCount > 0 && approvedCount >= enrolledCount
+                    ? "done"
+                    : readyToSubmitCount > 0
+                        ? "active"
+                        : "waiting",
+            value: approvedCount,
+            total: enrolledCount,
+            unit: "approved",
+            segments: [
+                { value: approvedCount, tone: "done" },
+                { value: returnedCount, tone: "warning" },
+                { value: pendingCount, tone: "pending" },
+            ],
+            detail:
+                approvedCount >= enrolledCount && enrolledCount > 0
+                    ? "Every record is approved."
+                    : [
+                        readyToSubmitCount > 0 && `${readyToSubmitCount} ready to submit.`,
+                        pendingCount > 0 && `${pendingCount} waiting for the Administrator.`,
+                        returnedCount > 0 && `${returnedCount} returned for changes.`,
+                    ].filter(Boolean).join(" ") || "Complete the records above first.",
+            action:
+                readyToSubmitCount > 0
+                    ? { label: "Submit records", onClick: () => navigate("/consolidated-records") }
+                    : null,
+        },
+    ];
+
+    const sectionContext = sections
+        .map((section) => `Grade ${section.grade_level} · ${section.section_name}`)
+        .join(", ");
     const needsInterventionTotal = performanceCounts.at_risk + performanceCounts.needs_intervention;
 
     return (
@@ -160,12 +285,14 @@ function Dashboard() {
                 <header className="dashboard-header">
 
                     <div>
-                        <h1>
-                            Dashboard
-                        </h1>
+                        <p className="dashboard-eyebrow">
+                            Class Adviser · {getDisplayName(user)}
+                        </p>
+
+                        <h1>Dashboard</h1>
 
                         <p>
-                            Class Adviser · {getDisplayName(user)}
+                            Track your academic records and student performance
                         </p>
                     </div>
 
@@ -196,13 +323,6 @@ function Dashboard() {
 
                 <section className="dashboard-content">
 
-                    <div className="section-heading">
-                        <h2>Dashboard Overview</h2>
-                        <p>
-                            Track your academic records and student performance
-                        </p>
-                    </div>
-
                     {error && (
                         <div className="error-banner">
                             <AlertTriangle size={20} />
@@ -219,6 +339,10 @@ function Dashboard() {
 
                     {!isLoading && consolidatedData && (
                         <>
+                            {sections.length > 0 && (
+                                <NextSteps context={sectionContext} steps={nextSteps} />
+                            )}
+
                             {/* OVERVIEW CARDS */}
                             <div className="overview-grid">
 
@@ -380,7 +504,7 @@ function Dashboard() {
                                             </strong>
 
                                             <span>
-                                                {upload.teacher_name} •{" "}
+                                                {upload.teacher_name} ·{" "}
                                                 {new Date(upload.upload_date).toLocaleDateString()}
                                             </span>
                                         </div>

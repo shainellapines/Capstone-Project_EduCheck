@@ -29,8 +29,14 @@ const computeFinalGrade = (term1, term2, term3) => {
 // durable identity the system can later consolidate across subjects.
 // Learners without a valid 12-digit LRN are skipped — see the
 // MISSING_LRN / INVALID_LRN_FORMAT warnings from classRecordParser, which
-// already flag exactly these learners for the uploader to fix.
-const persistLearnerGradeRecords = async (dbClient, { classRecordId, parsedRecord, subject, schoolYear, sectionId }) => {
+// already flag exactly these learners for the uploader to fix. Learners in
+// `lockedLrns` (Approved or Pending Approval, see
+// rosterCheck.findLockedLearners) are skipped too, so their current grades
+// stay the ones that count.
+const persistLearnerGradeRecords = async (
+    dbClient,
+    { classRecordId, parsedRecord, subject, schoolYear, sectionId, lockedLrns = new Set() }
+) => {
     const termMaps = {
         term1: new Map(parsedRecord.terms.term1.map((record) => [getRecordKey(record), record])),
         term2: new Map(parsedRecord.terms.term2.map((record) => [getRecordKey(record), record])),
@@ -39,10 +45,16 @@ const persistLearnerGradeRecords = async (dbClient, { classRecordId, parsedRecor
 
     let persistedCount = 0;
     let skippedCount = 0;
+    let lockedCount = 0;
 
     for (const learner of parsedRecord.learners) {
         if (!isValidLrn(learner.lrn)) {
             skippedCount += 1;
+            continue;
+        }
+
+        if (lockedLrns.has(learner.lrn)) {
+            lockedCount += 1;
             continue;
         }
 
@@ -124,7 +136,7 @@ const persistLearnerGradeRecords = async (dbClient, { classRecordId, parsedRecor
         persistedCount += 1;
     }
 
-    return { persisted_count: persistedCount, skipped_no_lrn_count: skippedCount };
+    return { persisted_count: persistedCount, skipped_no_lrn_count: skippedCount, skipped_locked_count: lockedCount };
 };
 
 module.exports = {

@@ -142,12 +142,15 @@ function PrincipalDashboard() {
                 <header className="dashboard-header">
 
                     <div>
-                        <h1>
-                            Dashboard
-                        </h1>
+                        <p className="dashboard-eyebrow">
+                            Principal · {getDisplayName(user)}
+                        </p>
+
+                        <h1>Dashboard</h1>
 
                         <p>
-                            Principal · School-wide, view-only · {getDisplayName(user)}
+                            A read-only view of submission progress across every section —
+                            approvals, rejections, and uploads still needing attention.
                         </p>
                     </div>
 
@@ -177,15 +180,6 @@ function PrincipalDashboard() {
                 </header>
 
                 <section className="dashboard-content">
-
-                    <div className="section-heading">
-                        <h2>Overview</h2>
-
-                        <p>
-                            A read-only view of submission progress across every section —
-                            approvals, rejections, and uploads still needing attention.
-                        </p>
-                    </div>
 
                     {error && (
                         <div className="error-banner">

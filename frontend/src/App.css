@@ -5,10 +5,10 @@
    and now resolve to guide values, so every page picks up the new look
    without per-page changes. New CSS should use the guide names. */
 :root {
-    /* Typography: Public Sans for UI, Lexend for headings and key figures,
-       IBM Plex Mono for LRNs and grades, Source Serif 4 for the SF10 sheet. */
-    --font-sans: "Public Sans", system-ui, sans-serif;
-    --font-display: "Lexend", "Public Sans", system-ui, sans-serif;
+    /* Typography: Inter for UI, headings and key figures (same as the login
+       page), IBM Plex Mono for LRNs and grades, Source Serif 4 for the SF10 sheet. */
+    --font-sans: "Inter", system-ui, sans-serif;
+    --font-display: "Inter", system-ui, sans-serif;
     --font-serif: "Source Serif 4", Georgia, serif;
     --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
     --ec-font-sans: var(--font-sans);

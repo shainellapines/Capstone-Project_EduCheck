@@ -43,10 +43,11 @@
 // which sits below Grades 5-6 and is unrelated to any specific grade -
 // see grade: "spare" below.)
 //
-// STATUS (2026-10-04): generation is live for QUARTER_4 years only - see
-// services/sf10/generator.js (template adapter registry). Years graded in
-// 3 terms are kept as-is and reported as unsupported, never converted.
-// The original reasoning is preserved below.
+// STATUS (2026-10-13): generation is live for QUARTER_4 and TERM_3 years -
+// see services/sf10/generator.js. On the capstone adviser's direction, a
+// 3-term year keeps this form and uses only the first three rating
+// columns of its block, relabelled Term 1-3; terms are never converted
+// into quarters. The original reasoning is preserved below.
 //
 // BLOCKED: SF10 GENERATION CANNOT GO LIVE AGAINST THIS TEMPLATE YET.
 // This form grades in "Quarter 1-4" - it is DepEd's OLDER, 4-quarter-per-

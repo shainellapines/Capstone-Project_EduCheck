@@ -1,11 +1,12 @@
 /* Reuses Dashboard.css's shell classes (dashboard-layout, dashboard-main,
-   dashboard-header, dashboard-content, error-banner, success-banner) for
-   everything generic — this file only covers what's specific to the
-   upload page. */
+   dashboard-header, dashboard-content, error-banner) and StatusBadge.css
+   for everything generic — this file only covers the upload page: a
+   two-step form (subject tiles, then the file), its result summary, and
+   the guide beside it. */
 
 .cru-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr) 300px;
     align-items: start;
     gap: 24px;
     max-width: 1240px;
@@ -13,260 +14,622 @@
 
 .cru-card {
     background: var(--ec-surface);
-    border: 1px solid var(--ec-slate-200);
+    border: 1px solid var(--ec-border);
     border-radius: var(--ec-radius-md);
-    padding: 30px;
     box-shadow: var(--ec-shadow-xs);
-    margin-bottom: 28px;
+    overflow: hidden;
 }
 
-.cru-card-header {
+/* ---------- Steps ---------- */
+
+.cru-step {
+    padding: 26px 28px;
+}
+
+.cru-step + .cru-step {
+    border-top: 1px solid var(--ec-border);
+}
+
+.cru-step-head {
     display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 24px;
-}
-
-.cru-icon-badge {
-    width: 46px;
-    height: 46px;
-    border-radius: 10px;
-    background: var(--ec-primary-50);
-    color: var(--ec-primary-500);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.cru-card-header h2 {
-    margin: 0;
-    color: var(--ec-slate-900);
-    font-size: 18px;
-}
-
-.cru-card-header p {
-    margin: 4px 0 0;
-    color: var(--ec-slate-500);
-    font-size: 14px;
-}
-
-.cru-field {
-    margin-bottom: 20px;
-}
-
-.cru-field label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: var(--ec-slate-700);
-    font-size: 14px;
-}
-
-.cru-select-wrap {
-    position: relative;
-}
-
-.cru-field select {
-    width: 100%;
-    padding: 12px 40px 12px 14px;
-    border: 1.5px solid var(--ec-slate-300);
-    border-radius: var(--ec-radius-sm);
-    background: var(--ec-surface);
-    font-size: 14px;
-    font-family: var(--ec-font-body);
-    color: var(--ec-slate-700);
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.cru-field select:focus {
-    outline: none;
-    border-color: var(--ec-primary-500);
-    box-shadow: 0 0 0 3px var(--ec-primary-100);
-}
-
-.cru-field select:disabled {
-    background: var(--ec-slate-50);
-    cursor: not-allowed;
-}
-
-.cru-select-chevron {
-    position: absolute;
-    top: 50%;
-    right: 14px;
-    transform: translateY(-50%);
-    color: var(--ec-slate-400);
-    pointer-events: none;
-}
-
-.cru-no-assignments {
-    display: block;
-    margin-top: 8px;
-    color: var(--ec-warning);
-    font-size: 13px;
-}
-
-.cru-dropzone {
-    border: 1.5px dashed var(--ec-slate-300);
-    border-radius: var(--ec-radius-md);
-    padding: 36px 24px;
-    text-align: center;
-    margin-bottom: 20px;
-    background: var(--ec-slate-50);
-    transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.cru-dropzone.drag-active {
-    border-color: var(--ec-primary-500);
-    border-style: solid;
-    background: var(--ec-primary-50);
-}
-
-.cru-dropzone-icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto;
-    border-radius: 50%;
-    background: var(--ec-primary-100);
-    color: var(--ec-primary-600);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cru-dropzone h3 {
-    margin: 16px 0 6px;
-    color: var(--ec-slate-700);
-    font-size: 16px;
-}
-
-.cru-dropzone p {
-    color: var(--ec-text-muted);
-    font-size: 14px;
-    margin: 0 0 10px;
-}
-
-.cru-dropzone-hint {
-    display: inline-block;
+    align-items: flex-start;
+    gap: 12px;
     margin-bottom: 18px;
+}
+
+.cru-step-head > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.cru-step-head h2 {
+    margin: 1px 0 0;
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 600;
+    color: var(--ec-text);
+}
+
+.cru-step-head p {
+    margin: 2px 0 0;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--ec-text-muted);
+}
+
+.cru-step-badge {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    margin-top: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--ec-border-strong);
+    color: var(--ec-text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    transition: background var(--ec-duration) ease-out, border-color var(--ec-duration) ease-out;
+}
+
+.cru-step-badge.is-done {
+    background: var(--ec-action);
+    border-color: var(--ec-action);
+    color: var(--ec-on-action);
+}
+
+.cru-chip {
+    flex: none;
+    align-self: center;
     padding: 3px 10px;
     border-radius: var(--ec-radius-pill);
-    background: var(--ec-surface);
-    border: 1px solid var(--ec-slate-200);
-    color: var(--ec-slate-500);
-    font-size: 11.5px;
+    background: var(--ec-surface-sunken);
+    border: 1px solid var(--ec-border);
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    color: var(--ec-text-muted);
+    white-space: nowrap;
 }
+
+/* ---------- Subject tiles ---------- */
+
+.cru-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.cru-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-height: 86px;
+    padding: 12px 36px 12px 14px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    color: var(--ec-text);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color var(--ec-duration) ease-out, background var(--ec-duration) ease-out,
+        box-shadow var(--ec-duration) ease-out;
+}
+
+.cru-tile:hover:not(:disabled) {
+    border-color: var(--ec-border-strong);
+    background: var(--ec-hover);
+}
+
+.cru-tile:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
+}
+
+.cru-tile.is-selected {
+    border-color: var(--ec-action);
+    background: var(--ec-selected);
+    box-shadow: inset 0 0 0 1px var(--ec-action);
+}
+
+.cru-tile:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.cru-tile strong {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+}
+
+.cru-tile-meta {
+    font-size: 12.5px;
+    line-height: 18px;
+    color: var(--ec-text-muted);
+}
+
+.cru-tile-foot {
+    margin-top: auto;
+    padding-top: 8px;
+    font-size: 11.5px;
+    line-height: 14px;
+    color: var(--ec-text-muted);
+}
+
+.cru-tile-check {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ec-border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ec-on-action);
+}
+
+.cru-tile.is-selected .cru-tile-check {
+    border-color: var(--ec-action);
+    background: var(--ec-action);
+}
+
+.cru-tile.is-skeleton {
+    cursor: default;
+    background: var(--ec-surface-sunken);
+    border-color: transparent;
+    animation: cru-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cru-pulse {
+    50% { opacity: 0.55; }
+}
+
+.cru-empty {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: var(--ec-radius);
+    background: var(--ec-status-revision-bg, var(--ec-warning-bg));
+    color: var(--ec-text);
+    font-size: 13.5px;
+    line-height: 20px;
+}
+
+.cru-empty svg {
+    flex: none;
+    margin-top: 1px;
+    color: var(--ec-severity-warning-fg);
+}
+
+/* ---------- File ---------- */
 
 .cru-file-input {
     display: none;
 }
 
-.cru-browse-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 8px;
-    background: var(--ec-primary-500);
-    color: var(--ec-on-action);
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.cru-browse-button:hover {
-    background: var(--ec-primary-600);
-}
-
-.cru-browse-button.disabled {
-    background: var(--ec-slate-300);
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.cru-selected-file {
+.cru-dropzone {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 15px;
-    background: var(--ec-slate-50);
-    border: 1px solid var(--ec-slate-200);
-    border-radius: 8px;
-    margin-bottom: 20px;
+    gap: 4px;
+    padding: 30px 24px;
+    border: 1.5px dashed var(--ec-border-strong);
+    border-radius: var(--ec-radius-md);
+    background: var(--ec-surface-sunken);
+    text-align: center;
+    cursor: pointer;
+    transition: border-color var(--ec-duration) ease-out, background var(--ec-duration) ease-out;
 }
 
-.cru-selected-file .file-size {
-    font-size: 13px;
-    color: var(--ec-slate-500);
-    margin-top: 3px;
+.cru-dropzone:hover {
+    border-color: var(--ec-action);
 }
 
-.cru-submit-button {
+.cru-dropzone:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
+}
+
+.cru-dropzone.drag-active {
+    border-style: solid;
+    border-color: var(--ec-action);
+    background: var(--ec-selected);
+}
+
+.cru-dropzone-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 8px;
-    background: var(--ec-primary-500);
-    color: var(--ec-on-action);
-    font-size: 15px;
+    background: var(--ec-surface);
+    border: 1px solid var(--ec-border);
+    color: var(--ec-link);
+}
+
+.cru-dropzone-title {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: var(--ec-text);
+}
+
+.cru-dropzone-title span {
+    color: var(--ec-link);
     font-weight: 600;
-    font-family: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.cru-dropzone-hint {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ec-text-muted);
+}
+
+.cru-file {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px 12px 14px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius-md);
+    background: var(--ec-surface);
+}
+
+.cru-file-icon {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--ec-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ec-status-success-bg);
+    color: var(--ec-status-success-fg);
+}
+
+.cru-file-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.cru-file-text strong {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--ec-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cru-file-text span {
+    font-size: 12.5px;
+    color: var(--ec-text-muted);
+}
+
+.cru-icon-button {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: var(--ec-radius);
+    background: transparent;
+    color: var(--ec-text-muted);
     cursor: pointer;
-    transition: background 0.15s ease;
 }
 
-.cru-submit-button:hover:not(:disabled) {
-    background: var(--ec-primary-600);
-    box-shadow: var(--ec-shadow-primary);
+.cru-icon-button:hover:not(:disabled) {
+    background: var(--ec-hover);
+    color: var(--ec-text);
 }
 
-.cru-submit-button:disabled {
-    background: var(--ec-slate-200);
-    color: var(--ec-slate-500);
+.cru-error {
+    margin: 0 28px 20px;
+}
+
+/* ---------- Footer + buttons ---------- */
+
+.cru-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 28px;
+    border-top: 1px solid var(--ec-border);
+    background: var(--ec-surface-sunken);
+}
+
+.cru-footer-summary {
+    margin: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--ec-text-muted);
+}
+
+.cru-footer-summary strong {
+    font-size: 14px;
+    color: var(--ec-text);
+}
+
+.cru-button {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 18px;
+    border: 1px solid transparent;
+    border-radius: var(--ec-radius);
+    font: 600 14px/20px var(--ec-font-sans);
+    cursor: pointer;
+    transition: background var(--ec-duration) ease-out, border-color var(--ec-duration) ease-out;
+}
+
+.cru-button:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
+}
+
+.cru-button.primary {
+    background: var(--ec-action);
+    color: var(--ec-on-action);
+}
+
+.cru-button.primary:hover:not(:disabled) {
+    background: var(--ec-action-hover);
+}
+
+/* Disabled stays recognisably the primary action, just quieter. */
+.cru-button.primary:disabled {
+    opacity: 0.45;
     cursor: not-allowed;
 }
 
-/* GUIDE PANEL */
+.cru-button.secondary {
+    background: var(--ec-surface);
+    border-color: var(--ec-border-strong);
+    color: var(--ec-text);
+}
 
-.cru-guide {
+.cru-button.secondary:hover {
+    background: var(--ec-hover);
+}
+
+.cru-button.ghost {
+    height: 32px;
+    padding: 0 12px;
+    background: transparent;
+    border-color: var(--ec-border);
+    color: var(--ec-text);
+    font-size: 13px;
+}
+
+.cru-button.ghost:hover:not(:disabled) {
+    background: var(--ec-hover);
+}
+
+/* ---------- Result ---------- */
+
+.cru-result-head {
+    display: flex;
+    gap: 14px;
+    padding: 26px 28px 22px;
+}
+
+.cru-result-icon {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.is-ready .cru-result-icon {
+    background: var(--ec-status-success-bg);
+    color: var(--ec-status-success-fg);
+}
+
+.needs-fixes .cru-result-icon {
+    background: var(--ec-severity-warning-bg);
+    color: var(--ec-severity-warning-fg);
+}
+
+.cru-result-head h2 {
+    margin: 2px 0 0;
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 600;
+    color: var(--ec-text);
+}
+
+.cru-result-head p {
+    margin: 4px 0 0;
+    max-width: 60ch;
+    font-size: 13.5px;
+    line-height: 20px;
+    color: var(--ec-text-muted);
+}
+
+.cru-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px 20px;
+    margin: 0;
+    padding: 18px 28px;
+    border-top: 1px solid var(--ec-border);
+}
+
+.cru-summary dt {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ec-text-muted);
+}
+
+.cru-summary dd {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: var(--ec-text);
+}
+
+.cru-summary-wide {
+    grid-column: 1 / -1;
+}
+
+.cru-summary-file {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.cru-summary-file svg {
+    flex: none;
+    color: var(--ec-status-success-fg);
+}
+
+.cru-summary-file span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cru-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    margin: 0 28px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-border);
+    overflow: hidden;
+}
+
+.cru-stat {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 4px;
+    padding: 12px 14px;
+    background: var(--ec-surface);
+}
+
+.cru-stat span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ec-text-muted);
+}
+
+.cru-stat strong {
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 600;
+    color: var(--ec-text);
+}
+
+.cru-stat.is-error strong {
+    color: var(--ec-status-danger-fg);
+}
+
+.cru-stat.is-warning strong {
+    color: var(--ec-severity-warning-fg);
+}
+
+.cru-note {
+    margin: 12px 28px 0;
+    font-size: 13px;
+    color: var(--ec-text-muted);
+}
+
+.cru-callout {
+    display: flex;
+    gap: 10px;
+    margin: 16px 28px 0;
+    padding: 12px 14px;
+    border: 1px solid var(--ec-border);
+    border-left: 3px solid var(--ec-severity-warning-fg);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    font-size: 13.5px;
+    line-height: 20px;
+    color: var(--ec-text);
+}
+
+.cru-callout svg {
+    flex: none;
+    margin-top: 1px;
+    color: var(--ec-severity-warning-fg);
+}
+
+.cru-callout ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+    color: var(--ec-text-muted);
+}
+
+.cru-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 24px;
+    padding: 16px 28px;
+    border-top: 1px solid var(--ec-border);
+    background: var(--ec-surface-sunken);
+}
+
+/* ---------- Guide ---------- */
+
+.cru-guide {
     position: sticky;
     top: 24px;
 }
 
 .cru-guide-card {
-    background: var(--ec-surface);
-    border: 1px solid var(--ec-slate-200);
-    border-radius: var(--ec-radius-md);
     padding: 22px;
+    background: var(--ec-surface);
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius-md);
     box-shadow: var(--ec-shadow-xs);
 }
 
 .cru-guide-card h3 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0 0 16px;
-    font-size: 14.5px;
-    color: var(--ec-slate-900);
+    margin: 0 0 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ec-text-muted);
 }
 
-.cru-guide-card h3 svg {
-    color: var(--ec-primary-500);
+.cru-guide-divider {
+    height: 1px;
+    margin: 20px 0;
+    background: var(--ec-border);
 }
 
+/* A vertical stepper: numbers joined by a hairline. */
 .cru-steps {
     list-style: none;
     margin: 0;
@@ -277,38 +640,49 @@
 }
 
 .cru-steps li {
+    position: relative;
     display: flex;
     gap: 12px;
     align-items: flex-start;
 }
 
+.cru-steps li:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 11px;
+    top: 26px;
+    bottom: -14px;
+    width: 1px;
+    background: var(--ec-border);
+}
+
 .cru-step-number {
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 23px;
+    height: 23px;
     border-radius: 50%;
-    background: var(--ec-primary-50);
-    color: var(--ec-primary-600);
+    border: 1px solid var(--ec-border-strong);
+    background: var(--ec-surface);
+    color: var(--ec-text);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
-    font-family: var(--ec-font-heading);
 }
 
 .cru-steps strong {
     display: block;
     font-size: 13.5px;
-    color: var(--ec-slate-800);
-    margin-bottom: 2px;
+    line-height: 20px;
+    color: var(--ec-text);
 }
 
 .cru-steps p {
-    margin: 0;
+    margin: 2px 0 0;
     font-size: 12.5px;
+    line-height: 18px;
     color: var(--ec-text-muted);
-    line-height: 1.5;
 }
 
 .cru-checklist {
@@ -325,19 +699,21 @@
     align-items: flex-start;
     gap: 10px;
     font-size: 13px;
-    color: var(--ec-slate-600);
-    line-height: 1.45;
+    line-height: 19px;
+    color: var(--ec-text);
 }
 
 .cru-checklist svg {
     flex-shrink: 0;
-    margin-top: 1px;
-    color: var(--ec-success);
+    margin-top: 2px;
+    color: var(--ec-status-success-fg);
 }
 
-@media (max-width: 950px) {
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1050px) {
     .cru-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .cru-guide {
@@ -345,93 +721,45 @@
     }
 }
 
-.cru-result-block {
-    background: var(--ec-slate-50);
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 24px;
-}
-
-.cru-result-block h3 {
-    margin: 0 0 14px;
-    color: var(--ec-slate-900);
-    font-size: 16px;
-}
-
-.cru-info-row {
-    display: flex;
-    gap: 8px;
-    padding: 8px 0;
-    border-top: 1px solid var(--ec-slate-200);
-    font-size: 14px;
-    color: var(--ec-slate-600);
-}
-
-.cru-info-row:first-of-type {
-    border-top: none;
-}
-
-.cru-info-row strong {
-    color: var(--ec-slate-900);
-}
-
-.cru-view-results-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    background: var(--ec-primary-500);
-    color: var(--ec-on-action);
-    font-weight: 600;
-    font-size: 14px;
-    font-family: inherit;
-    cursor: pointer;
-    margin-top: 14px;
-    transition: background 0.15s ease;
-}
-
-.cru-view-results-button:hover {
-    background: var(--ec-primary-600);
-}
-
-.cru-result-title {
-    margin-top: 0;
-    color: var(--ec-slate-900);
-}
-
-.cru-preview-scroll {
-    overflow-x: auto;
-}
-
-.cru-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.cru-table th {
-    text-align: left;
-    padding: 10px;
-    border-bottom: 1px solid var(--ec-slate-200);
-    background: var(--ec-slate-50);
-    font-size: 13px;
-    color: var(--ec-slate-600);
-}
-
-.cru-table td {
-    padding: 10px;
-    border-bottom: 1px solid var(--ec-slate-100);
-    font-size: 14px;
-    color: var(--ec-slate-700);
-}
-
 @media (max-width: 700px) {
-    .cru-card {
-        padding: 20px;
+    .cru-step,
+    .cru-result-head {
+        padding-left: 18px;
+        padding-right: 18px;
     }
-}
 
-.cru-integrity-warnings {
-    border-left: 3px solid var(--ec-warning);
+    .cru-footer,
+    .cru-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .cru-footer .cru-button,
+    .cru-actions .cru-button {
+        width: 100%;
+    }
+
+    .cru-summary,
+    .cru-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cru-summary {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .cru-stats,
+    .cru-callout,
+    .cru-note {
+        margin-left: 18px;
+        margin-right: 18px;
+    }
+
+    .cru-error {
+        margin-left: 18px;
+        margin-right: 18px;
+    }
 }

@@ -9,8 +9,29 @@ const { buildCumulativeRecord, evaluateReadiness } = require("./cumulativeRecord
 // ==========================================
 // Each adapter maps the canonical cumulative record onto one official
 // SF10-ES edition and declares which grading schemes that edition prints.
-// When DepEd releases a 3-term SF10, add an adapter declaring TERM_3 and
-// make it the active one - nothing else changes.
+// When DepEd releases a 3-term SF10, add an adapter for it and make it the
+// active one - nothing else changes.
+//
+// 3-term years (per the capstone adviser): the form is kept and that year's
+// block uses only three of its four rating columns, relabelled Term 1-3.
+// The term grades are printed as recorded; nothing is converted into
+// quarters. 4-quarter years in the same form are untouched.
+
+// Every grade block prints "Quarterly Rating" two rows above its first
+// subject row, and the column labels 1-4 on the row just above it.
+const ratingHeaderRows = (block) => {
+    const firstSubjectRow = Math.min(...Object.values(block.subjectRows));
+    return { titleRow: firstSubjectRow - 2, labelRow: firstSubjectRow - 1 };
+};
+
+const relabelForTerms = (template, sheetName, block) => {
+    const { titleRow, labelRow } = ratingHeaderRows(block);
+    const [first] = block.columns.quarters;
+    template.set(sheetName, `${first}${titleRow}`, "Term Rating");
+    ["T1", "T2", "T3", "–"].forEach((label, index) =>
+        template.set(sheetName, `${block.columns.quarters[index]}${labelRow}`, label)
+    );
+};
 
 const formatBirthdate = (value) => {
     if (!value) return null;
@@ -65,9 +86,9 @@ const writeHeader = (template, sheetName, header, year) => {
 
 const quarter4Adapter = {
     id: "sf10-es-revised-2025",
-    name: "SF10-ES (Revised 2025, DO 10 s. 2024) - Quarters 1-4",
+    name: "SF10-ES (Revised 2025, DO 10 s. 2024)",
     file: path.join(__dirname, "templates/sf10-es-revised-2025.xlsx"),
-    supportedSchemes: ["QUARTER_4"],
+    supportedSchemes: ["QUARTER_4", "TERM_3"],
 
     fill: async (record, readiness) => {
         const template = await loadTemplate(quarter4Adapter.file);
@@ -91,11 +112,15 @@ const quarter4Adapter = {
 
                 writeHeader(template, sheetName, block.header, year);
 
+                const terms = year.grading_scheme === "TERM_3";
+                if (terms) relabelForTerms(template, sheetName, block);
+                const ratingColumns = terms ? block.columns.quarters.slice(0, 3) : block.columns.quarters;
+
                 year.subjects.forEach((subject) => {
                     const row = block.subjectRows[subject.subject_key];
                     if (!row) return;
 
-                    block.columns.quarters.forEach((column, index) =>
+                    ratingColumns.forEach((column, index) =>
                         template.set(sheetName, `${column}${row}`, subject.ratings[index])
                     );
                     template.set(sheetName, `${block.columns.final}${row}`, subject.final_rating);

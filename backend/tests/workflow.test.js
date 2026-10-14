@@ -87,11 +87,29 @@ describe("Submission workflow, snapshot and re-upload guard", () => {
         assert.equal((await submit("adviser_a")).status, 409);
     });
 
-    it("WF-06 re-uploading over an Approved learner is blocked (409)", async () => {
-        const before = (await t.pool.query("SELECT COUNT(*) FROM class_records")).rows[0].count;
+    it("WF-06 a re-upload saves the rest of the class but leaves the Approved learner untouched", async () => {
         const res = await reupload();
+        assert.equal(res.status, 201, JSON.stringify(res.body));
+        assert.equal(res.body.grade_records.skipped_locked_count, 1);
+        const warning = res.body.integrity_warnings.find((w) => w.code === "LOCKED_LEARNERS_SKIPPED");
+        assert.ok(warning, "the teacher is told who was skipped");
+        assert.deepEqual(warning.approved_lrns, [lrn]);
+
+        const saved = await t.pool.query("SELECT lrn FROM grade_records WHERE class_record_id=$1 ORDER BY lrn", [
+            res.body.class_record.class_record_id,
+        ]);
+        assert.deepEqual(
+            saved.rows.map((row) => row.lrn),
+            ["888800000002", "888800000003"]
+        );
+    });
+
+    it("WF-06b a file in which every learner is locked is refused (409), nothing saved", async () => {
+        const before = (await t.pool.query("SELECT COUNT(*) FROM class_records")).rows[0].count;
+        const { file } = buildEcr({ lrnFor: lrnGenerator("8888"), limit: 1 });
+        const res = await t.upload({ token: t.tokens.adviser_a, subjectId: t.ids.english4, sectionId: t.ids.mabini, file });
         assert.equal(res.status, 409);
-        assert.match(res.body.message, /Approved/);
+        assert.match(res.body.message, /Every learner in this file is locked/);
         assert.equal((await t.pool.query("SELECT COUNT(*) FROM class_records")).rows[0].count, before);
     });
 

@@ -3,7 +3,7 @@ const path = require("path");
 const { parseClassRecord } = require("../services/classRecord/classRecordParser");
 const { validateClassRecord } = require("../services/classRecord/classRecordValidator");
 const { persistLearnerGradeRecords } = require("../services/classRecord/gradeRecordPersistence");
-const { compareHeader, checkHeaderSubject, checkGradeLevel, checkRoster, checkApprovedLearners } = require("../services/classRecord/rosterCheck");
+const { compareHeader, checkHeaderSubject, checkGradeLevel, checkRoster, findLockedLearners } = require("../services/classRecord/rosterCheck");
 const pool = require("../db");
 
 const removeUploadedFile = (filePath) => {
@@ -78,8 +78,18 @@ const getUploadOptions = async (req, res) => {
             [teacherId]
         );
 
+        // Both paths can name the same slot (a subject row left over in a
+        // section later made Self-Contained); list each slot once.
+        const seen = new Set();
+        const options = [...subjectTeacherOptions.rows, ...adviserOptions.rows].filter((option) => {
+            const key = `${option.section_id}:${option.subject_id}:${option.school_year_id}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+
         res.json({
-            options: [...subjectTeacherOptions.rows, ...adviserOptions.rows],
+            options,
             school_years: schoolYearsResult.rows
         });
 
@@ -177,6 +187,7 @@ const getMyClassRecords = async (req, res) => {
                 cr.class_record_id,
                 cr.teacher_id,
                 cr.subject_id,
+                cr.section_id,
                 cr.school_year_id,
                 cr.upload_date,
                 cr.file_name,
@@ -633,6 +644,25 @@ const uploadClassRecord = async (req, res) => {
             });
         }
 
+        // Two learners sharing one LRN would both be saved under it, and the
+        // consolidated record would then pick one learner's grades for the
+        // other. The parser reports it; here it stops the upload.
+        const duplicateLrns = (parsedRecord.validation.warnings || []).filter(
+            (warning) => warning.type === "DUPLICATE_LRN"
+        );
+
+        if (duplicateLrns.length > 0) {
+            removeUploadedFile(file.path);
+
+            return res.status(422).json({
+                message:
+                    `The LRN sheet gives the same LRN to more than one learner: ` +
+                    duplicateLrns.map((warning) => warning.message).join(" ") +
+                    " Correct the LRN sheet and upload again.",
+                duplicate_lrns: duplicateLrns,
+            });
+        }
+
         const subjectError = checkHeaderSubject({ header: parsedRecord.header, subject });
 
         if (subjectError) {
@@ -641,15 +671,15 @@ const uploadClassRecord = async (req, res) => {
             return res.status(subjectError.status).json(subjectError);
         }
 
-        const approvedError = await checkApprovedLearners({
+        const locked = await findLockedLearners({
             parsedRecord,
             schoolYearId: schoolYear.school_year_id,
         });
 
-        if (approvedError) {
+        if (locked.error) {
             removeUploadedFile(file.path);
 
-            return res.status(approvedError.status).json(approvedError);
+            return res.status(locked.error.status).json(locked.error);
         }
 
         const rosterCheck = await checkRoster({
@@ -667,6 +697,7 @@ const uploadClassRecord = async (req, res) => {
         const integrityWarnings = [
             ...compareHeader({ header: parsedRecord.header, section, subject, schoolYear }),
             ...rosterCheck.warnings,
+            ...(locked.warning ? [locked.warning] : []),
         ];
 
         const recordStatus = validationResult.ready_for_submission
@@ -767,6 +798,7 @@ const uploadClassRecord = async (req, res) => {
                 subject,
                 schoolYear,
                 sectionId: section.section_id,
+                lockedLrns: locked.lockedLrns,
             });
 
             // SPMP M-02: tell the uploader when rule-based validation flagged
@@ -851,6 +883,7 @@ const uploadClassRecord = async (req, res) => {
             grade_records: {
                 persisted_count: gradeRecordSummary.persisted_count,
                 skipped_no_lrn_count: gradeRecordSummary.skipped_no_lrn_count,
+                skipped_locked_count: gradeRecordSummary.skipped_locked_count,
             },
 
             integrity_warnings: integrityWarnings,

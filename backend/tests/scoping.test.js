@@ -113,6 +113,15 @@ describe("Adviser read scoping (CON-06, ANA-02)", () => {
         );
         assert.equal(res.body.sections[0].student_count, 5);
 
+        // Names behind the counts, for the dashboard's Next steps panel.
+        const section = res.body.sections[0];
+        assert.equal(section.missing_subjects.length, section.subjects_not_started);
+        assert.equal(
+            section.flagged_subjects.length,
+            section.subjects_needs_revision + section.subjects_needs_attention
+        );
+        assert.ok(section.missing_subjects.every((subject) => subject.subject_id && subject.subject_name));
+
         const admin = await t.request("GET", `/api/consolidation/school-years/${sy}/sections`, {
             token: t.tokens.admin,
         });
@@ -129,6 +138,24 @@ describe("Adviser read scoping (CON-06, ANA-02)", () => {
             adviser.body.section_performance.map((s) => s.section_id),
             [t.ids.mabini]
         );
+    });
+
+    it("analytics returns a three-term trend and each subject's grade range", async () => {
+        const res = await t.request("GET", `/api/analytics/school-years/${sy}`, { token: t.tokens.admin });
+        assert.equal(res.status, 200);
+
+        const isAverage = (value) => value === null || (value >= 0 && value <= 100);
+
+        assert.deepEqual(res.body.term_trend.map((point) => point.term), ["Term 1", "Term 2", "Term 3"]);
+        assert.ok(res.body.term_trend.every((point) => isAverage(point.average)));
+
+        assert.ok(res.body.subject_performance.length > 0);
+        res.body.subject_performance.forEach((subject) => {
+            assert.ok(subject.lowest_final_grade <= subject.average_final_grade);
+            assert.ok(subject.average_final_grade <= subject.highest_final_grade);
+            assert.equal(subject.term_trend.length, 3);
+            assert.ok(subject.term_trend.every((point) => isAverage(point.average)));
+        });
     });
 
     it("repository search only returns the Adviser's own learners", async () => {

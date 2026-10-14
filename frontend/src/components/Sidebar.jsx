@@ -20,6 +20,7 @@ import {
 
 import "../styles/Dashboard.css";
 import logo from "../assets/educheck-logo.png";
+import logoOnDark from "../assets/educheck-logo-white.png";
 import { getStoredUser, getToken, clearSession } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
 import { API_URL } from "../config";
@@ -132,11 +133,11 @@ function Sidebar({ activeKey }) {
         <aside className="sidebar">
 
             <div className="sidebar-brand">
-                <div className="brand-logo">
-                    <img src={logo} alt="EduCheck logo" />
-                </div>
+                {/* Navy mark on the light theme, white mark on the dark one */}
+                <img className="brand-logo brand-logo-light" src={logo} alt="" width="40" height="40" />
+                <img className="brand-logo brand-logo-dark" src={logoOnDark} alt="" width="40" height="40" />
 
-                <div>
+                <div className="brand-text">
                     <h2>EduCheck</h2>
                     <span>Academic Records</span>
                 </div>

@@ -2,6 +2,14 @@ const pool = require("../db");
 const { recordAuditLog } = require("../utils/auditLog");
 const { checkGradeLevel } = require("../services/classRecord/rosterCheck");
 
+// A Self-Contained section's Class Adviser teaches every subject of its
+// grade level (uploadController.getUploadOptions grants them all), so a
+// subject there is never assigned on its own - not to the Adviser, which
+// would list it twice, and not to anyone else, which would let two
+// teachers upload the same subject.
+const selfContainedSubjectMessage = (sectionName) =>
+    `${sectionName} is Self-Contained: its Class Adviser teaches every subject, so subjects cannot be assigned separately. Assign the Class Adviser only.`;
+
 // GET all assignments (admin view - joined with readable names)
 const getAssignments = async (req, res) => {
     try {
@@ -126,12 +134,16 @@ const createAssignment = async (req, res) => {
             const levels = await pool.query(
                 `
                 SELECT sub.subject_name, sub.grade_level AS subject_grade,
-                       sec.section_name, sec.grade_level AS section_grade
+                       sec.section_name, sec.grade_level AS section_grade, sec.staffing_mode
                 FROM subjects sub, sections sec
                 WHERE sub.subject_id = $1 AND sec.section_id = $2
                 `,
                 [subject_id, section_id]
             );
+
+            if (levels.rows[0] && levels.rows[0].staffing_mode === "Self-Contained") {
+                return res.status(409).json({ message: selfContainedSubjectMessage(levels.rows[0].section_name) });
+            }
 
             const mismatch = levels.rows[0] ? checkGradeLevel({
                 subject: { subject_name: levels.rows[0].subject_name, grade_level: levels.rows[0].subject_grade },
@@ -225,12 +237,16 @@ const createAssignmentsBatch = async (req, res) => {
             [teacher_id]
         );
         const section = await dbClient.query(
-            `SELECT section_name, grade_level FROM sections WHERE section_id = $1`,
+            `SELECT section_name, grade_level, staffing_mode FROM sections WHERE section_id = $1`,
             [section_id]
         );
 
         if (teacher.rows.length === 0 || section.rows.length === 0) {
             return res.status(400).json({ message: "The selected teacher or section does not exist." });
+        }
+
+        if (section.rows[0].staffing_mode === "Self-Contained" && subjectIds.length > 0) {
+            return res.status(409).json({ message: selfContainedSubjectMessage(section.rows[0].section_name) });
         }
 
         if (class_adviser && teacher.rows[0].role !== "adviser") {

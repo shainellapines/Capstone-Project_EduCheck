@@ -154,15 +154,33 @@ const attachCompleteness = async (students, gradeLevels) => {
         const subjectsExpected = expectedByGradeLevel.get(student.grade_level) ?? null;
         const subjectsRecorded = student.subjects.length;
         const allSubjectsGraded = student.subjects.every((subject) => subject.final_grade !== null);
+        const allSubjectsSubmitted = subjectsExpected !== null ? subjectsRecorded >= subjectsExpected : null;
+        const subjectsNotReady = student.subjects
+            .map((subject) => ({ subject_name: subject.subject_name, reason: subjectNotReadyReason(subject) }))
+            .filter((subject) => subject.reason);
 
         return {
             ...student,
             subjects_expected: subjectsExpected,
             subjects_recorded: subjectsRecorded,
-            all_subjects_submitted: subjectsExpected !== null ? subjectsRecorded >= subjectsExpected : null,
+            all_subjects_submitted: allSubjectsSubmitted,
             all_subjects_graded: allSubjectsGraded,
+            subjects_not_ready: subjectsNotReady,
+            // The one test for "may be submitted / approved": every subject
+            // is in, and each one passed validation with a final grade.
+            ready_for_submission: Boolean(allSubjectsSubmitted) && subjectsNotReady.length === 0,
         };
     });
+};
+
+// Why a subject's latest upload cannot go into a submitted record yet, or
+// null when it can. A subject counts only once its upload passed
+// validation ("Validated") and every term produced a final grade.
+const subjectNotReadyReason = (subject) => {
+    if (subject.status === "Needs Revision") return "a revision was requested";
+    if (subject.status !== "Validated") return "its upload has validation errors";
+    if (subject.final_grade === null) return "it has no final grade";
+    return null;
 };
 
 // Attaches each student's submission workflow state (Sprint 7). Absence of
@@ -404,6 +422,22 @@ const getSectionProgressForSchoolYear = async (req, res) => {
             expectedCounts.rows.map((row) => [row.grade_level, Number(row.subject_count)])
         );
 
+        // Subject names per grade level, so a section can list WHICH
+        // subjects are still missing or flagged, not only how many.
+        const subjectListResult = await pool.query(
+            "SELECT subject_id, subject_name, grade_level FROM subjects ORDER BY subject_name"
+        );
+
+        const subjectsByGradeLevel = new Map();
+
+        subjectListResult.rows.forEach((row) => {
+            if (!subjectsByGradeLevel.has(row.grade_level)) {
+                subjectsByGradeLevel.set(row.grade_level, []);
+            }
+
+            subjectsByGradeLevel.get(row.grade_level).push(row);
+        });
+
         // Latest class_record per (section, subject) for this school year —
         // same "latest upload wins" ranking buildRankedGradesQuery uses, just
         // keyed by section+subject instead of student+subject, since one
@@ -496,6 +530,8 @@ const getSectionProgressForSchoolYear = async (req, res) => {
         const sections = sectionsResult.rows.map((section) => {
             const subjectsExpected = expectedByGradeLevel.get(section.grade_level) ?? 0;
             const subjectRows = subjectRowsBySection.get(section.section_id) || [];
+            const statusBySubjectId = new Map(subjectRows.map((row) => [row.subject_id, row.status]));
+            const gradeSubjects = subjectsByGradeLevel.get(section.grade_level) || [];
 
             return {
                 section_id: section.section_id,
@@ -507,6 +543,18 @@ const getSectionProgressForSchoolYear = async (req, res) => {
                 subjects_needs_revision: subjectRows.filter((row) => row.status === "Needs Revision").length,
                 subjects_needs_attention: subjectRows.filter((row) => row.status === "Needs Attention").length,
                 subjects_not_started: Math.max(subjectsExpected - subjectRows.length, 0),
+                missing_subjects: gradeSubjects
+                    .filter((subject) => !statusBySubjectId.has(subject.subject_id))
+                    .map(({ subject_id, subject_name }) => ({ subject_id, subject_name })),
+                flagged_subjects: gradeSubjects
+                    .filter((subject) =>
+                        ["Needs Revision", "Needs Attention"].includes(statusBySubjectId.get(subject.subject_id))
+                    )
+                    .map(({ subject_id, subject_name }) => ({
+                        subject_id,
+                        subject_name,
+                        status: statusBySubjectId.get(subject_id),
+                    })),
                 student_count: studentCountBySection.get(section.section_id) || 0,
                 submission_status_counts:
                     submissionCountsBySection.get(section.section_id) || emptySubmissionCounts(),
@@ -718,14 +766,53 @@ const requestRevision = async (req, res) => {
             );
         }
 
-        const amendedNote =
+        // Records still waiting for approval are sent back too: uploads for
+        // them are locked (rosterCheck.findLockedLearners), so this is
+        // how the corrected file gets in, and the Administrator must not
+        // approve grades the Adviser has just flagged.
+        const withdrawnResult = await pool.query(
+            `
+            UPDATE record_submissions rs
+            SET status = 'Amendment Requested', updated_at = NOW()
+            FROM grade_records gr
+            WHERE gr.lrn = rs.lrn
+              AND gr.class_record_id = $1
+              AND rs.school_year_id = $2
+              AND rs.status = 'Pending Approval'
+            RETURNING rs.lrn
+            `,
+            [classRecordId, record.school_year_id]
+        );
+
+        if (withdrawnResult.rows.length > 0) {
+            await pool.query(
+                `
+                INSERT INTO notifications (user_id, title, message, status)
+                SELECT user_id, $1, $2, 'Unread'
+                FROM users
+                WHERE role = 'admin' AND LOWER(COALESCE(status, 'Active')) = 'active'
+                `,
+                [
+                    "Submitted Records Sent Back",
+                    `${withdrawnResult.rows.length} record(s) waiting for approval were sent back because a ` +
+                        `${record.subject_name}${sectionLabel} revision was requested. They will be resubmitted once corrected.`,
+                ]
+            );
+        }
+
+        const amendedNote = [
             amendedResult.rows.length > 0
                 ? ` ${amendedResult.rows.length} previously approved record(s) reopened for amendment.`
-                : "";
+                : "",
+            withdrawnResult.rows.length > 0
+                ? ` ${withdrawnResult.rows.length} record(s) waiting for approval sent back.`
+                : "",
+        ].join("");
 
         return res.json({
             message: `Revision requested. The teacher has been notified.${amendedNote}`,
             amended_count: amendedResult.rows.length,
+            withdrawn_count: withdrawnResult.rows.length,
         });
     } catch (error) {
         console.error("Request revision error:", error);
