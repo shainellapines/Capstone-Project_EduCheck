@@ -23,6 +23,10 @@ the hardest (about 12-17 learners below 75), ESP and MAPEH the easiest
 fail at least one, so FAILED remarks and low grades show up in Consolidated
 Records and Analytics.
 
+The TLE file has 98 learners: LRN 100000000099 and 100000000100 are left out
+(their TLE grades are "not yet encoded"), so those two learners stay incomplete
+for TC-036 (an incomplete record cannot be submitted).
+
 - Uploaded as its own subject: Validated, 0 errors, no header warning.
 - Uploaded as a different subject: refused, because the file is for another
   subject (TC-068, Known Limitations D-08).
