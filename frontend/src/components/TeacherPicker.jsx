@@ -5,7 +5,7 @@ import "./TeacherPicker.css";
 const ROLE_FILTERS = [
     { key: "all", label: "All" },
     { key: "adviser", label: "Advisers" },
-    { key: "subject_teacher", label: "Subject Teachers" },
+    { key: "subject", label: "Subject Teachers" },
 ];
 
 const roleLabel = (role) => (role === "adviser" ? "Adviser" : "Subject Teacher");

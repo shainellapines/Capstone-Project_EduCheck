@@ -42,7 +42,13 @@ function SectionAssignments() {
     });
     const [savingSection, setSavingSection] = useState(false);
 
-    const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+    // Where the assignment form is open: null (closed), "top" (the Add
+    // Assignment button) or a section card's group key. Opened from a card,
+    // the section and school year are fixed, and so is the teacher when it
+    // was opened from that teacher's row.
+    const [formPlace, setFormPlace] = useState(null);
+    const noLocks = { section: false, teacher: false, adviserOnly: false };
+    const [formLocks, setFormLocks] = useState(noLocks);
     const emptyAssignmentForm = {
         teacher_id: "",
         section_id: "",
@@ -228,8 +234,37 @@ function SectionAssignments() {
         });
     };
 
+    // Opened with "Assign Class Adviser", the picked Adviser gets that slot
+    // ticked straight away.
     const handleTeacherPick = (teacherId) =>
-        setAssignmentForm((previous) => ({ ...previous, teacher_id: teacherId, class_adviser: false, subject_ids: [] }));
+        setAssignmentForm((previous) => ({
+            ...previous,
+            teacher_id: teacherId,
+            class_adviser: formLocks.adviserOnly,
+            subject_ids: [],
+        }));
+
+    const closeAssignmentForm = () => setFormPlace(null);
+
+    const toggleTopAssignmentForm = () => {
+        if (formPlace === "top") return closeAssignmentForm();
+        setAssignmentForm(emptyAssignmentForm);
+        setFormLocks(noLocks);
+        setFormPlace("top");
+    };
+
+    // Opens the form inside one section card, with that card's section and
+    // school year filled in (and the teacher, from a teacher's row).
+    const openCardAssignmentForm = (group, { teacher = null, adviserOnly = false } = {}) => {
+        setAssignmentForm({
+            ...emptyAssignmentForm,
+            section_id: String(group.section.section_id),
+            school_year_id: String(group.schoolYearId),
+            teacher_id: teacher ? String(teacher.teacherId) : "",
+        });
+        setFormLocks({ section: true, teacher: Boolean(teacher), adviserOnly });
+        setFormPlace(group.key);
+    };
 
     const toggleAssignmentSubject = (subjectId) => {
         setAssignmentForm((previous) => ({
@@ -334,7 +369,7 @@ function SectionAssignments() {
             }
 
             setAssignmentForm(emptyAssignmentForm);
-            setShowAssignmentForm(false);
+            closeAssignmentForm();
             setActionMessage(data.message || "Assignments created successfully.");
             await loadAll();
         } catch (createError) {
@@ -343,6 +378,192 @@ function SectionAssignments() {
             setSavingAssignment(false);
         }
     };
+
+
+    // One assignment form, rendered either under the Add Assignment button
+    // or inside the section card it was opened from (see formPlace).
+    const renderAssignmentForm = () => (
+        <form
+            className={`sa-inline-form${formLocks.section ? " sa-card-form" : ""}`}
+            onSubmit={handleCreateAssignment}
+        >
+            {!formLocks.section && (
+                <>
+                    <div className="sa-field">
+                        <label htmlFor="section_id">Section</label>
+                        <select
+                            id="section_id"
+                            name="section_id"
+                            value={assignmentForm.section_id}
+                            onChange={handleAssignmentFormChange}
+                            required
+                        >
+                            <option value="" disabled>
+                                Select a section
+                            </option>
+                            {sections.map((section) => (
+                                <option key={section.section_id} value={section.section_id}>
+                                    {section.section_name} (Grade {section.grade_level} -{" "}
+                                    {section.staffing_mode})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="sa-field">
+                        <label htmlFor="school_year_id">School Year</label>
+                        <select
+                            id="school_year_id"
+                            name="school_year_id"
+                            value={assignmentForm.school_year_id}
+                            onChange={handleAssignmentFormChange}
+                            required
+                        >
+                            <option value="" disabled>
+                                Select a school year
+                            </option>
+                            {schoolYears.map((year) => (
+                                <option key={year.school_year_id} value={year.school_year_id}>
+                                    {year.school_year}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </>
+            )}
+
+            <div className="sa-field sa-field-wide">
+                <label htmlFor="teacher_search">Teacher</label>
+                {formLocks.teacher && formTeacher ? (
+                    <p id="teacher_search" className="sa-fixed-teacher">
+                        {formTeacher.first_name} {formTeacher.last_name} (
+                        {formTeacher.role === "adviser" ? "Adviser" : "Subject Teacher"})
+                    </p>
+                ) : (
+                    <TeacherPicker
+                        id="teacher_search"
+                        teachers={teachers}
+                        value={assignmentForm.teacher_id}
+                        onChange={handleTeacherPick}
+                        lockedRole={formSelfContained || formLocks.adviserOnly ? "adviser" : null}
+                        lockedReason={
+                            formSelfContained
+                                ? "Self-Contained sections take an Adviser only."
+                                : "Only an Adviser account can be Class Adviser."
+                        }
+                    />
+                )}
+            </div>
+
+            <fieldset className="sa-slot-picker">
+                <legend>
+                    Assign as <span>(tick everything this teacher handles in the section)</span>
+                </legend>
+
+                {!formSection || !assignmentForm.school_year_id ? (
+                    <p className="sa-slot-hint">
+                        Choose a section and school year to see its subjects.
+                    </p>
+                ) : (
+                    <>
+                        {(() => {
+                            const holder = slotHolder(null);
+                            const notAdviser = formTeacherIsSubjectTeacher;
+                            return (
+                                <label className={`sa-slot${holder || notAdviser ? " is-disabled" : ""}`}>
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            formSelfContained
+                                                ? !holder && !notAdviser
+                                                : assignmentForm.class_adviser
+                                        }
+                                        disabled={Boolean(holder) || notAdviser || formSelfContained}
+                                        onChange={(event) =>
+                                            setAssignmentForm((previous) => ({
+                                                ...previous,
+                                                class_adviser: event.target.checked,
+                                            }))
+                                        }
+                                    />
+                                    <span className="sa-slot-name">Class Adviser</span>
+                                    {holder && <span className="sa-slot-note">assigned to {holder}</span>}
+                                    {!holder && notAdviser && (
+                                        <span className="sa-slot-note">needs an Adviser account</span>
+                                    )}
+                                </label>
+                            );
+                        })()}
+
+                        <p className="sa-slot-group">Subjects (Grade {formSection.grade_level})</p>
+
+                        {formSelfContained && (
+                            <p className="sa-slot-hint">
+                                Self-Contained: the Class Adviser teaches every subject below
+                                automatically.
+                            </p>
+                        )}
+
+                        <div className="sa-slot-grid">
+                            {formSelfContained && formSubjects.map((subject) => (
+                                <label key={subject.subject_id} className="sa-slot is-disabled">
+                                    <input type="checkbox" checked readOnly disabled />
+                                    <span className="sa-slot-name">{subject.subject_name}</span>
+                                    {slotHolder(null) && (
+                                        <span className="sa-slot-note">covered by {slotHolder(null)}</span>
+                                    )}
+                                </label>
+                            ))}
+
+                            {!formSelfContained && formSubjects.map((subject) => {
+                                const holder = slotHolder(subject.subject_id);
+                                return (
+                                    <label
+                                        key={subject.subject_id}
+                                        className={`sa-slot${holder ? " is-disabled" : ""}`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={assignmentForm.subject_ids.includes(subject.subject_id)}
+                                            disabled={Boolean(holder)}
+                                            onChange={() => toggleAssignmentSubject(subject.subject_id)}
+                                        />
+                                        <span className="sa-slot-name">{subject.subject_name}</span>
+                                        {holder && <span className="sa-slot-note">assigned to {holder}</span>}
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </>
+                )}
+            </fieldset>
+
+            <div className="sa-form-actions">
+                <button
+                    type="button"
+                    className="sa-cancel-button"
+                    onClick={closeAssignmentForm}
+                    disabled={savingAssignment}
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    className="sa-save-button"
+                    disabled={savingAssignment}
+                >
+                    {(() => {
+                        const count = formSelfContained
+                            ? 1
+                            : assignmentForm.subject_ids.length + (assignmentForm.class_adviser ? 1 : 0);
+                        if (savingAssignment) return "Saving...";
+                        return count > 1 ? `Save ${count} Assignments` : "Save Assignment";
+                    })()}
+                </button>
+            </div>
+        </form>
+    );
 
     // What a teacher loses with the Class Adviser slot: every Adviser page is
     // scoped to the sections whose slot they hold, not to their subjects.
@@ -701,7 +922,7 @@ function SectionAssignments() {
                                     <button
                                         type="button"
                                         className="sa-add-button"
-                                        onClick={() => setShowAssignmentForm((v) => !v)}
+                                        onClick={toggleTopAssignmentForm}
                                         disabled={sections.length === 0 || teachers.length === 0}
                                     >
                                         <Plus size={16} />
@@ -713,170 +934,7 @@ function SectionAssignments() {
                                     <p className="sa-hint">Add a section first before assigning teachers.</p>
                                 )}
 
-                                {showAssignmentForm && (
-                                    <form className="sa-inline-form" onSubmit={handleCreateAssignment}>
-                                        <div className="sa-field">
-                                            <label htmlFor="section_id">Section</label>
-                                            <select
-                                                id="section_id"
-                                                name="section_id"
-                                                value={assignmentForm.section_id}
-                                                onChange={handleAssignmentFormChange}
-                                                required
-                                            >
-                                                <option value="" disabled>
-                                                    Select a section
-                                                </option>
-                                                {sections.map((section) => (
-                                                    <option key={section.section_id} value={section.section_id}>
-                                                        {section.section_name} (Grade {section.grade_level} -{" "}
-                                                        {section.staffing_mode})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="sa-field">
-                                            <label htmlFor="school_year_id">School Year</label>
-                                            <select
-                                                id="school_year_id"
-                                                name="school_year_id"
-                                                value={assignmentForm.school_year_id}
-                                                onChange={handleAssignmentFormChange}
-                                                required
-                                            >
-                                                <option value="" disabled>
-                                                    Select a school year
-                                                </option>
-                                                {schoolYears.map((year) => (
-                                                    <option key={year.school_year_id} value={year.school_year_id}>
-                                                        {year.school_year}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="sa-field sa-field-wide">
-                                            <label htmlFor="teacher_search">Teacher</label>
-                                            <TeacherPicker
-                                                id="teacher_search"
-                                                teachers={teachers}
-                                                value={assignmentForm.teacher_id}
-                                                onChange={handleTeacherPick}
-                                                lockedRole={formSelfContained ? "adviser" : null}
-                                                lockedReason="Self-Contained sections take an Adviser only."
-                                            />
-                                        </div>
-
-                                        <fieldset className="sa-slot-picker">
-                                            <legend>
-                                                Assign as <span>(tick everything this teacher handles in the section)</span>
-                                            </legend>
-
-                                            {!formSection || !assignmentForm.school_year_id ? (
-                                                <p className="sa-slot-hint">
-                                                    Choose a section and school year to see its subjects.
-                                                </p>
-                                            ) : (
-                                                <>
-                                                    {(() => {
-                                                        const holder = slotHolder(null);
-                                                        const notAdviser = formTeacherIsSubjectTeacher;
-                                                        return (
-                                                            <label className={`sa-slot${holder || notAdviser ? " is-disabled" : ""}`}>
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={
-                                                                        formSelfContained
-                                                                            ? !holder && !notAdviser
-                                                                            : assignmentForm.class_adviser
-                                                                    }
-                                                                    disabled={Boolean(holder) || notAdviser || formSelfContained}
-                                                                    onChange={(event) =>
-                                                                        setAssignmentForm((previous) => ({
-                                                                            ...previous,
-                                                                            class_adviser: event.target.checked,
-                                                                        }))
-                                                                    }
-                                                                />
-                                                                <span className="sa-slot-name">Class Adviser</span>
-                                                                {holder && <span className="sa-slot-note">assigned to {holder}</span>}
-                                                                {!holder && notAdviser && (
-                                                                    <span className="sa-slot-note">needs an Adviser account</span>
-                                                                )}
-                                                            </label>
-                                                        );
-                                                    })()}
-
-                                                    <p className="sa-slot-group">Subjects (Grade {formSection.grade_level})</p>
-
-                                                    {formSelfContained && (
-                                                        <p className="sa-slot-hint">
-                                                            Self-Contained: the Class Adviser teaches every subject below
-                                                            automatically.
-                                                        </p>
-                                                    )}
-
-                                                    <div className="sa-slot-grid">
-                                                        {formSelfContained && formSubjects.map((subject) => (
-                                                            <label key={subject.subject_id} className="sa-slot is-disabled">
-                                                                <input type="checkbox" checked readOnly disabled />
-                                                                <span className="sa-slot-name">{subject.subject_name}</span>
-                                                                {slotHolder(null) && (
-                                                                    <span className="sa-slot-note">covered by {slotHolder(null)}</span>
-                                                                )}
-                                                            </label>
-                                                        ))}
-
-                                                        {!formSelfContained && formSubjects.map((subject) => {
-                                                            const holder = slotHolder(subject.subject_id);
-                                                            return (
-                                                                <label
-                                                                    key={subject.subject_id}
-                                                                    className={`sa-slot${holder ? " is-disabled" : ""}`}
-                                                                >
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={assignmentForm.subject_ids.includes(subject.subject_id)}
-                                                                        disabled={Boolean(holder)}
-                                                                        onChange={() => toggleAssignmentSubject(subject.subject_id)}
-                                                                    />
-                                                                    <span className="sa-slot-name">{subject.subject_name}</span>
-                                                                    {holder && <span className="sa-slot-note">assigned to {holder}</span>}
-                                                                </label>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </>
-                                            )}
-                                        </fieldset>
-
-                                        <div className="sa-form-actions">
-                                            <button
-                                                type="button"
-                                                className="sa-cancel-button"
-                                                onClick={() => setShowAssignmentForm(false)}
-                                                disabled={savingAssignment}
-                                            >
-                                                Cancel
-                                            </button>
-
-                                            <button
-                                                type="submit"
-                                                className="sa-save-button"
-                                                disabled={savingAssignment}
-                                            >
-                                                {(() => {
-                                                    const count = formSelfContained
-                                                        ? 1
-                                                        : assignmentForm.subject_ids.length + (assignmentForm.class_adviser ? 1 : 0);
-                                                    if (savingAssignment) return "Saving...";
-                                                    return count > 1 ? `Save ${count} Assignments` : "Save Assignment";
-                                                })()}
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
+                                {formPlace === "top" && renderAssignmentForm()}
 
                                 <div className="sa-groups">
                                     {sectionGroups.length === 0 && <p className="sa-hint">No assignments yet.</p>}
@@ -930,14 +988,26 @@ function SectionAssignments() {
                                                         })}
                                                     </div>
 
-                                                    <button
-                                                        type="button"
-                                                        className="sa-delete-button"
-                                                        onClick={() => handleRemoveTeacherLoad(teacher)}
-                                                    >
-                                                        <Trash2 size={15} />
-                                                        Remove all
-                                                    </button>
+                                                    <div className="sa-row-actions">
+                                                        {!group.selfContained && group.unassigned.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                className="sa-row-add"
+                                                                onClick={() => openCardAssignmentForm(group, { teacher })}
+                                                            >
+                                                                <Plus size={15} />
+                                                                Add subject
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            className="sa-delete-button"
+                                                            onClick={() => handleRemoveTeacherLoad(teacher)}
+                                                        >
+                                                            <Trash2 size={15} />
+                                                            Remove all
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
 
@@ -956,8 +1026,32 @@ function SectionAssignments() {
                                                                 : []),
                                                         ].join(" · ")}
                                                     </span>
+                                                    <div className="sa-gap-actions">
+                                                        {!group.hasAdviser && (
+                                                            <button
+                                                                type="button"
+                                                                className="sa-gap-button"
+                                                                onClick={() => openCardAssignmentForm(group, { adviserOnly: true })}
+                                                            >
+                                                                <Plus size={14} />
+                                                                Assign Class Adviser
+                                                            </button>
+                                                        )}
+                                                        {!group.selfContained && group.unassigned.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                className="sa-gap-button"
+                                                                onClick={() => openCardAssignmentForm(group)}
+                                                            >
+                                                                <Plus size={14} />
+                                                                Assign subjects
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
+
+                                            {formPlace === group.key && renderAssignmentForm()}
                                         </section>
                                     ))}
                                 </div>
