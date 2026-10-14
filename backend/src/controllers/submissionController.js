@@ -6,6 +6,17 @@ const {
 } = require("./consolidationController");
 
 const isValidSchoolYearId = (value) => Number.isInteger(value) && value > 0;
+
+// 409 body for a record that has every subject but not every subject is
+// usable yet (see consolidationController.subjectNotReadyReason).
+const notReadyError = (student, action = "submitted") => ({
+    message: student.all_subjects_submitted
+        ? `This record cannot be ${action} yet: ` +
+          student.subjects_not_ready.map((subject) => `${subject.subject_name} (${subject.reason})`).join(", ") +
+          ". The subject teacher must upload a corrected e-Class Record first."
+        : `This record cannot be ${action} yet: ${student.subjects_recorded} of ${student.subjects_expected} subjects have grades.`,
+    subjects_not_ready: student.subjects_not_ready,
+});
 const isValidLrn = (value) => typeof value === "string" && /^\d{12}$/.test(value);
 
 // "Grade 6 – Rizal" for each of the given section ids.
@@ -121,6 +132,10 @@ const submitForApproval = async (req, res) => {
             });
         }
 
+        if (!student.ready_for_submission) {
+            return res.status(409).json(notReadyError(student));
+        }
+
         const result = await pool.query(
             `
             INSERT INTO record_submissions
@@ -165,9 +180,9 @@ const submitForApproval = async (req, res) => {
 // SUBMIT EVERY ELIGIBLE STUDENT AT ONCE
 // (Class Adviser)
 // ==========================================
-// "Eligible" = complete (all_subjects_submitted), not already Approved, and
-// no subject still flagged "Needs Revision" — same two guards
-// submitForApproval enforces one student at a time. Skips everyone else
+// "Eligible" = ready_for_submission (every subject in, validated, with a
+// final grade, none flagged "Needs Revision") and not already Approved or
+// Pending — the same guards submitForApproval enforces one student at a time. Skips everyone else
 // rather than erroring, and reports counts so the adviser can see what
 // happened.
 
@@ -187,11 +202,12 @@ const submitAllEligible = async (req, res) => {
         const students = (await fetchConsolidatedStudents(schoolYearId)).filter(
             (student) => student.section_id && adviserSectionIds.has(student.section_id)
         );
+        // Pending Approval is left alone: re-sending it would only reset
+        // its review time.
         const eligible = students.filter(
             (student) =>
-                student.all_subjects_submitted &&
-                student.submission.status !== "Approved" &&
-                !student.subjects.some((subject) => subject.status === "Needs Revision")
+                student.ready_for_submission &&
+                !["Approved", "Pending Approval"].includes(student.submission.status)
         );
 
         let submittedCount = 0;
@@ -240,6 +256,7 @@ const submitAllEligible = async (req, res) => {
             submitted_count: submittedCount,
             already_approved_count: students.filter((s) => s.submission.status === "Approved").length,
             incomplete_count: students.filter((s) => !s.all_subjects_submitted).length,
+            not_ready_count: students.filter((s) => s.all_subjects_submitted && !s.ready_for_submission).length,
         });
     } catch (error) {
         console.error("Submit all eligible error:", error);
@@ -294,6 +311,17 @@ const decideSubmission = (targetStatus) => async (req, res) => {
         const approvedStudent = await fetchConsolidatedStudent(schoolYearId, lrn);
         let snapshot = null;
 
+        // The record may have changed since it was submitted (a revision
+        // request, or grades that never passed validation), so approval
+        // re-checks it rather than trusting the submit-time check.
+        if (targetStatus === "Approved" && (!approvedStudent || !approvedStudent.ready_for_submission)) {
+            return res.status(409).json(
+                approvedStudent
+                    ? notReadyError(approvedStudent, "approved")
+                    : { message: "No consolidated record found for this LRN in this school year." }
+            );
+        }
+
         if (targetStatus === "Approved" && approvedStudent) {
             const adviserResult = await pool.query(
                 `
@@ -330,7 +358,7 @@ const decideSubmission = (targetStatus) => async (req, res) => {
             UPDATE record_submissions
             SET status = $1, approved_by = $2, approved_at = NOW(), remarks = $3,
                 snapshot = $6, updated_at = NOW()
-            WHERE lrn = $4 AND school_year_id = $5
+            WHERE lrn = $4 AND school_year_id = $5 AND status = 'Pending Approval'
             RETURNING *
             `,
             [
@@ -342,6 +370,11 @@ const decideSubmission = (targetStatus) => async (req, res) => {
                 snapshot ? JSON.stringify(snapshot) : null,
             ]
         );
+
+        // Someone else decided it between the check above and this update.
+        if (result.rows.length === 0) {
+            return res.status(409).json({ message: "This record is not currently pending approval." });
+        }
 
         if (reviewedBy) {
             const message =

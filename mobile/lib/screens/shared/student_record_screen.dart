@@ -133,6 +133,8 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
     final subjects = asList(student['subjects']);
     final flagged = subjects.where((s) => s['status'] == 'Needs Revision').length;
     final complete = student['all_subjects_submitted'] == true;
+    // Every subject in, validated and with a final grade (server-computed).
+    final ready = student['ready_for_submission'] == true;
 
     return [
       AppCard(
@@ -207,7 +209,7 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
         const SizedBox(height: 10),
       ],
       const SizedBox(height: 8),
-      ..._actions(status, complete, flagged),
+      ..._actions(status, complete, ready, flagged),
       if (_role != 'subject') ...[
         const SizedBox(height: 10),
         OutlinedButton.icon(
@@ -223,9 +225,9 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
     ];
   }
 
-  List<Widget> _actions(String status, bool complete, int flagged) {
+  List<Widget> _actions(String status, bool complete, bool ready, int flagged) {
     if (_role == 'adviser') {
-      final canSubmit = complete && flagged == 0 && status != 'Approved' && status != 'Pending Approval';
+      final canSubmit = ready && status != 'Approved' && status != 'Pending Approval';
       final hint = status == 'Approved'
           ? 'This record is approved. Return a subject to reopen it.'
           : status == 'Pending Approval'
@@ -234,7 +236,9 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
                   ? 'Every subject needs an uploaded grade before submitting.'
                   : flagged > 0
                       ? 'Resolve subjects marked Needs Revision first.'
-                      : null;
+                      : !ready
+                          ? 'Some subjects have validation errors or no final grade. The teacher must re-upload them first.'
+                          : null;
       return [
         FilledButton.icon(
           onPressed: canSubmit && !_busy ? _submit : null,

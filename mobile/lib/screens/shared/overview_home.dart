@@ -65,8 +65,7 @@ class OverviewHome extends StatelessWidget {
             .length;
         final ready = students
             .where((s) =>
-                s['all_subjects_submitted'] == true &&
-                !asList(s['subjects']).any((subject) => subject['status'] == 'Needs Revision') &&
+                s['ready_for_submission'] == true &&
                 const {'Not Submitted', 'Rejected', 'Amendment Requested'}.contains(asMap(s['submission'])['status']))
             .length;
 

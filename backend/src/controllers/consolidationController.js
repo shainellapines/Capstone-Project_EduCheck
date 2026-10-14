@@ -154,15 +154,33 @@ const attachCompleteness = async (students, gradeLevels) => {
         const subjectsExpected = expectedByGradeLevel.get(student.grade_level) ?? null;
         const subjectsRecorded = student.subjects.length;
         const allSubjectsGraded = student.subjects.every((subject) => subject.final_grade !== null);
+        const allSubjectsSubmitted = subjectsExpected !== null ? subjectsRecorded >= subjectsExpected : null;
+        const subjectsNotReady = student.subjects
+            .map((subject) => ({ subject_name: subject.subject_name, reason: subjectNotReadyReason(subject) }))
+            .filter((subject) => subject.reason);
 
         return {
             ...student,
             subjects_expected: subjectsExpected,
             subjects_recorded: subjectsRecorded,
-            all_subjects_submitted: subjectsExpected !== null ? subjectsRecorded >= subjectsExpected : null,
+            all_subjects_submitted: allSubjectsSubmitted,
             all_subjects_graded: allSubjectsGraded,
+            subjects_not_ready: subjectsNotReady,
+            // The one test for "may be submitted / approved": every subject
+            // is in, and each one passed validation with a final grade.
+            ready_for_submission: Boolean(allSubjectsSubmitted) && subjectsNotReady.length === 0,
         };
     });
+};
+
+// Why a subject's latest upload cannot go into a submitted record yet, or
+// null when it can. A subject counts only once its upload passed
+// validation ("Validated") and every term produced a final grade.
+const subjectNotReadyReason = (subject) => {
+    if (subject.status === "Needs Revision") return "a revision was requested";
+    if (subject.status !== "Validated") return "its upload has validation errors";
+    if (subject.final_grade === null) return "it has no final grade";
+    return null;
 };
 
 // Attaches each student's submission workflow state (Sprint 7). Absence of
@@ -748,14 +766,53 @@ const requestRevision = async (req, res) => {
             );
         }
 
-        const amendedNote =
+        // Records still waiting for approval are sent back too: uploads for
+        // them are locked (rosterCheck.findLockedLearners), so this is
+        // how the corrected file gets in, and the Administrator must not
+        // approve grades the Adviser has just flagged.
+        const withdrawnResult = await pool.query(
+            `
+            UPDATE record_submissions rs
+            SET status = 'Amendment Requested', updated_at = NOW()
+            FROM grade_records gr
+            WHERE gr.lrn = rs.lrn
+              AND gr.class_record_id = $1
+              AND rs.school_year_id = $2
+              AND rs.status = 'Pending Approval'
+            RETURNING rs.lrn
+            `,
+            [classRecordId, record.school_year_id]
+        );
+
+        if (withdrawnResult.rows.length > 0) {
+            await pool.query(
+                `
+                INSERT INTO notifications (user_id, title, message, status)
+                SELECT user_id, $1, $2, 'Unread'
+                FROM users
+                WHERE role = 'admin' AND LOWER(COALESCE(status, 'Active')) = 'active'
+                `,
+                [
+                    "Submitted Records Sent Back",
+                    `${withdrawnResult.rows.length} record(s) waiting for approval were sent back because a ` +
+                        `${record.subject_name}${sectionLabel} revision was requested. They will be resubmitted once corrected.`,
+                ]
+            );
+        }
+
+        const amendedNote = [
             amendedResult.rows.length > 0
                 ? ` ${amendedResult.rows.length} previously approved record(s) reopened for amendment.`
-                : "";
+                : "",
+            withdrawnResult.rows.length > 0
+                ? ` ${withdrawnResult.rows.length} record(s) waiting for approval sent back.`
+                : "",
+        ].join("");
 
         return res.json({
             message: `Revision requested. The teacher has been notified.${amendedNote}`,
             amended_count: amendedResult.rows.length,
+            withdrawn_count: withdrawnResult.rows.length,
         });
     } catch (error) {
         console.error("Request revision error:", error);

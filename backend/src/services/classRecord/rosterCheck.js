@@ -200,32 +200,63 @@ const checkRoster = async ({ parsedRecord, sectionId, schoolYearId }) => {
     return { error: null, warnings };
 };
 
-// Re-uploading changes grades. Once a learner's consolidated record is
-// Approved it is final until the Adviser reopens it (a revision request
-// moves it to 'Amendment Requested'), so an upload that touches any
-// Approved learner is refused.
-const checkApprovedLearners = async ({ parsedRecord, schoolYearId }) => {
+// Re-uploading changes grades. A learner whose consolidated record is
+// Approved, or Pending Approval, is locked: approval freezes a snapshot,
+// and the Administrator must approve exactly what the Adviser submitted.
+// A revision request reopens them ('Amendment Requested'). An upload is
+// not refused for them (an e-Class Record covers the whole class); their
+// rows are simply not saved, and the rest of the class is. Only a file in
+// which every learner is locked is refused, since it would change nothing.
+const findLockedLearners = async ({ parsedRecord, schoolYearId }) => {
     const lrns = uniqueValidLrns(parsedRecord);
+    const none = { error: null, lockedLrns: new Set(), warning: null };
 
-    if (lrns.length === 0) return null;
+    if (lrns.length === 0) return none;
 
     const result = await pool.query(
         `
-        SELECT lrn FROM record_submissions
-        WHERE school_year_id = $1 AND status = 'Approved' AND lrn = ANY($2)
+        SELECT lrn, status FROM record_submissions
+        WHERE school_year_id = $1 AND status IN ('Approved', 'Pending Approval') AND lrn = ANY($2)
         `,
         [schoolYearId, lrns]
     );
 
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) return none;
+
+    const approved = result.rows.filter((row) => row.status === "Approved").map((row) => row.lrn);
+    const pending = result.rows.filter((row) => row.status === "Pending Approval").map((row) => row.lrn);
+    const counts = [
+        approved.length > 0 ? `${approved.length} Approved` : null,
+        pending.length > 0 ? `${pending.length} waiting for approval` : null,
+    ]
+        .filter(Boolean)
+        .join(" and ");
+    const reopen = "Ask the Class Adviser to request a revision for this subject to reopen them.";
+
+    if (result.rows.length === lrns.length) {
+        return {
+            ...none,
+            error: {
+                status: 409,
+                message: `Every learner in this file is locked (${counts}), so the upload would change nothing. ${reopen}`,
+                approved_lrns: approved.slice(0, 20),
+                pending_lrns: pending.slice(0, 20),
+            },
+        };
+    }
 
     return {
-        status: 409,
-        message:
-            `${result.rows.length} learner(s) in this file already have an Approved record. ` +
-            "Ask the Class Adviser to request a revision to reopen it before re-uploading.",
-        approved_lrns: result.rows.map((row) => row.lrn).slice(0, 20),
+        error: null,
+        lockedLrns: new Set(result.rows.map((row) => row.lrn)),
+        warning: {
+            code: "LOCKED_LEARNERS_SKIPPED",
+            message:
+                `${result.rows.length} learner(s) were not updated because their records are locked (${counts}); ` +
+                `the rest of the class was saved. ${reopen}`,
+            approved_lrns: approved.slice(0, 20),
+            pending_lrns: pending.slice(0, 20),
+        },
     };
 };
 
-module.exports = { compareHeader, checkHeaderSubject, checkGradeLevel, checkRoster, checkApprovedLearners };
+module.exports = { compareHeader, checkHeaderSubject, checkGradeLevel, checkRoster, findLockedLearners };

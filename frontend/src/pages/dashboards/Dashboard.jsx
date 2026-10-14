@@ -181,10 +181,10 @@ function Dashboard() {
     const pendingCount = statusCount("Pending Approval");
     const returnedCount = statusCount("Rejected") + statusCount("Amendment Requested");
 
-    // Complete records not yet sent (or sent back): what "Submit" acts on.
+    // Ready records not yet sent (or sent back): what "Submit" acts on.
     const readyToSubmitCount = students.filter(
         (student) =>
-            student.all_subjects_submitted &&
+            student.ready_for_submission &&
             ["Not Submitted", "Rejected", "Amendment Requested"].includes(student.submission?.status)
     ).length;
 

@@ -6,6 +6,37 @@ const pool = require("../db");
 // to rule out things like "12345678" or "password".
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
+const VALID_ROLES = ["admin", "principal", "adviser", "subject"];
+const VALID_STATUSES = ["Active", "Inactive"];
+
+const isActive = (status) => (status || "Active").toLowerCase() === "active";
+
+// Rejects a role or status outside the fixed lists; null when both are fine
+// (or not being set).
+const invalidRoleOrStatus = ({ role, status }) => {
+    if (role !== undefined && !VALID_ROLES.includes(role)) {
+        return `Role must be one of: ${VALID_ROLES.join(", ")}.`;
+    }
+    if (status !== undefined && !VALID_STATUSES.includes(status)) {
+        return `Status must be one of: ${VALID_STATUSES.join(", ")}.`;
+    }
+    return null;
+};
+
+// Would this change leave the school with no active Administrator? Then
+// nobody could manage accounts again without database access.
+const removesLastActiveAdmin = async (target, nextRole, nextStatus) => {
+    if (target.role !== "admin" || !isActive(target.status)) return false;
+    if (nextRole === "admin" && isActive(nextStatus)) return false;
+
+    const others = await pool.query(
+        `SELECT COUNT(*) FROM users
+         WHERE role = 'admin' AND user_id <> $1 AND LOWER(COALESCE(status, 'Active')) = 'active'`,
+        [target.user_id]
+    );
+    return Number(others.rows[0].count) === 0;
+};
+
 // GET all users
 const getUsers = async (req, res) => {
     try {
@@ -70,6 +101,12 @@ const createUser = async (req, res) => {
             });
         }
 
+        const invalid = invalidRoleOrStatus({ role, status });
+
+        if (invalid) {
+            return res.status(400).json({ message: invalid });
+        }
+
         if (!PASSWORD_RULE.test(password)) {
             return res.status(400).json({
                 message: "Password must be at least 8 characters and include both a letter and a number."
@@ -129,6 +166,63 @@ const updateUser = async (req, res) => {
             status
         } = req.body;
 
+        const invalid = invalidRoleOrStatus({ role: role ?? undefined, status: status ?? undefined });
+
+        if (invalid) {
+            return res.status(400).json({ message: invalid });
+        }
+
+        const existing = await pool.query(`SELECT user_id, role, status FROM users WHERE user_id = $1`, [id]);
+
+        if (existing.rows.length === 0) {
+            return res.status(404).json({
+                message: "User not found."
+            });
+        }
+
+        const target = existing.rows[0];
+        const nextRole = role ?? target.role;
+        const nextStatus = status ?? target.status;
+        const isSelf = target.user_id === req.user.user_id;
+
+        if (isSelf && (nextRole !== target.role || !isActive(nextStatus))) {
+            return res.status(409).json({
+                message: "You cannot change your own role or deactivate your own account. Ask another Administrator."
+            });
+        }
+
+        if (await removesLastActiveAdmin(target, nextRole, nextStatus)) {
+            return res.status(409).json({
+                message: "This is the only active Administrator account. Create or activate another Administrator first."
+            });
+        }
+
+        // The Class Adviser slot needs an Adviser account (see
+        // assignmentController), so a role change may not strand one.
+        if (target.role === "adviser" && nextRole !== "adviser") {
+            const adviserSlots = await pool.query(
+                `
+                SELECT sec.section_name, sy.school_year
+                FROM teacher_assignments ta
+                INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+                INNER JOIN sections sec ON sec.section_id = ta.section_id
+                INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
+                WHERE t.user_id = $1 AND ta.subject_id IS NULL
+                ORDER BY sy.school_year, sec.section_name
+                `,
+                [target.user_id]
+            );
+
+            if (adviserSlots.rows.length > 0) {
+                const held = adviserSlots.rows.map((row) => `${row.section_name} (${row.school_year})`);
+                return res.status(409).json({
+                    message:
+                        `This account is the Class Adviser of ${held.join(", ")}. ` +
+                        "Remove those Class Adviser assignments before changing its role."
+                });
+            }
+        }
+
         const result = await pool.query(
             `UPDATE users
              SET username = COALESCE($1, username),
@@ -157,6 +251,12 @@ const updateUser = async (req, res) => {
             user: result.rows[0]
         });
     } catch (error) {
+        if (error.code === "23505") {
+            return res.status(409).json({
+                message: "Username or email already exists."
+            });
+        }
+
         console.error("Update user error:", error);
 
         res.status(500).json({
@@ -169,6 +269,26 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
+
+        const existing = await pool.query(`SELECT user_id, role, status FROM users WHERE user_id = $1`, [id]);
+
+        if (existing.rows.length === 0) {
+            return res.status(404).json({
+                message: "User not found."
+            });
+        }
+
+        if (existing.rows[0].user_id === req.user.user_id) {
+            return res.status(409).json({
+                message: "You cannot delete your own account. Ask another Administrator."
+            });
+        }
+
+        if (await removesLastActiveAdmin(existing.rows[0], null, null)) {
+            return res.status(409).json({
+                message: "This is the only active Administrator account. Create or activate another Administrator first."
+            });
+        }
 
         const result = await pool.query(
             `DELETE FROM users

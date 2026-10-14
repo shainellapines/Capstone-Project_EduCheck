@@ -347,13 +347,11 @@ function ConsolidatedRecords() {
         }
     };
 
-    // Display only: a learner not yet submitted who has every subject in
-    // and none in Needs Revision is shown as Ready (the same test as the
-    // bulk-submit eligibility count below).
+    // Display only: a learner not yet submitted whose every subject is in,
+    // validated and graded (the server's ready_for_submission) is shown as
+    // Ready - the same test as the bulk-submit eligibility count below.
     const displayStatusOf = (student) =>
-        student.submission.status === "Not Submitted" &&
-        student.all_subjects_submitted &&
-        !student.subjects.some((subject) => subject.status === "Needs Revision")
+        student.submission.status === "Not Submitted" && student.ready_for_submission
             ? "ready"
             : student.submission.status;
 
@@ -395,9 +393,8 @@ function ConsolidatedRecords() {
     const eligibleForBulkSubmit =
         students?.filter(
             (student) =>
-                student.all_subjects_submitted &&
-                student.submission.status !== "Approved" &&
-                !student.subjects.some((subject) => subject.status === "Needs Revision")
+                student.ready_for_submission &&
+                !["Approved", "Pending Approval"].includes(student.submission.status)
         ).length || 0;
 
     const isAdviser = user.role === "adviser";
@@ -567,7 +564,7 @@ function ConsolidatedRecords() {
                                 const isHighlighted = student.lrn === highlightedLrn;
                                 const canSubmit =
                                     isAdviser &&
-                                    student.all_subjects_submitted &&
+                                    student.ready_for_submission &&
                                     ["Not Submitted", "Rejected", "Amendment Requested"].includes(submissionStatus);
 
                                 return (
@@ -596,10 +593,18 @@ function ConsolidatedRecords() {
                                             </button>
 
                                             <span
-                                                className={`cr-subject-count${student.all_subjects_submitted ? " is-complete" : " is-incomplete"}`}
-                                                title={student.all_subjects_submitted ? "Every subject has a grade" : "Some subjects are still missing"}
+                                                className={`cr-subject-count${student.ready_for_submission ? " is-complete" : " is-incomplete"}`}
+                                                title={
+                                                    !student.all_subjects_submitted
+                                                        ? "Some subjects are still missing"
+                                                        : student.ready_for_submission
+                                                          ? "Every subject has a validated grade"
+                                                          : `Not ready: ${(student.subjects_not_ready || [])
+                                                                .map((subject) => `${subject.subject_name} (${subject.reason})`)
+                                                                .join(", ")}`
+                                                }
                                             >
-                                                {student.all_subjects_submitted ? (
+                                                {student.ready_for_submission ? (
                                                     <CheckCircle size={15} aria-hidden="true" />
                                                 ) : (
                                                     <AlertTriangle size={15} aria-hidden="true" />
@@ -607,7 +612,11 @@ function ConsolidatedRecords() {
                                                 {student.subjects_recorded}
                                                 {student.subjects_expected !== null ? ` / ${student.subjects_expected}` : ""}
                                                 <span className="cr-sr-only">
-                                                    {student.all_subjects_submitted ? " subjects, complete" : " subjects, incomplete"}
+                                                    {student.ready_for_submission
+                                                        ? " subjects, complete"
+                                                        : student.all_subjects_submitted
+                                                          ? " subjects, not ready"
+                                                          : " subjects, incomplete"}
                                                 </span>
                                             </span>
 
