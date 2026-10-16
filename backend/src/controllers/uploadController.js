@@ -674,10 +674,30 @@ const uploadClassRecord = async (req, res) => {
         const locked = await findLockedLearners({
             parsedRecord,
             schoolYearId: schoolYear.school_year_id,
+            sectionId: section.section_id,
+            subjectName: subject.subject_name,
+            uploaderUserId: req.user.user_id,
         });
+
+        // Sent whether the file is refused or saved without the locked
+        // learners: either way the Adviser is the one who can reopen them.
+        const notifyAdviserOfLock = () =>
+            locked.notifyAdviser
+                ? pool.query(
+                      `
+                      INSERT INTO notifications (user_id, title, message, status)
+                      VALUES ($1, 'Upload Blocked by Locked Records', $2, 'Unread')
+                      `,
+                      [
+                          locked.notifyAdviser.userId,
+                          `${locked.notifyAdviser.message} (Grade ${subject.grade_level} – ${section.section_name})`,
+                      ]
+                  )
+                : null;
 
         if (locked.error) {
             removeUploadedFile(file.path);
+            await notifyAdviserOfLock();
 
             return res.status(locked.error.status).json(locked.error);
         }
@@ -841,6 +861,8 @@ const uploadClassRecord = async (req, res) => {
         } finally {
             dbClient.release();
         }
+
+        await notifyAdviserOfLock();
 
         return res.status(201).json({
             message: validationResult.ready_for_submission

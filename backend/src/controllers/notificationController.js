@@ -83,8 +83,57 @@ const markAllNotificationsRead = async (req, res) => {
     }
 };
 
+// ==========================================
+// DELETE ONE NOTIFICATION / CLEAR READ ONES
+// ==========================================
+// Notifications are alerts, not records: the actions they report stay in
+// the submissions and the audit log, so a user may remove their own.
+
+const deleteNotification = async (req, res) => {
+    try {
+        const notificationId = Number(req.params.notificationId);
+
+        if (!Number.isInteger(notificationId) || notificationId <= 0) {
+            return res.status(400).json({ message: "A valid notification ID is required." });
+        }
+
+        const result = await pool.query(
+            "DELETE FROM notifications WHERE notification_id = $1 AND user_id = $2 RETURNING notification_id",
+            [notificationId, req.user.user_id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Notification not found." });
+        }
+
+        return res.json({ message: "Notification deleted." });
+    } catch (error) {
+        console.error("Delete notification error:", error);
+
+        return res.status(500).json({ message: "Failed to delete the notification." });
+    }
+};
+
+// Unread ones are kept so nothing is cleared before it is seen.
+const clearReadNotifications = async (req, res) => {
+    try {
+        const result = await pool.query(
+            "DELETE FROM notifications WHERE user_id = $1 AND status = 'Read'",
+            [req.user.user_id]
+        );
+
+        return res.json({ message: "Read notifications cleared.", deleted_count: result.rowCount });
+    } catch (error) {
+        console.error("Clear read notifications error:", error);
+
+        return res.status(500).json({ message: "Failed to clear notifications." });
+    }
+};
+
 module.exports = {
     getMyNotifications,
     markNotificationRead,
     markAllNotificationsRead,
+    deleteNotification,
+    clearReadNotifications,
 };

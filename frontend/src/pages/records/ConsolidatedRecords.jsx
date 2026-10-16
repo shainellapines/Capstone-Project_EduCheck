@@ -69,6 +69,9 @@ function ConsolidatedRecords() {
     const [pendingLrns, setPendingLrns] = useState(new Set());
     const [rejectingLrn, setRejectingLrn] = useState(null);
     const [rejectReason, setRejectReason] = useState("");
+    // Pending records the Administrator ticked for "Approve selected".
+    const [selectedLrns, setSelectedLrns] = useState(new Set());
+    const [approvingSelected, setApprovingSelected] = useState(false);
 
     // Adviser return-to-subject-teacher correction (SPMP v1.0 US-006) — acts
     // on one class_record_id, not one lrn, since one subject upload covers
@@ -166,6 +169,7 @@ function ConsolidatedRecords() {
     useEffect(() => {
         fetchStudents();
         setExpandedLrns(new Set());
+        setSelectedLrns(new Set());
         setCurrentPage(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSchoolYearId, sectionFilterId]);
@@ -259,6 +263,64 @@ function ConsolidatedRecords() {
             setActionMessage(`Approved ${lrn}.`);
             await fetchStudents({ silent: true });
         });
+
+    const toggleSelected = (lrn) => {
+        setSelectedLrns((previous) => {
+            const next = new Set(previous);
+
+            if (next.has(lrn)) {
+                next.delete(lrn);
+            } else {
+                next.add(lrn);
+            }
+
+            return next;
+        });
+    };
+
+    // Each record still gets the full approval checks on the server; any
+    // that fail them are skipped and named here instead of approved.
+    const approveSelected = async () => {
+        const lrns = [...selectedLrns];
+        if (lrns.length === 0) return;
+        if (!window.confirm(`Approve ${lrns.length} selected record(s)? Approved records are locked.`)) return;
+
+        setActionMessage("");
+        setError("");
+        setApprovingSelected(true);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/submissions/school-years/${selectedSchoolYearId}/approve-selected`,
+                {
+                    method: "POST",
+                    headers: authHeaders({ "Content-Type": "application/json" }),
+                    body: JSON.stringify({ lrns }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to approve the selected records.");
+            }
+
+            setActionMessage(data.message);
+            if (data.skipped?.length) {
+                // The success banner is hidden while an error shows, so the
+                // count goes in here too.
+                setError(
+                    `${data.message} Not approved: ${data.skipped.map((item) => `${item.lrn} (${item.message})`).join("; ")}`
+                );
+            }
+            setSelectedLrns(new Set());
+            await fetchStudents({ silent: true });
+        } catch (approveError) {
+            setError(approveError.message || "Failed to approve the selected records.");
+        } finally {
+            setApprovingSelected(false);
+        }
+    };
 
     const rejectRecord = (lrn) =>
         withPending(lrn, async () => {
@@ -398,6 +460,21 @@ function ConsolidatedRecords() {
         ).length || 0;
 
     const isAdviser = user.role === "adviser";
+    const isAdmin = user.role === "admin";
+
+    // "Select all" covers the Pending records the Administrator can see
+    // after the search and status filters, not ones hidden by them.
+    const selectablePending = filteredStudents.filter(
+        (student) => student.submission.status === "Pending Approval"
+    );
+    const allPendingSelected =
+        selectablePending.length > 0 && selectablePending.every((student) => selectedLrns.has(student.lrn));
+
+    const toggleSelectAllPending = () => {
+        setSelectedLrns(
+            allPendingSelected ? new Set() : new Set(selectablePending.map((student) => student.lrn))
+        );
+    };
     const subjectColumnCount = isAdviser ? 8 : 7;
 
     return (
@@ -513,6 +590,29 @@ function ConsolidatedRecords() {
                                             <Send size={15} />
                                             Submit all eligible ({eligibleForBulkSubmit})
                                         </button>
+                                    )}
+
+                                    {isAdmin && selectablePending.length > 0 && (
+                                        <div className="cr-bulk cr-bulk-approve">
+                                            <label className="cr-select-all">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={allPendingSelected}
+                                                    onChange={toggleSelectAllPending}
+                                                />
+                                                Select all pending ({selectablePending.length})
+                                            </label>
+
+                                            <button
+                                                type="button"
+                                                className="cr-btn cr-btn-approve"
+                                                onClick={approveSelected}
+                                                disabled={selectedLrns.size === 0 || approvingSelected}
+                                            >
+                                                <CheckCircle size={15} />
+                                                Approve selected ({selectedLrns.size})
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
 
@@ -639,6 +739,16 @@ function ConsolidatedRecords() {
 
                                                 {user.role === "admin" && submissionStatus === "Pending Approval" && (
                                                     <>
+                                                        <label className="cr-select-row" title="Select for Approve selected">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedLrns.has(student.lrn)}
+                                                                onChange={() => toggleSelected(student.lrn)}
+                                                                disabled={isPending || approvingSelected}
+                                                                aria-label={`Select ${student.last_name}, ${student.first_name} for approval`}
+                                                            />
+                                                        </label>
+
                                                         <button
                                                             type="button"
                                                             className="cr-btn cr-btn-approve"

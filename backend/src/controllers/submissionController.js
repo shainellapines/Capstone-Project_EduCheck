@@ -273,6 +273,133 @@ const submitAllEligible = async (req, res) => {
 // nothing to decide on a record nobody has submitted yet, and a decision
 // already made (Approved/Rejected) is not silently overwritten here.
 
+// Decides one record. Shared by the single approve/reject and by bulk
+// approval, so every record gets the same checks and snapshot either way.
+// Returns { error: { status, body } } or the decided record's details.
+const decideRecord = async ({ targetStatus, schoolYearId, lrn, remarks, adminUserId }) => {
+    const existing = await pool.query(
+        `
+        SELECT rs.status, rs.reviewed_by, s.first_name, s.last_name
+        FROM record_submissions rs
+        INNER JOIN students s ON s.lrn = rs.lrn
+        WHERE rs.lrn = $1 AND rs.school_year_id = $2
+        `,
+        [lrn, schoolYearId]
+    );
+
+    if (existing.rows.length === 0 || existing.rows[0].status !== "Pending Approval") {
+        return { error: { status: 409, body: { message: "This record is not currently pending approval." } } };
+    }
+
+    const { reviewed_by: reviewedBy, first_name: firstName, last_name: lastName } = existing.rows[0];
+    const studentName = `${lastName}, ${firstName}`;
+
+    // On approval, freeze the consolidated record as it stands now so
+    // later re-uploads or reassignments cannot rewrite approved history.
+    const approvedStudent = await fetchConsolidatedStudent(schoolYearId, lrn);
+    let snapshot = null;
+
+    // The record may have changed since it was submitted (a revision
+    // request, or grades that never passed validation), so approval
+    // re-checks it rather than trusting the submit-time check.
+    if (targetStatus === "Approved" && (!approvedStudent || !approvedStudent.ready_for_submission)) {
+        return {
+            error: {
+                status: 409,
+                body: approvedStudent
+                    ? notReadyError(approvedStudent, "approved")
+                    : { message: "No consolidated record found for this LRN in this school year." },
+            },
+        };
+    }
+
+    if (targetStatus === "Approved" && approvedStudent) {
+        const adviserResult = await pool.query(
+            `
+            SELECT t.first_name, t.last_name
+            FROM teacher_assignments ta
+            INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+            WHERE ta.section_id = $1 AND ta.school_year_id = $2 AND ta.subject_id IS NULL
+            `,
+            [approvedStudent.section_id, schoolYearId]
+        );
+        const adviser = adviserResult.rows[0];
+
+        snapshot = {
+            captured_at: new Date().toISOString(),
+            lrn: approvedStudent.lrn,
+            name: `${approvedStudent.last_name}, ${approvedStudent.first_name}`,
+            grade_level: approvedStudent.grade_level,
+            section_id: approvedStudent.section_id,
+            adviser: adviser ? `${adviser.first_name} ${adviser.last_name}` : null,
+            subjects: approvedStudent.subjects.map((subject) => ({
+                subject_name: subject.subject_name,
+                teacher_name: subject.teacher_name,
+                term_1: subject.term_1,
+                term_2: subject.term_2,
+                term_3: subject.term_3,
+                final_grade: subject.final_grade,
+                class_record_id: subject.class_record_id,
+            })),
+        };
+    }
+
+    const result = await pool.query(
+        `
+        UPDATE record_submissions
+        SET status = $1, approved_by = $2, approved_at = NOW(), remarks = $3,
+            snapshot = $6, updated_at = NOW()
+        WHERE lrn = $4 AND school_year_id = $5 AND status = 'Pending Approval'
+        RETURNING *
+        `,
+        [
+            targetStatus,
+            adminUserId,
+            remarks || null,
+            lrn,
+            schoolYearId,
+            snapshot ? JSON.stringify(snapshot) : null,
+        ]
+    );
+
+    // Someone else decided it between the check above and this update.
+    if (result.rows.length === 0) {
+        return { error: { status: 409, body: { message: "This record is not currently pending approval." } } };
+    }
+
+    // Re-read after the update for the teachers whose grades fed into it.
+    const student = await fetchConsolidatedStudent(schoolYearId, lrn);
+
+    return { submission: result.rows[0], reviewedBy, studentName, student };
+};
+
+// The subject teachers whose uploaded grades fed into this record, each
+// with every subject of theirs in it (a teacher may own more than one).
+const subjectNamesByTeacherOf = (student) => {
+    const subjectNamesByTeacher = new Map();
+
+    (student?.subjects || []).forEach((subject) => {
+        if (!subject.teacher_user_id) return;
+
+        if (!subjectNamesByTeacher.has(subject.teacher_user_id)) {
+            subjectNamesByTeacher.set(subject.teacher_user_id, []);
+        }
+
+        subjectNamesByTeacher.get(subject.teacher_user_id).push(subject.subject_name);
+    });
+
+    return subjectNamesByTeacher;
+};
+
+const insertNotification = (userId, title, message) =>
+    pool.query(
+        `
+        INSERT INTO notifications (user_id, title, message, status)
+        VALUES ($1, $2, $3, 'Unread')
+        `,
+        [userId, title, message]
+    );
+
 const decideSubmission = (targetStatus) => async (req, res) => {
     try {
         const schoolYearId = Number(req.params.schoolYearId);
@@ -287,94 +414,19 @@ const decideSubmission = (targetStatus) => async (req, res) => {
             return res.status(400).json({ message: "A valid 12-digit LRN is required." });
         }
 
-        const existing = await pool.query(
-            `
-            SELECT rs.status, rs.reviewed_by, s.first_name, s.last_name
-            FROM record_submissions rs
-            INNER JOIN students s ON s.lrn = rs.lrn
-            WHERE rs.lrn = $1 AND rs.school_year_id = $2
-            `,
-            [lrn, schoolYearId]
-        );
+        const decided = await decideRecord({
+            targetStatus,
+            schoolYearId,
+            lrn,
+            remarks,
+            adminUserId: req.user.user_id,
+        });
 
-        if (existing.rows.length === 0 || existing.rows[0].status !== "Pending Approval") {
-            return res.status(409).json({
-                message: "This record is not currently pending approval.",
-            });
+        if (decided.error) {
+            return res.status(decided.error.status).json(decided.error.body);
         }
 
-        const { reviewed_by: reviewedBy, first_name: firstName, last_name: lastName } = existing.rows[0];
-        const studentName = `${lastName}, ${firstName}`;
-
-        // On approval, freeze the consolidated record as it stands now so
-        // later re-uploads or reassignments cannot rewrite approved history.
-        const approvedStudent = await fetchConsolidatedStudent(schoolYearId, lrn);
-        let snapshot = null;
-
-        // The record may have changed since it was submitted (a revision
-        // request, or grades that never passed validation), so approval
-        // re-checks it rather than trusting the submit-time check.
-        if (targetStatus === "Approved" && (!approvedStudent || !approvedStudent.ready_for_submission)) {
-            return res.status(409).json(
-                approvedStudent
-                    ? notReadyError(approvedStudent, "approved")
-                    : { message: "No consolidated record found for this LRN in this school year." }
-            );
-        }
-
-        if (targetStatus === "Approved" && approvedStudent) {
-            const adviserResult = await pool.query(
-                `
-                SELECT t.first_name, t.last_name
-                FROM teacher_assignments ta
-                INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
-                WHERE ta.section_id = $1 AND ta.school_year_id = $2 AND ta.subject_id IS NULL
-                `,
-                [approvedStudent.section_id, schoolYearId]
-            );
-            const adviser = adviserResult.rows[0];
-
-            snapshot = {
-                captured_at: new Date().toISOString(),
-                lrn: approvedStudent.lrn,
-                name: `${approvedStudent.last_name}, ${approvedStudent.first_name}`,
-                grade_level: approvedStudent.grade_level,
-                section_id: approvedStudent.section_id,
-                adviser: adviser ? `${adviser.first_name} ${adviser.last_name}` : null,
-                subjects: approvedStudent.subjects.map((subject) => ({
-                    subject_name: subject.subject_name,
-                    teacher_name: subject.teacher_name,
-                    term_1: subject.term_1,
-                    term_2: subject.term_2,
-                    term_3: subject.term_3,
-                    final_grade: subject.final_grade,
-                    class_record_id: subject.class_record_id,
-                })),
-            };
-        }
-
-        const result = await pool.query(
-            `
-            UPDATE record_submissions
-            SET status = $1, approved_by = $2, approved_at = NOW(), remarks = $3,
-                snapshot = $6, updated_at = NOW()
-            WHERE lrn = $4 AND school_year_id = $5 AND status = 'Pending Approval'
-            RETURNING *
-            `,
-            [
-                targetStatus,
-                req.user.user_id,
-                remarks || null,
-                lrn,
-                schoolYearId,
-                snapshot ? JSON.stringify(snapshot) : null,
-            ]
-        );
-
-        // Someone else decided it between the check above and this update.
-        if (result.rows.length === 0) {
-            return res.status(409).json({ message: "This record is not currently pending approval." });
-        }
+        const { reviewedBy, studentName, student } = decided;
 
         if (reviewedBy) {
             const message =
@@ -382,62 +434,117 @@ const decideSubmission = (targetStatus) => async (req, res) => {
                     ? `${studentName}'s consolidated record was approved.`
                     : `${studentName}'s consolidated record was rejected.${remarks ? ` Reason: ${remarks}` : ""}`;
 
-            await pool.query(
-                `
-                INSERT INTO notifications (user_id, title, message, status)
-                VALUES ($1, $2, $3, 'Unread')
-                `,
-                [reviewedBy, `Submission ${targetStatus}`, message]
-            );
+            await insertNotification(reviewedBy, `Submission ${targetStatus}`, message);
         }
 
         // Notify each subject teacher whose uploaded grades fed into this
-        // consolidated record too — previously only the adviser who
-        // submitted it found out the outcome, and the teacher who actually
-        // uploaded the underlying subject grades had no visibility into
-        // what happened to it downstream. One notification per teacher
-        // (not per subject) in case the same teacher owns more than one
-        // subject for this student, naming every subject of theirs involved.
-        const student = await fetchConsolidatedStudent(schoolYearId, lrn);
+        // consolidated record too, not only the adviser who submitted it.
+        for (const [teacherUserId, subjectNames] of subjectNamesByTeacherOf(student)) {
+            const subjectList = subjectNames.join(", ");
+            const teacherMessage =
+                targetStatus === "Approved"
+                    ? `${studentName}'s consolidated record — including your ${subjectList} grade(s) — was approved.`
+                    : `${studentName}'s consolidated record — including your ${subjectList} grade(s) — was rejected.${remarks ? ` Reason: ${remarks}` : ""}`;
 
-        if (student) {
-            const subjectNamesByTeacher = new Map();
-
-            student.subjects.forEach((subject) => {
-                if (!subject.teacher_user_id) return;
-
-                if (!subjectNamesByTeacher.has(subject.teacher_user_id)) {
-                    subjectNamesByTeacher.set(subject.teacher_user_id, []);
-                }
-
-                subjectNamesByTeacher.get(subject.teacher_user_id).push(subject.subject_name);
-            });
-
-            for (const [teacherUserId, subjectNames] of subjectNamesByTeacher) {
-                const subjectList = subjectNames.join(", ");
-                const teacherMessage =
-                    targetStatus === "Approved"
-                        ? `${studentName}'s consolidated record — including your ${subjectList} grade(s) — was approved.`
-                        : `${studentName}'s consolidated record — including your ${subjectList} grade(s) — was rejected.${remarks ? ` Reason: ${remarks}` : ""}`;
-
-                await pool.query(
-                    `
-                    INSERT INTO notifications (user_id, title, message, status)
-                    VALUES ($1, $2, $3, 'Unread')
-                    `,
-                    [teacherUserId, `Submission ${targetStatus}`, teacherMessage]
-                );
-            }
+            await insertNotification(teacherUserId, `Submission ${targetStatus}`, teacherMessage);
         }
 
         return res.json({
             message: `Record ${targetStatus.toLowerCase()}.`,
-            submission: result.rows[0],
+            submission: decided.submission,
         });
     } catch (error) {
         console.error(`${targetStatus} submission error:`, error);
 
         return res.status(500).json({ message: `Failed to ${targetStatus.toLowerCase()} this record.` });
+    }
+};
+
+// ==========================================
+// APPROVE SELECTED RECORDS AT ONCE
+// (School Administrator)
+// ==========================================
+// The Administrator ticks the records they reviewed and approves them in
+// one step. Each one gets the same checks and snapshot as a single
+// approval; one that fails them is skipped and reported, not approved.
+// Rejection stays one at a time, since each needs its own reason. One
+// summary notification per person instead of one per learner.
+
+const MAX_BULK_APPROVE = 200;
+
+const approveSelected = async (req, res) => {
+    try {
+        const schoolYearId = Number(req.params.schoolYearId);
+        const lrns = Array.isArray(req.body?.lrns) ? [...new Set(req.body.lrns)] : null;
+
+        if (!isValidSchoolYearId(schoolYearId)) {
+            return res.status(400).json({ message: "A valid school year ID is required." });
+        }
+
+        if (!lrns || lrns.length === 0 || !lrns.every(isValidLrn)) {
+            return res.status(400).json({ message: "Select at least one record (12-digit LRNs)." });
+        }
+
+        if (lrns.length > MAX_BULK_APPROVE) {
+            return res.status(400).json({ message: `Approve at most ${MAX_BULK_APPROVE} records at a time.` });
+        }
+
+        const approved = [];
+        const skipped = [];
+        const countsByAdviser = new Map();
+        const countsByTeacher = new Map();
+
+        for (const lrn of lrns) {
+            const decided = await decideRecord({
+                targetStatus: "Approved",
+                schoolYearId,
+                lrn,
+                remarks: null,
+                adminUserId: req.user.user_id,
+            });
+
+            if (decided.error) {
+                skipped.push({ lrn, message: decided.error.body.message });
+                continue;
+            }
+
+            approved.push(lrn);
+
+            if (decided.reviewedBy) {
+                countsByAdviser.set(decided.reviewedBy, (countsByAdviser.get(decided.reviewedBy) || 0) + 1);
+            }
+
+            for (const teacherUserId of subjectNamesByTeacherOf(decided.student).keys()) {
+                countsByTeacher.set(teacherUserId, (countsByTeacher.get(teacherUserId) || 0) + 1);
+            }
+        }
+
+        for (const [userId, count] of countsByAdviser) {
+            await insertNotification(
+                userId,
+                "Submission Approved",
+                `${count} consolidated record(s) you submitted were approved.`
+            );
+        }
+
+        for (const [userId, count] of countsByTeacher) {
+            await insertNotification(
+                userId,
+                "Submission Approved",
+                `${count} consolidated record(s) that include your grades were approved.`
+            );
+        }
+
+        return res.json({
+            message: `Approved ${approved.length} record(s).${skipped.length ? ` ${skipped.length} skipped.` : ""}`,
+            approved_count: approved.length,
+            approved,
+            skipped,
+        });
+    } catch (error) {
+        console.error("Approve selected error:", error);
+
+        return res.status(500).json({ message: "Failed to approve the selected records." });
     }
 };
 
@@ -449,4 +556,5 @@ module.exports = {
     submitAllEligible,
     approveSubmission,
     rejectSubmission,
+    approveSelected,
 };

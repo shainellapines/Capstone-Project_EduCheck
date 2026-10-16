@@ -5,6 +5,7 @@ const {
     submitAllEligible,
     approveSubmission,
     rejectSubmission,
+    approveSelected,
 } = require("../controllers/submissionController");
 
 const {
@@ -40,6 +41,12 @@ router.post(
     "/school-years/:schoolYearId/students/:lrn/approve",
     authorizeRoles("admin"),
     approveSubmission
+);
+
+router.post(
+    "/school-years/:schoolYearId/approve-selected",
+    authorizeRoles("admin"),
+    approveSelected
 );
 
 router.post(

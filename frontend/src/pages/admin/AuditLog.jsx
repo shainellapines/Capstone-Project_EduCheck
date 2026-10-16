@@ -21,6 +21,7 @@ const ENTITY_TYPE_LABEL = {
     section: "Section",
     teacher_assignment: "Teacher Assignment",
     historical_record: "SF10 Historical Record",
+    user: "User Account",
 };
 
 // Shared badge tones from StatusBadge.css, each with its own icon so the
@@ -178,6 +179,7 @@ function AuditLog() {
                             <option value="">All</option>
                             <option value="section">Sections</option>
                             <option value="teacher_assignment">Teacher Assignments</option>
+                            <option value="user">User Accounts</option>
                         </select>
                     </div>
                 </header>

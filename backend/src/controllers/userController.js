@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const pool = require("../db");
+const { recordAuditLog } = require("../utils/auditLog");
 
 // Minimal complexity rule: 8+ characters, at least one letter and one
 // number. Not a full policy (no symbol/case requirements) - just enough
@@ -341,11 +342,66 @@ const searchUsers = async (req, res) => {
     }
 };
 
+// RESET another account's password (Admin only)
+// The fix when a teacher forgets the password, or when an account still has
+// the one the Administrator set. The user changes it afterwards in Settings.
+// The password itself is never logged, only that a reset happened.
+const resetUserPassword = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { new_password } = req.body;
+
+        if (!new_password || !PASSWORD_RULE.test(new_password)) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters and include both a letter and a number."
+            });
+        }
+
+        const existing = await pool.query(`SELECT user_id, username FROM users WHERE user_id = $1`, [id]);
+
+        if (existing.rows.length === 0) {
+            return res.status(404).json({
+                message: "User not found."
+            });
+        }
+
+        const target = existing.rows[0];
+
+        if (target.user_id === req.user.user_id) {
+            return res.status(409).json({
+                message: "Change your own password in Settings, where your current password is checked."
+            });
+        }
+
+        const passwordHash = await bcrypt.hash(new_password, 10);
+
+        await pool.query(`UPDATE users SET password_hash = $1 WHERE user_id = $2`, [passwordHash, target.user_id]);
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "update",
+            entityType: "user",
+            entityId: target.user_id,
+            beforeData: null,
+            afterData: { username: target.username, password_reset: true },
+        });
+
+        res.json({ message: `Password reset for ${target.username}.` });
+    } catch (error) {
+        console.error("Reset password error:", error);
+
+        res.status(500).json({
+            message: "Failed to reset the password."
+        });
+    }
+};
+
 module.exports = {
     getUsers,
     getUserById,
     createUser,
     updateUser,
     deleteUser,
-    searchUsers
+    searchUsers,
+    resetUserPassword
 };

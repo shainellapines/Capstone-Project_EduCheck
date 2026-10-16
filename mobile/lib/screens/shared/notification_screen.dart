@@ -38,6 +38,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final GlobalKey<AsyncViewState<Json>> _viewKey = GlobalKey();
   bool _unreadOnly = false;
 
+  /// Swiped away and deleted on the server; hidden at once so the list does
+  /// not wait for a reload to drop them.
+  final Set<int> _deletedIds = {};
+
   Future<ApiResult<Json>> _load() async {
     final result = await EduCheckApi.instance.notifications();
     NotificationPoller.instance.unreadCount.value = (result.data['unread_count'] as num?)?.toInt() ?? 0;
@@ -71,6 +75,38 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
+  Future<bool> _delete(Json item) async {
+    try {
+      await EduCheckApi.instance.deleteNotification((item['notification_id'] as num).toInt());
+      return true;
+    } catch (error) {
+      if (mounted) showMessage(context, error.toString(), error: true);
+      return false;
+    }
+  }
+
+  Future<void> _clearRead() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear read notifications?'),
+        content: const Text('Read notifications will be deleted. Unread ones are kept.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Clear')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await EduCheckApi.instance.clearReadNotifications();
+      await _viewKey.currentState?.reload();
+      if (mounted) showMessage(context, 'Read notifications cleared.');
+    } catch (error) {
+      if (mounted) showMessage(context, error.toString(), error: true);
+    }
+  }
+
   IconData _iconFor(String title) {
     final lower = title.toLowerCase();
     if (lower.contains('approved')) return Icons.verified_outlined;
@@ -94,12 +130,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
       backgroundColor: AppTheme.background,
       appBar: detailAppBar('Notifications', actions: [
         TextButton(onPressed: _markAllRead, child: const Text('Mark all read')),
+        IconButton(
+          tooltip: 'Clear read notifications',
+          onPressed: _clearRead,
+          icon: const Icon(Icons.delete_sweep_outlined),
+        ),
       ]),
       body: AsyncView<Json>(
         key: _viewKey,
         load: _load,
         builder: (context, data, reload) {
-          final all = asList(data['notifications']);
+          final all = asList(data['notifications'])
+              .where((n) => !_deletedIds.contains((n['notification_id'] as num).toInt()))
+              .toList();
           final items = _unreadOnly ? all.where((n) => n['status'] == 'Unread').toList() : all;
 
           return [
@@ -124,13 +167,42 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 icon: Icons.notifications_off_outlined,
                 message: _unreadOnly ? 'You have no unread notifications.' : 'No notifications yet.',
               ),
+            if (items.isNotEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Text(
+                  'Swipe a notification left to delete it.',
+                  style: TextStyle(fontSize: 11, color: AppTheme.textGray),
+                ),
+              ),
             for (final item in items) ...[
-              _NotificationTile(
-                item: item,
-                icon: _iconFor(item['title']?.toString() ?? ''),
-                color: _colorFor(item['title']?.toString() ?? ''),
-                opens: widget.openableTitles.contains(item['title']?.toString()),
-                onTap: () => _open(item),
+              Dismissible(
+                key: ValueKey(item['notification_id']),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) => _delete(item),
+                onDismissed: (_) {
+                  setState(() => _deletedIds.add((item['notification_id'] as num).toInt()));
+                  if (item['status'] == 'Unread') {
+                    final poller = NotificationPoller.instance.unreadCount;
+                    poller.value = poller.value > 0 ? poller.value - 1 : 0;
+                  }
+                },
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.danger.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded, color: AppTheme.danger),
+                ),
+                child: _NotificationTile(
+                  item: item,
+                  icon: _iconFor(item['title']?.toString() ?? ''),
+                  color: _colorFor(item['title']?.toString() ?? ''),
+                  opens: widget.openableTitles.contains(item['title']?.toString()),
+                  onTap: () => _open(item),
+                ),
               ),
               const SizedBox(height: 10),
             ],

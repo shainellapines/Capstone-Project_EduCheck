@@ -17,6 +17,7 @@ import {
 import "./UserManagement.css";
 import Sidebar from "../../components/Sidebar";
 import { API_URL } from "../../config";
+import { getStoredUser } from "../../utils/session";
 
 
 function UserManagement() {
@@ -39,6 +40,7 @@ function UserManagement() {
     const [message, setMessage] = useState("");
 
     const token = localStorage.getItem("educheck_token");
+    const currentUserId = getStoredUser()?.user_id;
 
     const fetchUsers = async () => {
         try {
@@ -155,10 +157,39 @@ function UserManagement() {
                 );
             }
 
+            // A new password on Edit is a reset, sent to its own endpoint so
+            // it is checked and audited apart from the account details.
+            const resetPassword = editingUser && formData.password;
+
+            if (resetPassword) {
+                const resetResponse = await fetch(
+                    `${API_URL}/users/${editingUser.user_id}/reset-password`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ new_password: formData.password }),
+                    }
+                );
+
+                const resetData = await resetResponse.json();
+
+                if (!resetResponse.ok) {
+                    await fetchUsers();
+                    throw new Error(
+                        resetData.message || "Unable to reset the password."
+                    );
+                }
+            }
+
             closeModal();
 
             setMessage(
-                editingUser
+                resetPassword
+                    ? `User updated. ${formData.username} can now sign in with the new password.`
+                    : editingUser
                     ? "User updated successfully."
                     : "User created successfully."
             );
@@ -554,20 +585,27 @@ function UserManagement() {
                                 />
                             </div>
 
-                            {!editingUser && (
+                            {(!editingUser || editingUser.user_id !== currentUserId) && (
                                 <div className="form-group">
                                     <label>
-                                        Password
+                                        {editingUser ? "Reset Password" : "Password"}
                                     </label>
 
                                     <input
                                         type="password"
                                         name="password"
+                                        autoComplete="new-password"
+                                        placeholder={editingUser ? "Leave blank to keep the current password" : ""}
                                         value={formData.password}
                                         onChange={handleChange}
-                                        required
+                                        required={!editingUser}
                                         minLength={8}
                                     />
+
+                                    <span className="form-hint">
+                                        At least 8 characters with a letter and a number.
+                                        {editingUser && " Give it to the user and ask them to change it in Settings."}
+                                    </span>
                                 </div>
                             )}
 

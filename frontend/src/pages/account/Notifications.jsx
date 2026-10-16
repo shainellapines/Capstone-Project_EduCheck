@@ -8,6 +8,7 @@ import {
     CheckCheck,
     Undo2,
     RefreshCcw,
+    Trash2,
 } from "lucide-react";
 
 import "../../styles/Dashboard.css";
@@ -130,6 +131,57 @@ function Notifications() {
         }
     };
 
+    // Deleting is not best-effort like marking read: a notification that
+    // reappears on the next visit would look like the delete never worked.
+    const deleteOne = async (notification) => {
+        try {
+            setError("");
+
+            const response = await fetch(`${API_URL}/notifications/${notification.notification_id}`, {
+                method: "DELETE",
+                headers: authHeaders(),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || "Failed to delete the notification.");
+            }
+
+            setNotifications((previous) =>
+                previous.filter((n) => n.notification_id !== notification.notification_id)
+            );
+            if (notification.status === "Unread") {
+                setUnreadCount((previous) => Math.max(0, previous - 1));
+            }
+        } catch (deleteError) {
+            setError(deleteError.message || "Failed to delete the notification.");
+        }
+    };
+
+    const clearRead = async () => {
+        if (!window.confirm("Delete all read notifications? Unread ones are kept.")) return;
+
+        try {
+            setError("");
+
+            const response = await fetch(`${API_URL}/notifications/read`, {
+                method: "DELETE",
+                headers: authHeaders(),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || "Failed to clear notifications.");
+            }
+
+            setNotifications((previous) => previous.filter((n) => n.status === "Unread"));
+        } catch (clearError) {
+            setError(clearError.message || "Failed to clear notifications.");
+        }
+    };
+
+    const readCount = (notifications || []).length - unreadCount;
+
     const filterCounts = useMemo(() => {
         const counts = { all: 0, unread: 0, approved: 0, rejected: 0, revisions: 0 };
 
@@ -209,15 +261,27 @@ function Notifications() {
                                 ))}
                             </div>
 
-                            <button
-                                type="button"
-                                className="notif-mark-all"
-                                onClick={markAllRead}
-                                disabled={unreadCount === 0}
-                            >
-                                <CheckCheck size={16} />
-                                Mark all read
-                            </button>
+                            <div className="notif-toolbar-actions">
+                                <button
+                                    type="button"
+                                    className="notif-mark-all"
+                                    onClick={markAllRead}
+                                    disabled={unreadCount === 0}
+                                >
+                                    <CheckCheck size={16} />
+                                    Mark all read
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="notif-mark-all"
+                                    onClick={clearRead}
+                                    disabled={readCount === 0}
+                                >
+                                    <Trash2 size={16} />
+                                    Clear read
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -243,9 +307,9 @@ function Notifications() {
                             const isUnread = notification.status === "Unread";
 
                             return (
+                                <div className="notif-card-wrap" key={notification.notification_id}>
                                 <button
                                     type="button"
-                                    key={notification.notification_id}
                                     className={isUnread ? "notif-card unread" : "notif-card"}
                                     onClick={() => isUnread && markOneRead(notification.notification_id)}
                                 >
@@ -263,6 +327,17 @@ function Notifications() {
 
                                     {isUnread && <span className="notif-unread-dot" />}
                                 </button>
+
+                                <button
+                                    type="button"
+                                    className="notif-delete"
+                                    title="Delete notification"
+                                    aria-label={`Delete notification: ${notification.title}`}
+                                    onClick={() => deleteOne(notification)}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                                </div>
                             );
                         })}
 

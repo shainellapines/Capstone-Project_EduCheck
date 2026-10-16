@@ -93,6 +93,47 @@
     border-color: var(--ec-slate-400);
 }
 
+.notif-mark-all:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.notif-toolbar-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.notif-card-wrap {
+    position: relative;
+}
+
+.notif-card-wrap .notif-card {
+    padding-right: 56px;
+}
+
+.notif-delete {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ec-slate-400);
+    cursor: pointer;
+}
+
+.notif-delete:hover,
+.notif-delete:focus-visible {
+    background: var(--ec-danger-bg);
+    color: var(--ec-danger);
+}
+
 .notif-card {
     display: flex;
     align-items: flex-start;

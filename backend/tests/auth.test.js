@@ -102,4 +102,49 @@ describe("Authentication (EPIC-01)", () => {
             assert.deepEqual(me.body.assignments, []);
         }
     });
+
+    it("AUTH-11 Admin resets another account's password: old one stops working, audited, never logged", async () => {
+        const { rows } = await t.pool.query("SELECT user_id FROM users WHERE username='adviser_none'");
+        const id = rows[0].user_id;
+
+        const weak = await t.request("POST", `/api/users/${id}/reset-password`, {
+            token: t.tokens.admin,
+            body: { new_password: "short1" },
+        });
+        assert.equal(weak.status, 400);
+
+        const notAdmin = await t.request("POST", `/api/users/${id}/reset-password`, {
+            token: t.tokens.adviser_a,
+            body: { new_password: "ResetPass1" },
+        });
+        assert.equal(notAdmin.status, 403);
+
+        const ok = await t.request("POST", `/api/users/${id}/reset-password`, {
+            token: t.tokens.admin,
+            body: { new_password: "ResetPass1" },
+        });
+        assert.equal(ok.status, 200);
+
+        const oldLogin = await t.request("POST", "/api/auth/login", { body: { username: "adviser_none", password: PASSWORD } });
+        assert.equal(oldLogin.status, 401);
+        const newLogin = await t.request("POST", "/api/auth/login", { body: { username: "adviser_none", password: "ResetPass1" } });
+        assert.equal(newLogin.status, 200);
+
+        const audit = await t.pool.query("SELECT after_data FROM audit_logs WHERE entity_type='user' AND entity_id=$1", [id]);
+        assert.equal(audit.rows.length, 1);
+        assert.equal(audit.rows[0].after_data.password_reset, true);
+        assert.doesNotMatch(JSON.stringify(audit.rows[0].after_data), /ResetPass1/);
+
+        const { rows: adminRows } = await t.pool.query("SELECT user_id FROM users WHERE username='admin'");
+        const self = await t.request("POST", `/api/users/${adminRows[0].user_id}/reset-password`, {
+            token: t.tokens.admin,
+            body: { new_password: "ResetPass1" },
+        });
+        assert.equal(self.status, 409);
+
+        await t.pool.query("UPDATE users SET password_hash=$1 WHERE user_id=$2", [
+            require("bcryptjs").hashSync(PASSWORD, 10),
+            id,
+        ]);
+    });
 });
