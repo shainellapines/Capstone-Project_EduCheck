@@ -317,6 +317,134 @@
     background: var(--ec-success-bg);
 }
 
+.status-pill.pending {
+    color: var(--ec-primary-500);
+    background: var(--ec-primary-50);
+}
+
+.status-pill.setup {
+    color: var(--ec-warning);
+    background: var(--ec-warning-bg);
+}
+
+.temp-password-input {
+    display: flex;
+    gap: 8px;
+}
+
+.temp-password-input input {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    letter-spacing: 0.04em;
+}
+
+.temp-password-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 14px 0 4px;
+    padding: 12px 14px;
+    border: 1px dashed var(--ec-slate-300);
+    border-radius: 8px;
+    background: var(--ec-slate-50);
+}
+
+.temp-password-box span {
+    color: var(--ec-slate-600);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.temp-password-box code {
+    flex: 1;
+    color: var(--ec-slate-900);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.temp-password-box button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-pill.rejected {
+    color: var(--ec-danger);
+    background: var(--ec-danger-bg);
+}
+
+.status-note {
+    display: block;
+    margin-top: 5px;
+    max-width: 220px;
+    color: var(--ec-slate-500);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.status-note.is-danger {
+    color: var(--ec-danger);
+}
+
+.approval-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.approval-button.approve {
+    background: var(--ec-success);
+    color: var(--ec-on-action);
+}
+
+.approval-button.reject {
+    background: var(--ec-surface);
+    border-color: var(--ec-danger);
+    color: var(--ec-danger);
+}
+
+.approval-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.approval-reject-row td {
+    background: var(--ec-slate-50);
+}
+
+.approval-reject-row label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--ec-slate-700);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.approval-reject-row textarea {
+    width: 100%;
+    max-width: 560px;
+    margin-bottom: 10px;
+    padding: 9px 11px;
+    border: 1px solid var(--ec-slate-300);
+    border-radius: 7px;
+    background: var(--ec-surface);
+    color: var(--ec-slate-900);
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
 .status-pill.inactive {
     color: var(--ec-warning);
     background: var(--ec-warning-bg);
@@ -400,7 +528,9 @@
 
 .user-modal {
     width: 100%;
-    max-width: 540px;
+    max-width: 580px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
     background: var(--ec-surface);
     border-radius: 12px;
     box-shadow: var(--ec-shadow-popover);
@@ -474,6 +604,52 @@
 .form-group select:focus {
     border-color: var(--ec-primary-500);
     box-shadow: 0 0 0 2px var(--ec-focus);
+}
+
+.form-hint {
+    color: var(--ec-slate-500);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.form-section-title {
+    margin: 4px 0 12px;
+    color: var(--ec-slate-500);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.form-section-title:not(:first-child) {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--ec-slate-200);
+}
+
+.form-hint-block {
+    display: block;
+    margin: -8px 0 4px;
+}
+
+.profile-missing {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border: 1px solid var(--ec-warning);
+    border-radius: 20px;
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.profile-missing:hover,
+.profile-missing:focus-visible {
+    filter: brightness(0.95);
 }
 
 .form-row {

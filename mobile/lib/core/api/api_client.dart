@@ -42,6 +42,10 @@ class ApiClient {
   /// Called when the backend rejects the token; app.dart routes to login.
   void Function()? onUnauthorized;
 
+  /// Called when the backend refuses a request until a temporary password
+  /// is replaced (403 PASSWORD_CHANGE_REQUIRED); app.dart opens that screen.
+  void Function()? onPasswordChangeRequired;
+
   Uri _uri(String path) => Uri.parse('${SessionStore.instance.baseUrl}/api$path');
 
   Map<String, String> get _headers {
@@ -65,6 +69,10 @@ class ApiClient {
     if (response.statusCode == 401 && SessionStore.instance.token != null) {
       SessionStore.instance.clear();
       onUnauthorized?.call();
+    }
+
+    if (response.statusCode == 403 && body is Map && body['code'] == 'PASSWORD_CHANGE_REQUIRED') {
+      onPasswordChangeRequired?.call();
     }
 
     final message = body is Map && body['message'] is String
@@ -109,4 +117,6 @@ class ApiClient {
 
   Future<dynamic> put(String path, Map<String, dynamic> body) =>
       _send(() => http.put(_uri(path), headers: _headers, body: jsonEncode(body)));
+
+  Future<dynamic> delete(String path) => _send(() => http.delete(_uri(path), headers: _headers));
 }

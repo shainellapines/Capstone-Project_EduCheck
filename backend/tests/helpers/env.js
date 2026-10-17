@@ -42,6 +42,14 @@ const uploadDir = () => {
     return dir;
 };
 
+const outboxFile = () => path.join(runDir(), "outbox.jsonl");
+
+// Every email the server "sent" during this test file, oldest first.
+const readOutbox = () =>
+    fs.existsSync(outboxFile())
+        ? fs.readFileSync(outboxFile(), "utf8").trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line))
+        : [];
+
 const removeRunDir = () => {
     if (!currentRunDir) return;
     fs.rmSync(currentRunDir, { recursive: true, force: true, maxRetries: 3 });
@@ -218,6 +226,8 @@ const startServer = async () => {
             DB_NAME: TEST_DB,
             JWT_SECRET: "test-secret-do-not-use",
             UPLOAD_DIR: uploadDir(),
+            // Account emails go to a file, never to a real address.
+            MAIL_OUTBOX: outboxFile(),
         },
         stdio: ["ignore", "pipe", "pipe"],
     });
@@ -297,7 +307,7 @@ const setup = async () => {
         removeRunDir();
     };
 
-    return { baseUrl: server.baseUrl, pool, ids, tokens, request, upload, teardown, getLog: server.getLog };
+    return { baseUrl: server.baseUrl, pool, ids, tokens, request, upload, teardown, getLog: server.getLog, readOutbox };
 };
 
 module.exports = { setup, buildEcr, lrnGenerator, removeRunDir, PASSWORD };

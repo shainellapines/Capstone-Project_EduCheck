@@ -1,5 +1,6 @@
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const accountApprovalRoutes = require("./routes/accountApprovalRoutes");
 const teacherRoutes = require("./routes/teacherRoutes");
 const subjectRoutes = require("./routes/subjectRoutes");
 const sectionRoutes = require("./routes/sectionRoutes");
@@ -40,10 +41,17 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "")
     .filter(Boolean);
 
 // Middleware
-app.use(cors(allowedOrigins.length > 0 ? { origin: allowedOrigins } : undefined));
+// The web app reads X-Password-Change-Required from cross-origin responses.
+app.use(
+    cors({
+        ...(allowedOrigins.length > 0 ? { origin: allowedOrigins } : {}),
+        exposedHeaders: ["X-Password-Change-Required"],
+    })
+);
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/account-approvals", accountApprovalRoutes);
 app.use("/api/teachers", teacherRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/sections", sectionRoutes);

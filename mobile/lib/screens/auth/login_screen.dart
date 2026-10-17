@@ -128,7 +128,11 @@ class _LoginScreenState extends State<LoginScreen> {
           BoxShadow(color: AppTheme.textDark.withValues(alpha: 0.03), blurRadius: 18, offset: const Offset(0, 6)),
         ],
       ),
+      // Phones are often shared between teachers, so the login is never
+      // offered to the password manager: a saved login would greet the next
+      // teacher already filled in with someone else's account.
       child: AutofillGroup(
+        onDisposeAction: AutofillContextAction.cancel,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -171,9 +175,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 7),
             TextField(
               controller: _usernameController,
-              autofillHints: const [AutofillHints.username],
               textInputAction: TextInputAction.next,
-              decoration: _inputDecoration(hintText: 'e.g. adviser.grade6a'),
+              decoration: _inputDecoration(hintText: 'Enter your username'),
             ),
             const SizedBox(height: 17),
             _label('Password'),
@@ -181,7 +184,6 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _passwordController,
               obscureText: _obscurePassword,
-              autofillHints: const [AutofillHints.password],
               onSubmitted: (_) => _login(),
               decoration: _inputDecoration(
                 hintText: 'Enter your password',

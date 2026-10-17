@@ -106,6 +106,16 @@ function installSessionGuard() {
             }
         }
 
+        // The Administrator reset this password while the user was signed
+        // in: the server now refuses everything until it is replaced.
+        if (response.status === 403 && response.headers.get("X-Password-Change-Required") && getToken()) {
+            updateStoredUser({ must_change_password: true });
+
+            if (window.location.pathname !== "/change-password") {
+                window.location.href = "/change-password";
+            }
+        }
+
         return response;
     };
 }

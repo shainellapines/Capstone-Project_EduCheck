@@ -35,6 +35,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   final TextEditingController _search = TextEditingController();
   late String? _status = widget.initialStatus;
   bool _busy = false;
+  int _page = 1;
 
   Future<ApiResult<Json>> _load() async {
     final year = await SchoolYearContext.current();
@@ -109,6 +110,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 if (query.isEmpty) return true;
                 return '${s['last_name']}, ${s['first_name']} ${s['lrn']}'.toLowerCase().contains(query);
               }).toList();
+              final shown = pageOf(visible, _page);
 
               return [
                 if (widget.title != null) ...[
@@ -120,7 +122,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 ],
                 TextField(
                   controller: _search,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setState(() => _page = 1),
                   decoration: InputDecoration(
                     hintText: 'Search name or LRN',
                     prefixIcon: const Icon(Icons.search_rounded),
@@ -161,7 +163,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                             : 'No consolidated records for this school year yet.')
                         : 'No learners match this filter.',
                   ),
-                for (final student in visible) ...[
+                for (final student in shown) ...[
                   _StudentTile(
                     student: student,
                     sectionName: sectionNames[student['section_id']],
@@ -181,6 +183,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   ),
                   const SizedBox(height: 8),
                 ],
+                PagerBar(page: _page, total: visible.length, onPage: (page) => setState(() => _page = page)),
               ];
             },
           ),
@@ -195,7 +198,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
       child: ChoiceChip(
         label: Text(label, style: const TextStyle(fontSize: 12)),
         selected: _status == status,
-        onSelected: (_) => setState(() => _status = status),
+        onSelected: (_) => setState(() {
+          _status = status;
+          _page = 1;
+        }),
       ),
     );
   }

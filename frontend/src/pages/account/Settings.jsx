@@ -301,7 +301,7 @@ function Settings() {
 
                                         <p className="settings-info-note">
                                             {isAdmin
-                                                ? "Account details are managed in User Management and Teacher Management."
+                                                ? "Account details are managed in Accounts."
                                                 : "To correct your name, email or contact number, ask the School Administrator."}
                                         </p>
                                     </div>

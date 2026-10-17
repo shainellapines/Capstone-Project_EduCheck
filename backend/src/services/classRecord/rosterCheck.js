@@ -207,9 +207,45 @@ const checkRoster = async ({ parsedRecord, sectionId, schoolYearId }) => {
 // not refused for them (an e-Class Record covers the whole class); their
 // rows are simply not saved, and the rest of the class is. Only a file in
 // which every learner is locked is refused, since it would change nothing.
-const findLockedLearners = async ({ parsedRecord, schoolYearId }) => {
+// The section's Class Adviser, the one who can reopen locked learners.
+const findSectionAdviser = async ({ sectionId, schoolYearId }) => {
+    if (!sectionId) return null;
+
+    const result = await pool.query(
+        `
+        SELECT t.user_id, t.first_name, t.last_name
+        FROM teacher_assignments ta
+        INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
+        WHERE ta.section_id = $1 AND ta.school_year_id = $2 AND ta.subject_id IS NULL
+        `,
+        [sectionId, schoolYearId]
+    );
+
+    const row = result.rows[0];
+    return row ? { userId: row.user_id, name: `${row.first_name} ${row.last_name}` } : null;
+};
+
+// Says who reopens locked learners and where, so a teacher whose upload
+// was blocked knows the next step without asking around.
+const reopenInstruction = ({ adviser, uploaderUserId, subjectName }) => {
+    const steps =
+        `open Consolidated Records, expand one of the locked learners and click Request Revision on ` +
+        `${subjectName || "this subject"}. Then upload the corrected file again.`;
+
+    if (adviser && adviser.userId === uploaderUserId) {
+        return `You are this section's Class Adviser: ${steps}`;
+    }
+
+    if (adviser) {
+        return `To correct them, ask ${adviser.name} (Class Adviser) to ${steps} ${adviser.name} has been notified.`;
+    }
+
+    return `To correct them, ask the Class Adviser to ${steps}`;
+};
+
+const findLockedLearners = async ({ parsedRecord, schoolYearId, sectionId, subjectName, uploaderUserId }) => {
     const lrns = uniqueValidLrns(parsedRecord);
-    const none = { error: null, lockedLrns: new Set(), warning: null };
+    const none = { error: null, lockedLrns: new Set(), warning: null, notifyAdviser: null };
 
     if (lrns.length === 0) return none;
 
@@ -231,11 +267,25 @@ const findLockedLearners = async ({ parsedRecord, schoolYearId }) => {
     ]
         .filter(Boolean)
         .join(" and ");
-    const reopen = "Ask the Class Adviser to request a revision for this subject to reopen them.";
+    const adviser = await findSectionAdviser({ sectionId, schoolYearId });
+    const reopen = reopenInstruction({ adviser, uploaderUserId, subjectName });
+
+    // The Adviser hears about it directly, unless they made the upload.
+    const notifyAdviser =
+        adviser && adviser.userId !== uploaderUserId
+            ? {
+                  userId: adviser.userId,
+                  message:
+                      `A ${subjectName || "subject"} upload could not update ${result.rows.length} learner(s) ` +
+                      `because their records are locked (${counts}). If the teacher needs to correct grades, ` +
+                      `request a revision for ${subjectName || "that subject"} in Consolidated Records.`,
+              }
+            : null;
 
     if (result.rows.length === lrns.length) {
         return {
             ...none,
+            notifyAdviser,
             error: {
                 status: 409,
                 message: `Every learner in this file is locked (${counts}), so the upload would change nothing. ${reopen}`,
@@ -248,6 +298,7 @@ const findLockedLearners = async ({ parsedRecord, schoolYearId }) => {
     return {
         error: null,
         lockedLrns: new Set(result.rows.map((row) => row.lrn)),
+        notifyAdviser,
         warning: {
             code: "LOCKED_LEARNERS_SKIPPED",
             message:

@@ -282,6 +282,69 @@ class EmptyState extends StatelessWidget {
   }
 }
 
+/// Rows per page in the long mobile lists (learners, uploads).
+const listPageSize = 20;
+
+/// The rows on [page] (1-based), clamped so a list that shrank after a
+/// filter or reload never lands on an empty page.
+List<T> pageOf<T>(List<T> items, int page) {
+  final last = pageCountOf(items.length);
+  final current = page.clamp(1, last);
+  final start = (current - 1) * listPageSize;
+  return items.skip(start).take(listPageSize).toList();
+}
+
+int pageCountOf(int length) => length == 0 ? 1 : (length / listPageSize).ceil();
+
+/// Previous / "Page x of y" / Next under a long list. Hidden when the list
+/// fits on one page.
+class PagerBar extends StatelessWidget {
+  const PagerBar({super.key, required this.page, required this.total, required this.onPage});
+
+  final int page;
+  final int total;
+  final ValueChanged<int> onPage;
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = pageCountOf(total);
+    if (pages <= 1) return const SizedBox.shrink();
+    final current = page.clamp(1, pages);
+    final first = (current - 1) * listPageSize + 1;
+    final last = (current * listPageSize).clamp(1, total);
+    // The bar sits at the bottom of the list; a new page starts at its top.
+    void go(int target) {
+      onPage(target);
+      Scrollable.maybeOf(context)?.position.jumpTo(0);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Previous page',
+            onPressed: current > 1 ? () => go(current - 1) : null,
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          Expanded(
+            child: Text(
+              '$first-$last of $total  •  Page $current of $pages',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: AppTheme.textGray),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Next page',
+            onPressed: current < pages ? () => go(current + 1) : null,
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class OfflineBanner extends StatelessWidget {
   const OfflineBanner({super.key, required this.cachedAt});
 

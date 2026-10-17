@@ -4,6 +4,8 @@ const {
     getMyNotifications,
     markNotificationRead,
     markAllNotificationsRead,
+    deleteNotification,
+    clearReadNotifications,
 } = require("../controllers/notificationController");
 
 const { authenticateToken } = require("../middleware/authMiddleware");
@@ -19,5 +21,9 @@ router.get("/", getMyNotifications);
 router.post("/read-all", markAllNotificationsRead);
 
 router.post("/:notificationId/read", markNotificationRead);
+
+router.delete("/read", clearReadNotifications);
+
+router.delete("/:notificationId", deleteNotification);
 
 module.exports = router;

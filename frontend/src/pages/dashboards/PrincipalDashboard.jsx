@@ -9,6 +9,7 @@ import {
     Layers,
     Loader2,
     PieChart,
+    UserCheck,
     XCircle,
 } from "lucide-react";
 
@@ -18,8 +19,10 @@ import { getToken, getStoredUser, getDisplayName } from "../../utils/session";
 import { API_URL } from "../../config";
 
 
-// SPMP v1.0 US-008 (Should, Sprint 8): a School Principal is view-only —
-// no upload, no approve/reject, no user/section management. This mirrors
+// SPMP v1.0 US-008 (Should, Sprint 8): a School Principal is view-only for
+// records — no upload, no approve/reject, no user/section management. The
+// one decision they make is approving accounts (migration 010), flagged
+// at the top of this page when any are waiting. This mirrors
 // AdminDashboard's shape (same overview-card/quick-actions layout) but
 // every quick action lands on a read-only page, and there is no "Total
 // Users" card or approve/reject affordance anywhere on it.
@@ -35,6 +38,7 @@ function PrincipalDashboard() {
     const [sections, setSections] = useState(null);
     const [loadingData, setLoadingData] = useState(false);
     const [error, setError] = useState("");
+    const [accountsWaiting, setAccountsWaiting] = useState(0);
 
     const authHeaders = () => {
         const token = getToken();
@@ -45,6 +49,22 @@ function PrincipalDashboard() {
 
         return { Authorization: `Bearer ${token}` };
     };
+
+    useEffect(() => {
+        const fetchAccountsWaiting = async () => {
+            try {
+                const response = await fetch(`${API_URL}/account-approvals`, { headers: authHeaders() });
+                const data = await response.json();
+
+                if (response.ok) setAccountsWaiting((data.requests || []).length);
+            } catch {
+                // Non-critical: the Account Approvals page still lists them.
+            }
+        };
+
+        fetchAccountsWaiting();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const fetchSchoolYears = async () => {
@@ -180,6 +200,21 @@ function PrincipalDashboard() {
                 </header>
 
                 <section className="dashboard-content">
+
+                    {accountsWaiting > 0 && (
+                        <div className="approval-alert" role="status">
+                            <UserCheck size={20} aria-hidden="true" />
+                            <span>
+                                <strong>
+                                    {accountsWaiting} account{accountsWaiting === 1 ? "" : "s"} waiting for your approval.
+                                </strong>{" "}
+                                They cannot be used until you approve them.
+                            </span>
+                            <button type="button" onClick={() => navigate("/account-approvals")}>
+                                Review
+                            </button>
+                        </div>
+                    )}
 
                     {error && (
                         <div className="error-banner">

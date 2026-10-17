@@ -155,6 +155,7 @@ class _UploadsList extends StatefulWidget {
 
 class _UploadsListState extends State<_UploadsList> {
   String? _filter;
+  int _page = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +165,7 @@ class _UploadsListState extends State<_UploadsList> {
         final uploads = asList(data['uploads']);
         final statuses = uploads.map((u) => u['status'].toString()).toSet().toList()..sort();
         final visible = _filter == null ? uploads : uploads.where((u) => u['status'] == _filter).toList();
+        final shown = pageOf(visible, _page);
 
         return [
           const Text(
@@ -186,7 +188,10 @@ class _UploadsListState extends State<_UploadsList> {
                   child: ChoiceChip(
                     label: Text('All (${uploads.length})'),
                     selected: _filter == null,
-                    onSelected: (_) => setState(() => _filter = null),
+                    onSelected: (_) => setState(() {
+                      _filter = null;
+                      _page = 1;
+                    }),
                   ),
                 ),
                 for (final status in statuses)
@@ -195,7 +200,10 @@ class _UploadsListState extends State<_UploadsList> {
                     child: ChoiceChip(
                       label: Text(status),
                       selected: _filter == status,
-                      onSelected: (_) => setState(() => _filter = status),
+                      onSelected: (_) => setState(() {
+                        _filter = status;
+                        _page = 1;
+                      }),
                     ),
                   ),
               ],
@@ -204,10 +212,11 @@ class _UploadsListState extends State<_UploadsList> {
           const SizedBox(height: 12),
           if (visible.isEmpty)
             const EmptyState(icon: Icons.cloud_upload_outlined, message: 'No uploads to show.'),
-          for (final upload in visible) ...[
+          for (final upload in shown) ...[
             _UploadTile(upload: upload, onTap: () => _openUpload(context, upload)),
             const SizedBox(height: 8),
           ],
+          PagerBar(page: _page, total: visible.length, onPage: (page) => setState(() => _page = page)),
         ];
       },
     );

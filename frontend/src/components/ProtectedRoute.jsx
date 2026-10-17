@@ -14,6 +14,11 @@ function ProtectedRoute({ children, allowedRoles }) {
 
     const user = getStoredUser();
 
+    // A temporary password is replaced before any page opens.
+    if (user.must_change_password) {
+        return <Navigate to="/change-password" replace />;
+    }
+
     if (!allowedRoles.includes(user.role)) {
         return <Navigate to="/dashboard" replace />;
     }

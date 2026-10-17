@@ -124,7 +124,7 @@ const createAssignment = async (req, res) => {
             if (teacher.rows[0] && teacher.rows[0].role !== "adviser") {
                 return res.status(409).json({
                     message:
-                        "Only an Adviser account can be assigned as Class Adviser. Choose a subject for this teacher, or change the account's role to Adviser in User Management first."
+                        "Only an Adviser account can be assigned as Class Adviser. Choose a subject for this teacher, or change the account's role to Adviser in Accounts first."
                 });
             }
         }
@@ -252,7 +252,7 @@ const createAssignmentsBatch = async (req, res) => {
         if (class_adviser && teacher.rows[0].role !== "adviser") {
             return res.status(409).json({
                 message:
-                    "Only an Adviser account can be assigned as Class Adviser. Choose a subject for this teacher, or change the account's role to Adviser in User Management first."
+                    "Only an Adviser account can be assigned as Class Adviser. Choose a subject for this teacher, or change the account's role to Adviser in Accounts first."
             });
         }
 

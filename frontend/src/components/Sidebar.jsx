@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
     Users,
-    UserCog,
     FileText,
     Upload,
     BarChart3,
@@ -16,6 +15,8 @@ import {
     PieChart,
     Eye,
     History,
+    PanelLeftClose,
+    PanelLeftOpen,
 } from "lucide-react";
 
 import "../styles/Dashboard.css";
@@ -23,6 +24,7 @@ import logo from "../assets/educheck-logo.png";
 import logoOnDark from "../assets/educheck-logo-white.png";
 import { getStoredUser, getToken, clearSession } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
+import { isSidebarCollapsed, setSidebarCollapsed } from "../utils/sidebar";
 import { API_URL } from "../config";
 
 const POLL_INTERVAL_MS = 30000;
@@ -47,8 +49,7 @@ const NAV_ITEMS_BY_ROLE = {
     ],
     admin: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-        { key: "user-management", label: "User Management", icon: Users, path: "/users" },
-        { key: "teacher-management", label: "Teacher Management", icon: UserCog, path: "/teachers" },
+        { key: "accounts", label: "Accounts", icon: Users, path: "/accounts" },
         { key: "section-assignments", label: "Section & Teacher Assignments", icon: UserCheck, path: "/section-assignments" },
         { key: "audit-log", label: "Audit Log", icon: History, path: "/audit-log" },
         { key: "consolidated-records", label: "Submission Review", icon: ClipboardCheck, path: "/consolidated-records" },
@@ -67,6 +68,7 @@ const NAV_ITEMS_BY_ROLE = {
     principal: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         { key: "consolidated-records", label: "Submission Review", icon: Eye, path: "/consolidated-records" },
+        { key: "account-approvals", label: "Account Approvals", icon: UserCheck, path: "/account-approvals" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "analytics", label: "Academic Analytics", icon: BarChart3, path: "/analytics" },
         { key: "records-repository", label: "Records & SF10", icon: Database, path: "/records-repository" },
@@ -95,6 +97,16 @@ function Sidebar({ activeKey }) {
     );
 
     const [unreadCount, setUnreadCount] = useState(0);
+    const [collapsed, setCollapsed] = useState(isSidebarCollapsed);
+
+    const toggleCollapsed = () => {
+        setSidebarCollapsed(!collapsed);
+        setCollapsed(!collapsed);
+    };
+
+    // Collapsed, the labels are hidden, so each item carries its name as a
+    // hover tooltip instead. Expanded, the tooltip would just repeat the label.
+    const tip = (label) => (collapsed ? label : undefined);
 
     useEffect(() => {
         const token = getToken();
@@ -141,11 +153,25 @@ function Sidebar({ activeKey }) {
                     <h2>EduCheck</h2>
                     <span>Academic Records</span>
                 </div>
+
+                <button
+                    type="button"
+                    className="sidebar-toggle"
+                    onClick={toggleCollapsed}
+                    aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    aria-expanded={!collapsed}
+                    title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                    {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                </button>
             </div>
 
-            <div className={`role-badge role-badge-${user.role}`}>
+            <div
+                className={`role-badge role-badge-${user.role}`}
+                title={tip(ROLE_BADGE_LABEL[user.role] || user.role)}
+            >
                 <Users size={16} />
-                {ROLE_BADGE_LABEL[user.role] || user.role}
+                <span className="nav-label">{ROLE_BADGE_LABEL[user.role] || user.role}</span>
             </div>
 
             <nav className="sidebar-nav">
@@ -156,9 +182,11 @@ function Sidebar({ activeKey }) {
                         className={key === activeKey ? "nav-item active" : "nav-item"}
                         onClick={path ? () => navigate(path) : undefined}
                         style={{ cursor: path ? "pointer" : "default" }}
+                        title={tip(label)}
+                        aria-label={label}
                     >
                         <Icon size={19} />
-                        {label}
+                        <span className="nav-label">{label}</span>
                     </a>
                 ))}
 
@@ -166,9 +194,11 @@ function Sidebar({ activeKey }) {
                     className={activeKey === "notifications" ? "nav-item active" : "nav-item"}
                     onClick={() => navigate("/notifications")}
                     style={{ cursor: "pointer" }}
+                    title={tip("Notifications")}
+                    aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
                 >
                     <Bell size={19} />
-                    Notifications
+                    <span className="nav-label">Notifications</span>
                     {unreadCount > 0 && (
                         <span className="notification-badge">{unreadCount}</span>
                     )}
@@ -182,17 +212,21 @@ function Sidebar({ activeKey }) {
                     className={activeKey === "settings" ? "nav-item active" : "nav-item"}
                     onClick={() => navigate("/settings")}
                     style={{ cursor: "pointer" }}
+                    title={tip("Settings")}
+                    aria-label="Settings"
                 >
                     <Settings size={19} />
-                    Settings
+                    <span className="nav-label">Settings</span>
                 </a>
 
                 <button
                     className="nav-item logout-button"
                     onClick={handleLogout}
+                    title={tip("Logout")}
+                    aria-label="Logout"
                 >
                     <LogOut size={19} />
-                    Logout
+                    <span className="nav-label">Logout</span>
                 </button>
 
             </div>

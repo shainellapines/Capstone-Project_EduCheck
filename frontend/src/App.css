@@ -754,3 +754,15 @@ h1, h2, h3, h4, h5, h6 {
         animation-duration: 1.6s;
     }
 }
+
+/* "Sign out" on the change-password page, styled as a link in the note */
+.login-link-button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--ec-primary-500);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+}

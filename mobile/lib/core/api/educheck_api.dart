@@ -146,4 +146,8 @@ class EduCheckApi {
   Future<void> markNotificationRead(int id) => _client.post('/notifications/$id/read');
 
   Future<void> markAllNotificationsRead() => _client.post('/notifications/read-all');
+
+  Future<void> deleteNotification(int id) => _client.delete('/notifications/$id');
+
+  Future<void> clearReadNotifications() => _client.delete('/notifications/read');
 }

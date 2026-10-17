@@ -1,5 +1,19 @@
+const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const pool = require("../db");
+const { recordAuditLog } = require("../utils/auditLog");
+const {
+    PENDING_APPROVAL,
+    REJECTED,
+    AWAITING_SETUP,
+    ROLE_LABELS,
+    grantsMoreAccess,
+    hasActivePrincipal,
+    notifyActiveRole,
+    findAdviserSlots,
+    adviserSlotMessage,
+} = require("../utils/accountApproval");
+const { sendMail, accountReadyEmail, passwordResetEmail } = require("../utils/mailer");
 
 // Minimal complexity rule: 8+ characters, at least one letter and one
 // number. Not a full policy (no symbol/case requirements) - just enough
@@ -10,6 +24,87 @@ const VALID_ROLES = ["admin", "principal", "adviser", "subject"];
 const VALID_STATUSES = ["Active", "Inactive"];
 
 const isActive = (status) => (status || "Active").toLowerCase() === "active";
+
+// Subject Teachers and Class Advisers need a teacher profile (name and
+// employee number) to be assigned to sections; Admin and Principal do not.
+const TEACHER_ROLES = ["subject", "adviser"];
+
+// Accounts use the person's real DepEd address, so notices reach them.
+const DEPED_EMAIL = /^[^\s@]+@deped\.gov\.ph$/i;
+const DEPED_EMAIL_MESSAGE = "Use the person's DepEd email address (ending in @deped.gov.ph).";
+
+// One row per account with its teacher profile, if it has one.
+const ACCOUNT_SELECT = `
+    SELECT u.user_id, u.username, u.email, u.role, u.status, u.created_at,
+           u.pending_role, u.approval_remarks, u.reviewed_at,
+           t.teacher_id, t.first_name, t.last_name, t.employee_number, t.contact_number
+    FROM users u
+    LEFT JOIN teachers t ON t.user_id = u.user_id
+`;
+
+const PROFILE_FIELDS = ["first_name", "last_name", "employee_number", "contact_number"];
+
+// The teacher profile fields sent with an account, trimmed; null when the
+// request sent none of them (the profile is then left as it is).
+const readProfile = (body) => {
+    if (!PROFILE_FIELDS.some((field) => body[field] !== undefined)) return null;
+
+    const value = (field) => (typeof body[field] === "string" ? body[field].trim() : "");
+    return {
+        first_name: value("first_name"),
+        last_name: value("last_name"),
+        employee_number: value("employee_number"),
+        contact_number: value("contact_number") || null,
+    };
+};
+
+// The employee number is issued after approval, so it is only required
+// once an account has been set up.
+const missingProfileMessage = (profile, { requireEmployeeNumber }) => {
+    if (!profile || !profile.first_name || !profile.last_name) {
+        return "A Subject Teacher or Class Adviser needs a first name and last name.";
+    }
+    if (requireEmployeeNumber && !profile.employee_number) {
+        return "A Subject Teacher or Class Adviser needs an employee number.";
+    }
+    return null;
+};
+
+const isSetUp = (status) => ["Active", "Inactive"].includes(status);
+
+// Creates the profile, or updates the one the account already has.
+const saveProfile = (client, userId, profile) =>
+    client.query(
+        `
+        INSERT INTO teachers (user_id, employee_number, first_name, last_name, contact_number)
+        VALUES ($1, NULLIF($2, ''), $3, $4, $5)
+        ON CONFLICT (user_id) DO UPDATE SET
+            employee_number = COALESCE(EXCLUDED.employee_number, teachers.employee_number),
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            contact_number = EXCLUDED.contact_number
+        `,
+        [userId, profile.employee_number, profile.first_name, profile.last_name, profile.contact_number]
+    );
+
+const duplicateMessage = (error) =>
+    error.constraint && error.constraint.includes("employee_number")
+        ? "That employee number is already used by another teacher."
+        : "Username or email already exists.";
+
+const loadAccount = async (userId) =>
+    (await pool.query(`${ACCOUNT_SELECT} WHERE u.user_id = $1`, [userId])).rows[0];
+
+const accountLabel = (account) =>
+    account.first_name ? `${account.first_name} ${account.last_name}` : account.username;
+
+// What the audit log keeps of an account: never the password.
+const auditView = (account) => ({
+    username: account.username,
+    role: account.role,
+    status: account.status,
+    pending_role: account.pending_role || null,
+});
 
 // Rejects a role or status outside the fixed lists; null when both are fine
 // (or not being set).
@@ -40,11 +135,7 @@ const removesLastActiveAdmin = async (target, nextRole, nextStatus) => {
 // GET all users
 const getUsers = async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT user_id, username, email, role, status, created_at
-             FROM users
-             ORDER BY user_id`
-        );
+        const result = await pool.query(`${ACCOUNT_SELECT} ORDER BY u.user_id`);
 
         res.json(result.rows);
     } catch (error) {
@@ -61,20 +152,15 @@ const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await pool.query(
-            `SELECT user_id, username, email, role, status, created_at
-             FROM users
-             WHERE user_id = $1`,
-            [id]
-        );
+        const account = await loadAccount(id);
 
-        if (result.rows.length === 0) {
+        if (!account) {
             return res.status(404).json({
                 message: "User not found."
             });
         }
 
-        res.json(result.rows[0]);
+        res.json(account);
     } catch (error) {
         console.error("Get user error:", error);
 
@@ -85,77 +171,111 @@ const getUserById = async (req, res) => {
 };
 
 // CREATE user
+// The account and, for a Subject Teacher or Class Adviser, the teacher
+// profile are saved together: either both exist afterwards or neither does.
+// No password yet: the Administrator gives a temporary one at setup, after
+// the Principal approves, and it is emailed to the account's DepEd address.
 const createUser = async (req, res) => {
+    const client = await pool.connect();
+
     try {
         const {
             username,
-            password,
             email,
-            role,
-            status = "Active"
+            role
         } = req.body;
 
-        if (!username || !password || !email || !role) {
+        if (!username || !email || !role) {
             return res.status(400).json({
-                message: "Username, password, email, and role are required."
+                message: "Username, email, and role are required."
             });
         }
 
-        const invalid = invalidRoleOrStatus({ role, status });
+        const invalid = invalidRoleOrStatus({ role });
 
         if (invalid) {
             return res.status(400).json({ message: invalid });
         }
 
-        if (!PASSWORD_RULE.test(password)) {
-            return res.status(400).json({
-                message: "Password must be at least 8 characters and include both a letter and a number."
-            });
+        if (!DEPED_EMAIL.test(email.trim())) {
+            return res.status(400).json({ message: DEPED_EMAIL_MESSAGE });
         }
 
-        const existingUser = await pool.query(
-            `SELECT user_id
-             FROM users
-             WHERE username = $1 OR email = $2`,
-            [username, email]
-        );
+        const profile = TEACHER_ROLES.includes(role) ? readProfile(req.body) : null;
 
-        if (existingUser.rows.length > 0) {
-            return res.status(409).json({
-                message: "Username or email already exists."
-            });
+        if (TEACHER_ROLES.includes(role)) {
+            const missing = missingProfileMessage(profile, { requireEmployeeNumber: false });
+            if (missing) return res.status(400).json({ message: missing });
         }
 
-        const passwordHash = await bcrypt.hash(password, 10);
+        // Unusable until setup replaces it: nobody knows this password.
+        const passwordHash = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
 
-        const result = await pool.query(
+        // New accounts wait for the Principal unless there is none yet.
+        const needsApproval = await hasActivePrincipal();
+        const initialStatus = needsApproval ? PENDING_APPROVAL : AWAITING_SETUP;
+
+        await client.query("BEGIN");
+
+        const result = await client.query(
             `INSERT INTO users
                 (username, password_hash, email, role, status)
              VALUES ($1, $2, $3, $4, $5)
-             RETURNING user_id, username, email, role, status, created_at`,
-            [
-                username,
-                passwordHash,
-                email,
-                role,
-                status
-            ]
+             RETURNING user_id`,
+            [username.trim(), passwordHash, email.trim(), role, initialStatus]
         );
+        const userId = result.rows[0].user_id;
+
+        if (profile) await saveProfile(client, userId, profile);
+
+        await client.query("COMMIT");
+
+        const account = await loadAccount(userId);
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "create",
+            entityType: "user",
+            entityId: userId,
+            beforeData: null,
+            afterData: auditView(account),
+        });
+
+        if (needsApproval) {
+            await notifyActiveRole(
+                "principal",
+                "Account Awaiting Approval",
+                `A new ${ROLE_LABELS[role]} account for ${accountLabel(account)} is waiting for your approval.`
+            );
+        }
 
         res.status(201).json({
-            message: "User created successfully.",
-            user: result.rows[0]
+            message: needsApproval
+                ? "Account created and sent to the Principal for approval. Once approved, finish its setup here."
+                : "Account created. Finish its setup to give the employee number and password.",
+            user: account
         });
     } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+
+        if (error.code === "23505") {
+            return res.status(409).json({ message: duplicateMessage(error) });
+        }
+
         console.error("Create user error:", error);
 
         res.status(500).json({
             message: "Failed to create user."
         });
+    } finally {
+        client.release();
     }
 };
 
 // UPDATE user
+// A role change that gives more access waits for the Principal: the account
+// keeps its current role and the requested one is held in pending_role.
+// Removing access (a lower role, Inactive) applies at once.
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -172,7 +292,10 @@ const updateUser = async (req, res) => {
             return res.status(400).json({ message: invalid });
         }
 
-        const existing = await pool.query(`SELECT user_id, role, status FROM users WHERE user_id = $1`, [id]);
+        const existing = await pool.query(
+            `SELECT user_id, username, email, role, status, pending_role FROM users WHERE user_id = $1`,
+            [id]
+        );
 
         if (existing.rows.length === 0) {
             return res.status(404).json({
@@ -182,7 +305,31 @@ const updateUser = async (req, res) => {
 
         const target = existing.rows[0];
         const nextRole = role ?? target.role;
-        const nextStatus = status ?? target.status;
+        const awaitingApproval = [PENDING_APPROVAL, REJECTED, AWAITING_SETUP].includes(target.status);
+
+        // Only approval and then setup make a new account active.
+        if (awaitingApproval && status && status !== target.status) {
+            return res.status(409).json({
+                message:
+                    target.status === AWAITING_SETUP
+                        ? "Finish this account's setup to activate it."
+                        : "This account has not been approved yet. The Principal approves it first."
+            });
+        }
+
+        // Accounts made before this rule keep their address until it is changed.
+        if (email && email.trim() !== target.email && !DEPED_EMAIL.test(email.trim())) {
+            return res.status(400).json({ message: DEPED_EMAIL_MESSAGE });
+        }
+
+        const profile = TEACHER_ROLES.includes(nextRole) ? readProfile(req.body) : null;
+
+        if (profile) {
+            const missing = missingProfileMessage(profile, { requireEmployeeNumber: isSetUp(target.status) });
+            if (missing) return res.status(400).json({ message: missing });
+        }
+
+        const nextStatus = awaitingApproval ? target.status : status ?? target.status;
         const isSelf = target.user_id === req.user.user_id;
 
         if (isSelf && (nextRole !== target.role || !isActive(nextStatus))) {
@@ -200,61 +347,97 @@ const updateUser = async (req, res) => {
         // The Class Adviser slot needs an Adviser account (see
         // assignmentController), so a role change may not strand one.
         if (target.role === "adviser" && nextRole !== "adviser") {
-            const adviserSlots = await pool.query(
-                `
-                SELECT sec.section_name, sy.school_year
-                FROM teacher_assignments ta
-                INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
-                INNER JOIN sections sec ON sec.section_id = ta.section_id
-                INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
-                WHERE t.user_id = $1 AND ta.subject_id IS NULL
-                ORDER BY sy.school_year, sec.section_name
-                `,
-                [target.user_id]
-            );
+            const held = await findAdviserSlots(target.user_id);
 
-            if (adviserSlots.rows.length > 0) {
-                const held = adviserSlots.rows.map((row) => `${row.section_name} (${row.school_year})`);
-                return res.status(409).json({
-                    message:
-                        `This account is the Class Adviser of ${held.join(", ")}. ` +
-                        "Remove those Class Adviser assignments before changing its role."
-                });
+            if (held.length > 0) {
+                return res.status(409).json({ message: adviserSlotMessage(held) });
             }
         }
 
-        const result = await pool.query(
-            `UPDATE users
-             SET username = COALESCE($1, username),
-                 email = COALESCE($2, email),
-                 role = COALESCE($3, role),
-                 status = COALESCE($4, status)
-             WHERE user_id = $5
-             RETURNING user_id, username, email, role, status, created_at`,
-            [
-                username,
-                email,
-                role,
-                status,
-                id
-            ]
-        );
+        const roleChanged = nextRole !== target.role;
+        // A new account is still waiting anyway, so its role just changes.
+        const roleNeedsApproval =
+            roleChanged && !awaitingApproval && grantsMoreAccess(target.role, nextRole) && (await hasActivePrincipal());
+        const appliedRole = roleNeedsApproval ? target.role : nextRole;
+        const pendingRole = roleNeedsApproval ? nextRole : roleChanged ? null : target.pending_role;
+        // Correcting a rejected account sends it back to the Principal.
+        const resubmitted = target.status === REJECTED;
+        const appliedStatus = resubmitted ? PENDING_APPROVAL : nextStatus;
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "User not found."
-            });
+        // Account and profile change together, as when they are created.
+        const client = await pool.connect();
+
+        try {
+            await client.query("BEGIN");
+
+            await client.query(
+                `UPDATE users
+                 SET username = COALESCE($1, username),
+                     email = COALESCE($2, email),
+                     role = $3,
+                     status = $4,
+                     pending_role = $5,
+                     approval_remarks = CASE WHEN $6 THEN NULL ELSE approval_remarks END
+                 WHERE user_id = $7`,
+                [
+                    username ? username.trim() : username,
+                    email ? email.trim() : email,
+                    appliedRole,
+                    appliedStatus,
+                    pendingRole,
+                    resubmitted || roleNeedsApproval,
+                    id
+                ]
+            );
+
+            if (profile) await saveProfile(client, target.user_id, profile);
+
+            await client.query("COMMIT");
+        } catch (error) {
+            await client.query("ROLLBACK").catch(() => {});
+            throw error;
+        } finally {
+            client.release();
+        }
+
+        const account = await loadAccount(target.user_id);
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "update",
+            entityType: "user",
+            entityId: target.user_id,
+            beforeData: auditView(target),
+            afterData: auditView(account),
+        });
+
+        if (roleNeedsApproval) {
+            await notifyActiveRole(
+                "principal",
+                "Account Awaiting Approval",
+                `${accountLabel(account)}'s role change from ${ROLE_LABELS[target.role]} to ` +
+                    `${ROLE_LABELS[nextRole]} is waiting for your approval.`
+            );
+        } else if (resubmitted) {
+            await notifyActiveRole(
+                "principal",
+                "Account Awaiting Approval",
+                `${accountLabel(account)}'s account was corrected and sent back for your approval.`
+            );
         }
 
         res.json({
-            message: "User updated successfully.",
-            user: result.rows[0]
+            message: roleNeedsApproval
+                ? `Saved. The change to ${ROLE_LABELS[nextRole]} needs the Principal's approval; ` +
+                  "the account keeps its current role until then."
+                : resubmitted
+                ? "Saved and sent back to the Principal for approval."
+                : "Account updated successfully.",
+            user: account
         });
     } catch (error) {
         if (error.code === "23505") {
-            return res.status(409).json({
-                message: "Username or email already exists."
-            });
+            return res.status(409).json({ message: duplicateMessage(error) });
         }
 
         console.error("Update user error:", error);
@@ -322,12 +505,14 @@ const searchUsers = async (req, res) => {
         const { q = "" } = req.query;
 
         const result = await pool.query(
-            `SELECT user_id, username, email, role, status, created_at
-             FROM users
-             WHERE username ILIKE $1
-                OR email ILIKE $1
-                OR role ILIKE $1
-             ORDER BY user_id`,
+            `${ACCOUNT_SELECT}
+             WHERE u.username ILIKE $1
+                OR u.email ILIKE $1
+                OR u.role ILIKE $1
+                OR t.first_name ILIKE $1
+                OR t.last_name ILIKE $1
+                OR t.employee_number ILIKE $1
+             ORDER BY u.user_id`,
             [`%${q}%`]
         );
 
@@ -341,11 +526,193 @@ const searchUsers = async (req, res) => {
     }
 };
 
+// RESET another account's password (Admin only)
+// The fix when a teacher forgets the password, or when an account still has
+// the one the Administrator set. The user changes it afterwards in Settings.
+// The password itself is never logged, only that a reset happened.
+const resetUserPassword = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { new_password } = req.body;
+
+        if (!new_password || !PASSWORD_RULE.test(new_password)) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters and include both a letter and a number."
+            });
+        }
+
+        const target = await loadAccount(id);
+
+        if (!target) {
+            return res.status(404).json({
+                message: "User not found."
+            });
+        }
+
+        if (target.user_id === req.user.user_id) {
+            return res.status(409).json({
+                message: "Change your own password in Settings, where your current password is checked."
+            });
+        }
+
+        if (!isSetUp(target.status)) {
+            return res.status(409).json({
+                message: "This account is not set up yet. Its password is given when its setup is finished."
+            });
+        }
+
+        const passwordHash = await bcrypt.hash(new_password, 10);
+
+        // A reset password is temporary too: replaced at the next sign-in.
+        await pool.query(
+            `UPDATE users SET password_hash = $1, must_change_password = TRUE WHERE user_id = $2`,
+            [passwordHash, target.user_id]
+        );
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "update",
+            entityType: "user",
+            entityId: target.user_id,
+            beforeData: null,
+            afterData: { username: target.username, password_reset: true },
+        });
+
+        const mail = await sendMail({
+            to: target.email,
+            ...passwordResetEmail({ name: accountLabel(target), username: target.username, password: new_password }),
+        });
+
+        res.json({
+            message: mail.sent
+                ? `Password reset for ${target.username}. The new temporary password was emailed to ${target.email}.`
+                : `Password reset for ${target.username}. ${mail.reason} Give them the temporary password in person.`,
+            email_sent: mail.sent,
+        });
+    } catch (error) {
+        console.error("Reset password error:", error);
+
+        res.status(500).json({
+            message: "Failed to reset the password."
+        });
+    }
+};
+
+// FINISH SETUP (Admin only)
+// After the Principal approves, the Administrator gives the employee number
+// (Subject Teachers and Class Advisers) and a temporary password. The
+// account becomes Active and the password is emailed to its DepEd address;
+// it must be replaced at the first sign-in.
+const finishAccountSetup = async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+        const { id } = req.params;
+        const temporaryPassword = req.body?.temporary_password;
+        const employeeNumber =
+            typeof req.body?.employee_number === "string" ? req.body.employee_number.trim() : "";
+
+        const target = await loadAccount(id);
+
+        if (!target) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        if (target.status !== AWAITING_SETUP) {
+            return res.status(409).json({
+                message:
+                    target.status === PENDING_APPROVAL || target.status === REJECTED
+                        ? "The Principal has to approve this account before it can be set up."
+                        : "This account is already set up."
+            });
+        }
+
+        if (!temporaryPassword || !PASSWORD_RULE.test(temporaryPassword)) {
+            return res.status(400).json({
+                message: "The temporary password must be at least 8 characters and include both a letter and a number."
+            });
+        }
+
+        const isTeacher = TEACHER_ROLES.includes(target.role);
+
+        if (isTeacher && !target.teacher_id) {
+            return res.status(400).json({ message: "Add this teacher's name in Edit first." });
+        }
+
+        if (isTeacher && !employeeNumber) {
+            return res.status(400).json({ message: "Give this teacher's employee number." });
+        }
+
+        const passwordHash = await bcrypt.hash(temporaryPassword, 10);
+
+        await client.query("BEGIN");
+
+        if (isTeacher) {
+            await client.query(`UPDATE teachers SET employee_number = $1 WHERE user_id = $2`, [
+                employeeNumber,
+                target.user_id,
+            ]);
+        }
+
+        await client.query(
+            `UPDATE users
+             SET password_hash = $1, status = 'Active', must_change_password = TRUE
+             WHERE user_id = $2 AND status = $3`,
+            [passwordHash, target.user_id, AWAITING_SETUP]
+        );
+
+        await client.query("COMMIT");
+
+        const account = await loadAccount(target.user_id);
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "update",
+            entityType: "user",
+            entityId: target.user_id,
+            beforeData: auditView(target),
+            afterData: { ...auditView(account), employee_number: account.employee_number, setup_finished: true },
+        });
+
+        const mail = await sendMail({
+            to: account.email,
+            ...accountReadyEmail({
+                name: accountLabel(account),
+                username: account.username,
+                password: temporaryPassword,
+                roleLabel: ROLE_LABELS[account.role],
+            }),
+        });
+
+        res.json({
+            message: mail.sent
+                ? `${accountLabel(account)}'s account is active. The username and temporary password were emailed to ${account.email}.`
+                : `${accountLabel(account)}'s account is active. ${mail.reason} Give them the temporary password in person.`,
+            email_sent: mail.sent,
+            user: account,
+        });
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+
+        if (error.code === "23505") {
+            return res.status(409).json({ message: duplicateMessage(error) });
+        }
+
+        console.error("Finish account setup error:", error);
+
+        res.status(500).json({ message: "Failed to finish the account setup." });
+    } finally {
+        client.release();
+    }
+};
+
 module.exports = {
     getUsers,
     getUserById,
     createUser,
     updateUser,
     deleteUser,
-    searchUsers
+    searchUsers,
+    resetUserPassword,
+    finishAccountSetup
 };

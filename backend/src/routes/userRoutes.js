@@ -6,7 +6,9 @@ const {
     createUser,
     updateUser,
     deleteUser,
-    searchUsers
+    searchUsers,
+    resetUserPassword,
+    finishAccountSetup
 } = require("../controllers/userController");
 
 const {
@@ -31,6 +33,10 @@ router.get("/:id", getUserById);
 router.post("/", createUser);
 
 router.put("/:id", updateUser);
+
+router.post("/:id/reset-password", resetUserPassword);
+
+router.post("/:id/finish-setup", finishAccountSetup);
 
 router.delete("/:id", deleteUser);
 

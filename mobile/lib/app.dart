@@ -6,6 +6,7 @@ import 'core/session/session_store.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/adviser/adviser_dashboard_screen.dart';
+import 'screens/auth/change_password_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/principal/principal_dashboard_screen.dart';
 import 'screens/subject/subject_dashboard_screen.dart';
@@ -15,6 +16,9 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 /// The dashboard for the signed-in role. The role comes from the backend
 /// (JWT login response), never from a picker on the device.
 Widget homeForRole(String? role) {
+  // A temporary password is replaced before any dashboard opens.
+  if (SessionStore.instance.mustChangePassword) return const ChangePasswordScreen();
+
   switch (role) {
     case 'admin':
       return const AdminDashboardScreen();
@@ -31,7 +35,7 @@ Widget homeForRole(String? role) {
 
 /// Opens the signed-in user's dashboard and starts notification polling.
 void enterApp(BuildContext context) {
-  NotificationPoller.instance.start();
+  if (!SessionStore.instance.mustChangePassword) NotificationPoller.instance.start();
   Navigator.of(context).pushAndRemoveUntil(
     MaterialPageRoute(builder: (_) => homeForRole(SessionStore.instance.role)),
     (route) => false,
@@ -59,7 +63,21 @@ class _EduCheckAppState extends State<EduCheckApp> {
       );
     };
 
-    if (SessionStore.instance.isLoggedIn) NotificationPoller.instance.start();
+    // The Administrator reset the password while signed in: replace it first.
+    ApiClient.instance.onPasswordChangeRequired = () async {
+      final session = SessionStore.instance;
+      if (session.mustChangePassword || session.token == null) return;
+      NotificationPoller.instance.stop();
+      await session.save(session.token!, {...?session.user, 'must_change_password': true});
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+        (route) => false,
+      );
+    };
+
+    if (SessionStore.instance.isLoggedIn && !SessionStore.instance.mustChangePassword) {
+      NotificationPoller.instance.start();
+    }
   }
 
   @override

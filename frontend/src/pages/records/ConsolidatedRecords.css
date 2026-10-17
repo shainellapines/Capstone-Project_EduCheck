@@ -198,6 +198,32 @@
     margin-left: auto;
 }
 
+.cr-bulk-approve {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.cr-select-all,
+.cr-select-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ec-slate-700);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cr-select-all input,
+.cr-select-row input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--ec-primary-500);
+    cursor: pointer;
+}
+
 .cr-tabs {
     display: flex;
     gap: 4px;

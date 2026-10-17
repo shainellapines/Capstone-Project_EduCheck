@@ -117,8 +117,10 @@
     color: var(--ec-text);
 }
 
+/* Active page: the primary scale's light teal tint with teal text, one
+   step stronger than --ec-selected so it still reads at a glance. */
 .nav-item.active {
-    background: var(--ec-selected);
+    background: var(--ec-primary-100);
     color: var(--ec-link);
     font-weight: 600;
 }
@@ -168,6 +170,88 @@
     border: none;
     font-family: inherit;
     text-align: left;
+}
+
+/* Collapse toggle: sits at the right end of the brand row when expanded,
+   under the logo when collapsed. */
+.sidebar-toggle {
+    margin-left: auto;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: var(--ec-radius);
+    background: transparent;
+    color: var(--ec-text-muted);
+    cursor: pointer;
+    transition: background var(--ec-duration) ease-out, color var(--ec-duration) ease-out;
+}
+
+.sidebar-toggle:hover {
+    background: var(--ec-hover);
+    color: var(--ec-text);
+}
+
+.sidebar-toggle:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 2px;
+}
+
+/* Collapsed sidebar: icons only. Scoped above the phone breakpoint, where
+   the sidebar is hidden altogether and the main area must stay full width. */
+@media (min-width: 651px) {
+    .sidebar,
+    .dashboard-main {
+        transition: width var(--ec-duration) ease-out, margin-left var(--ec-duration) ease-out;
+    }
+
+    :root[data-sidebar="collapsed"] .sidebar {
+        width: 76px;
+    }
+
+    :root[data-sidebar="collapsed"] .dashboard-main {
+        margin-left: 76px;
+        width: calc(100% - 76px);
+    }
+
+    :root[data-sidebar="collapsed"] .sidebar-brand {
+        flex-direction: column;
+        gap: 12px;
+        padding: 24px 0 16px;
+    }
+
+    :root[data-sidebar="collapsed"] .sidebar-toggle {
+        margin-left: 0;
+    }
+
+    :root[data-sidebar="collapsed"] .brand-text,
+    :root[data-sidebar="collapsed"] .nav-label {
+        display: none;
+    }
+
+    :root[data-sidebar="collapsed"] .role-badge {
+        margin: 0 auto 16px;
+    }
+
+    :root[data-sidebar="collapsed"] .nav-item {
+        justify-content: center;
+        padding: 9px 0;
+    }
+
+    /* With no label to push it right, the unread count rides on the bell. */
+    :root[data-sidebar="collapsed"] .notification-badge {
+        position: absolute;
+        top: 2px;
+        right: 6px;
+        margin-left: 0;
+        width: 16px;
+        height: 16px;
+        font-size: 9px;
+    }
 }
 
 /* MAIN */
@@ -866,4 +950,41 @@
     .dashboard-content {
         padding: 20px;
     }
+}
+
+/* Principal dashboard: accounts waiting for approval */
+.approval-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    border: 1px solid var(--ec-primary-100);
+    border-radius: 12px;
+    background: var(--ec-primary-50);
+    color: var(--ec-slate-800);
+    font-size: 14px;
+}
+
+.approval-alert > svg {
+    color: var(--ec-primary-500);
+    flex-shrink: 0;
+}
+
+.approval-alert span {
+    flex: 1;
+    min-width: 200px;
+}
+
+.approval-alert button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--ec-primary-500);
+    color: var(--ec-on-action);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
 }

@@ -33,6 +33,12 @@ function Login() {
     const [loading, setLoading] = useState(false);
     // Display only: lets the user check what they typed.
     const [showPassword, setShowPassword] = useState(false);
+    // School laptops are shared. Browsers fill a saved login into the form
+    // as the page opens, greeting the next teacher with someone else's
+    // account. They skip read-only fields, so both stay read-only until the
+    // user clicks or tabs into one.
+    const [fieldsUnlocked, setFieldsUnlocked] = useState(false);
+    const unlockFields = () => setFieldsUnlocked(true);
     const usernameRef = useRef(null);
     const passwordRef = useRef(null);
     const submittingRef = useRef(false);
@@ -112,8 +118,9 @@ function Login() {
                 JSON.stringify(data.user)
             );
 
-            // /dashboard sends each role to its own home page.
-            navigate("/dashboard");
+            // /dashboard sends each role to its own home page; a temporary
+            // password is replaced first.
+            navigate(data.user?.must_change_password ? "/change-password" : "/dashboard");
 
         } catch (error) {
             setError(error.message);
@@ -178,7 +185,9 @@ function Login() {
                                     ref={usernameRef}
                                     id="username"
                                     type="text"
-                                    autoComplete="username"
+                                    autoComplete="off"
+                                    readOnly={!fieldsUnlocked}
+                                    onFocus={unlockFields}
                                     placeholder="Enter your username"
                                     value={username}
                                     onChange={(e) => {
@@ -201,7 +210,9 @@ function Login() {
                                     ref={passwordRef}
                                     id="password"
                                     type={showPassword ? "text" : "password"}
-                                    autoComplete="current-password"
+                                    autoComplete="off"
+                                    readOnly={!fieldsUnlocked}
+                                    onFocus={unlockFields}
                                     placeholder="Enter your password"
                                     value={password}
                                     onChange={(e) => {
