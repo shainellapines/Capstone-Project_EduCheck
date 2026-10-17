@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import SubjectDashboard from "./pages/dashboards/SubjectDashboard";
 import PrincipalDashboard from "./pages/dashboards/PrincipalDashboard";
 import Accounts from "./pages/admin/Accounts";
+import AccountApprovals from "./pages/admin/AccountApprovals";
 import SectionAssignments from "./pages/sections/SectionAssignments";
 import ClassRecordUpload from "./pages/records/ClassRecordUpload";
 import ValidationResults from "./pages/records/ValidationResults";
@@ -79,6 +80,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["admin"]}>
                             <Accounts />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/account-approvals"
+                    element={
+                        <ProtectedRoute allowedRoles={["principal"]}>
+                            <AccountApprovals />
                         </ProtectedRoute>
                     }
                 />

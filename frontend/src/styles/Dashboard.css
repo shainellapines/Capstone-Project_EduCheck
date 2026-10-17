@@ -867,3 +867,40 @@
         padding: 20px;
     }
 }
+
+/* Principal dashboard: accounts waiting for approval */
+.approval-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    border: 1px solid var(--ec-primary-100);
+    border-radius: 12px;
+    background: var(--ec-primary-50);
+    color: var(--ec-slate-800);
+    font-size: 14px;
+}
+
+.approval-alert > svg {
+    color: var(--ec-primary-500);
+    flex-shrink: 0;
+}
+
+.approval-alert span {
+    flex: 1;
+    min-width: 200px;
+}
+
+.approval-alert button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--ec-primary-500);
+    color: var(--ec-on-action);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}

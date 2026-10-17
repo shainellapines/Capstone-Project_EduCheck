@@ -1,6 +1,16 @@
 const bcrypt = require("bcryptjs");
 const pool = require("../db");
 const { recordAuditLog } = require("../utils/auditLog");
+const {
+    PENDING_APPROVAL,
+    REJECTED,
+    ROLE_LABELS,
+    grantsMoreAccess,
+    hasActivePrincipal,
+    notifyActiveRole,
+    findAdviserSlots,
+    adviserSlotMessage,
+} = require("../utils/accountApproval");
 
 // Minimal complexity rule: 8+ characters, at least one letter and one
 // number. Not a full policy (no symbol/case requirements) - just enough
@@ -23,6 +33,7 @@ const DEPED_EMAIL_MESSAGE = "Use the person's DepEd email address (ending in @de
 // One row per account with its teacher profile, if it has one.
 const ACCOUNT_SELECT = `
     SELECT u.user_id, u.username, u.email, u.role, u.status, u.created_at,
+           u.pending_role, u.approval_remarks, u.reviewed_at,
            t.teacher_id, t.first_name, t.last_name, t.employee_number, t.contact_number
     FROM users u
     LEFT JOIN teachers t ON t.user_id = u.user_id
@@ -71,6 +82,17 @@ const duplicateMessage = (error) =>
 
 const loadAccount = async (userId) =>
     (await pool.query(`${ACCOUNT_SELECT} WHERE u.user_id = $1`, [userId])).rows[0];
+
+const accountLabel = (account) =>
+    account.first_name ? `${account.first_name} ${account.last_name}` : account.username;
+
+// What the audit log keeps of an account: never the password.
+const auditView = (account) => ({
+    username: account.username,
+    role: account.role,
+    status: account.status,
+    pending_role: account.pending_role || null,
+});
 
 // Rejects a role or status outside the fixed lists; null when both are fine
 // (or not being set).
@@ -182,6 +204,10 @@ const createUser = async (req, res) => {
 
         const passwordHash = await bcrypt.hash(password, 10);
 
+        // New accounts wait for the Principal unless there is none yet.
+        const needsApproval = await hasActivePrincipal();
+        const initialStatus = needsApproval ? PENDING_APPROVAL : status;
+
         await client.query("BEGIN");
 
         const result = await client.query(
@@ -189,7 +215,7 @@ const createUser = async (req, res) => {
                 (username, password_hash, email, role, status)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING user_id`,
-            [username.trim(), passwordHash, email.trim(), role, status]
+            [username.trim(), passwordHash, email.trim(), role, initialStatus]
         );
         const userId = result.rows[0].user_id;
 
@@ -197,9 +223,30 @@ const createUser = async (req, res) => {
 
         await client.query("COMMIT");
 
+        const account = await loadAccount(userId);
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "create",
+            entityType: "user",
+            entityId: userId,
+            beforeData: null,
+            afterData: auditView(account),
+        });
+
+        if (needsApproval) {
+            await notifyActiveRole(
+                "principal",
+                "Account Awaiting Approval",
+                `A new ${ROLE_LABELS[role]} account for ${accountLabel(account)} is waiting for your approval.`
+            );
+        }
+
         res.status(201).json({
-            message: "Account created successfully.",
-            user: await loadAccount(userId)
+            message: needsApproval
+                ? "Account created and sent to the Principal for approval. It can be used once approved."
+                : "Account created successfully.",
+            user: account
         });
     } catch (error) {
         await client.query("ROLLBACK").catch(() => {});
@@ -219,6 +266,9 @@ const createUser = async (req, res) => {
 };
 
 // UPDATE user
+// A role change that gives more access waits for the Principal: the account
+// keeps its current role and the requested one is held in pending_role.
+// Removing access (a lower role, Inactive) applies at once.
 const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
@@ -235,7 +285,10 @@ const updateUser = async (req, res) => {
             return res.status(400).json({ message: invalid });
         }
 
-        const existing = await pool.query(`SELECT user_id, email, role, status FROM users WHERE user_id = $1`, [id]);
+        const existing = await pool.query(
+            `SELECT user_id, username, email, role, status, pending_role FROM users WHERE user_id = $1`,
+            [id]
+        );
 
         if (existing.rows.length === 0) {
             return res.status(404).json({
@@ -245,6 +298,14 @@ const updateUser = async (req, res) => {
 
         const target = existing.rows[0];
         const nextRole = role ?? target.role;
+        const awaitingApproval = [PENDING_APPROVAL, REJECTED].includes(target.status);
+
+        // Only the Principal's approval makes a new account active.
+        if (awaitingApproval && status && status !== target.status) {
+            return res.status(409).json({
+                message: "This account has not been approved yet. The Principal approves it first."
+            });
+        }
 
         // Accounts made before this rule keep their address until it is changed.
         if (email && email.trim() !== target.email && !DEPED_EMAIL.test(email.trim())) {
@@ -257,7 +318,8 @@ const updateUser = async (req, res) => {
             const missing = missingProfileMessage(profile);
             if (missing) return res.status(400).json({ message: missing });
         }
-        const nextStatus = status ?? target.status;
+
+        const nextStatus = awaitingApproval ? target.status : status ?? target.status;
         const isSelf = target.user_id === req.user.user_id;
 
         if (isSelf && (nextRole !== target.role || !isActive(nextStatus))) {
@@ -275,28 +337,22 @@ const updateUser = async (req, res) => {
         // The Class Adviser slot needs an Adviser account (see
         // assignmentController), so a role change may not strand one.
         if (target.role === "adviser" && nextRole !== "adviser") {
-            const adviserSlots = await pool.query(
-                `
-                SELECT sec.section_name, sy.school_year
-                FROM teacher_assignments ta
-                INNER JOIN teachers t ON t.teacher_id = ta.teacher_id
-                INNER JOIN sections sec ON sec.section_id = ta.section_id
-                INNER JOIN school_years sy ON sy.school_year_id = ta.school_year_id
-                WHERE t.user_id = $1 AND ta.subject_id IS NULL
-                ORDER BY sy.school_year, sec.section_name
-                `,
-                [target.user_id]
-            );
+            const held = await findAdviserSlots(target.user_id);
 
-            if (adviserSlots.rows.length > 0) {
-                const held = adviserSlots.rows.map((row) => `${row.section_name} (${row.school_year})`);
-                return res.status(409).json({
-                    message:
-                        `This account is the Class Adviser of ${held.join(", ")}. ` +
-                        "Remove those Class Adviser assignments before changing its role."
-                });
+            if (held.length > 0) {
+                return res.status(409).json({ message: adviserSlotMessage(held) });
             }
         }
+
+        const roleChanged = nextRole !== target.role;
+        // A new account is still waiting anyway, so its role just changes.
+        const roleNeedsApproval =
+            roleChanged && !awaitingApproval && grantsMoreAccess(target.role, nextRole) && (await hasActivePrincipal());
+        const appliedRole = roleNeedsApproval ? target.role : nextRole;
+        const pendingRole = roleNeedsApproval ? nextRole : roleChanged ? null : target.pending_role;
+        // Correcting a rejected account sends it back to the Principal.
+        const resubmitted = target.status === REJECTED;
+        const appliedStatus = resubmitted ? PENDING_APPROVAL : nextStatus;
 
         // Account and profile change together, as when they are created.
         const client = await pool.connect();
@@ -308,14 +364,18 @@ const updateUser = async (req, res) => {
                 `UPDATE users
                  SET username = COALESCE($1, username),
                      email = COALESCE($2, email),
-                     role = COALESCE($3, role),
-                     status = COALESCE($4, status)
-                 WHERE user_id = $5`,
+                     role = $3,
+                     status = $4,
+                     pending_role = $5,
+                     approval_remarks = CASE WHEN $6 THEN NULL ELSE approval_remarks END
+                 WHERE user_id = $7`,
                 [
                     username ? username.trim() : username,
                     email ? email.trim() : email,
-                    role,
-                    status,
+                    appliedRole,
+                    appliedStatus,
+                    pendingRole,
+                    resubmitted || roleNeedsApproval,
                     id
                 ]
             );
@@ -330,9 +390,40 @@ const updateUser = async (req, res) => {
             client.release();
         }
 
+        const account = await loadAccount(target.user_id);
+
+        await recordAuditLog({
+            actorUserId: req.user.user_id,
+            action: "update",
+            entityType: "user",
+            entityId: target.user_id,
+            beforeData: auditView(target),
+            afterData: auditView(account),
+        });
+
+        if (roleNeedsApproval) {
+            await notifyActiveRole(
+                "principal",
+                "Account Awaiting Approval",
+                `${accountLabel(account)}'s role change from ${ROLE_LABELS[target.role]} to ` +
+                    `${ROLE_LABELS[nextRole]} is waiting for your approval.`
+            );
+        } else if (resubmitted) {
+            await notifyActiveRole(
+                "principal",
+                "Account Awaiting Approval",
+                `${accountLabel(account)}'s account was corrected and sent back for your approval.`
+            );
+        }
+
         res.json({
-            message: "Account updated successfully.",
-            user: await loadAccount(target.user_id)
+            message: roleNeedsApproval
+                ? `Saved. The change to ${ROLE_LABELS[nextRole]} needs the Principal's approval; ` +
+                  "the account keeps its current role until then."
+                : resubmitted
+                ? "Saved and sent back to the Principal for approval."
+                : "Account updated successfully.",
+            user: account
         });
     } catch (error) {
         if (error.code === "23505") {

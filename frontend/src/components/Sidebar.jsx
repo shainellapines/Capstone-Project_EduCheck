@@ -65,6 +65,7 @@ const NAV_ITEMS_BY_ROLE = {
     principal: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
         { key: "consolidated-records", label: "Submission Review", icon: Eye, path: "/consolidated-records" },
+        { key: "account-approvals", label: "Account Approvals", icon: UserCheck, path: "/account-approvals" },
         { key: "section-progress", label: "Section Progress", icon: PieChart, path: "/section-progress" },
         { key: "analytics", label: "Academic Analytics", icon: BarChart3, path: "/analytics" },
         { key: "records-repository", label: "Records & SF10", icon: Database, path: "/records-repository" },

@@ -7,7 +7,7 @@ import {
     Trash2,
     X,
     UserCheck,
-    UserX,
+    Clock,
     UserRoundX,
     Loader2,
     AlertCircle,
@@ -50,6 +50,19 @@ const isTeacherRole = (role) => TEACHER_ROLES.includes(role);
 
 const fullNameOf = (account) =>
     account.first_name ? `${account.first_name} ${account.last_name}` : "";
+
+// New accounts and role raises wait for the Principal (migration 010).
+const isAwaitingApproval = (account) => account.status === "Pending Approval" || Boolean(account.pending_role);
+
+// Only the Principal's approval activates a new or rejected account, so
+// its status cannot be picked here.
+const canPickStatus = (account) => !account || ["Active", "Inactive"].includes(account.status);
+
+const STATUS_PILL_CLASS = {
+    Active: "active",
+    "Pending Approval": "pending",
+    Rejected: "rejected",
+};
 
 // A teacher account made before the merged page may have no profile yet;
 // it cannot be assigned to a section until one is added.
@@ -171,7 +184,7 @@ function Accounts() {
             username: formData.username,
             email: formData.email,
             role: formData.role,
-            status: formData.status,
+            ...(editingAccount && canPickStatus(editingAccount) ? { status: formData.status } : {}),
             ...(editingAccount ? {} : { password: formData.password }),
             ...(teacher
                 ? {
@@ -230,12 +243,11 @@ function Accounts() {
             }
 
             closeModal();
+            // The server says when a change went to the Principal instead.
             setMessage(
                 resetPassword
-                    ? `Account updated. ${formData.username} can now sign in with the new password.`
-                    : editingAccount
-                    ? "Account updated successfully."
-                    : "Account created successfully."
+                    ? `${data.message} The new password is set.`
+                    : data.message
             );
 
             await fetchAccounts();
@@ -290,7 +302,7 @@ function Accounts() {
     );
 
     const activeCount = accounts.filter((account) => account.status === "Active").length;
-    const inactiveCount = accounts.length - activeCount;
+    const awaitingCount = accounts.filter(isAwaitingApproval).length;
     const missingProfileCount = accounts.filter(isProfileMissing).length;
 
     const isSelf = editingAccount && editingAccount.user_id === currentUserId;
@@ -378,12 +390,12 @@ function Accounts() {
 
                 <div className="user-summary-card">
                     <div className="summary-icon gray">
-                        <UserX size={21} />
+                        <Clock size={21} />
                     </div>
 
                     <div>
-                        <span>Inactive</span>
-                        <strong>{inactiveCount}</strong>
+                        <span>Awaiting Principal</span>
+                        <strong>{awaitingCount}</strong>
                     </div>
                 </div>
 
@@ -516,11 +528,23 @@ function Accounts() {
                                             <td>
                                                 <span
                                                     className={`status-pill ${
-                                                        account.status === "Active" ? "active" : "inactive"
+                                                        STATUS_PILL_CLASS[account.status] || "inactive"
                                                     }`}
                                                 >
                                                     {account.status}
                                                 </span>
+
+                                                {account.pending_role && (
+                                                    <span className="status-note">
+                                                        Change to {ROLE_LABELS[account.pending_role]} awaiting the Principal
+                                                    </span>
+                                                )}
+
+                                                {account.status === "Rejected" && account.approval_remarks && (
+                                                    <span className="status-note is-danger">
+                                                        Reason: {account.approval_remarks}
+                                                    </span>
+                                                )}
                                             </td>
 
                                             <td>
@@ -599,6 +623,23 @@ function Accounts() {
                             onSubmit={handleSubmit}
                         >
 
+                            {editingAccount?.status === "Rejected" && (
+                                <div className="modal-error">
+                                    <AlertCircle size={17} />
+                                    <span>
+                                        The Principal did not approve this account
+                                        {editingAccount.approval_remarks ? `: ${editingAccount.approval_remarks}` : "."} Saving
+                                        your corrections sends it back for approval.
+                                    </span>
+                                </div>
+                            )}
+
+                            {!editingAccount && (
+                                <p className="form-hint form-hint-block">
+                                    New accounts are sent to the Principal for approval and can be used once approved.
+                                </p>
+                            )}
+
                             <p className="form-section-title">Account</p>
 
                             <div className="form-group">
@@ -672,19 +713,21 @@ function Accounts() {
                                         />
                                     </div>
 
-                                    <div className="form-group">
-                                        <label htmlFor="account-status">Status</label>
+                                    {editingAccount && canPickStatus(editingAccount) && (
+                                        <div className="form-group">
+                                            <label htmlFor="account-status">Status</label>
 
-                                        <select
-                                            id="account-status"
-                                            name="status"
-                                            value={formData.status}
-                                            onChange={handleChange}
-                                        >
-                                            <option value="Active">Active</option>
-                                            <option value="Inactive">Inactive</option>
-                                        </select>
-                                    </div>
+                                            <select
+                                                id="account-status"
+                                                name="status"
+                                                value={formData.status}
+                                                onChange={handleChange}
+                                            >
+                                                <option value="Active">Active</option>
+                                                <option value="Inactive">Inactive</option>
+                                            </select>
+                                        </div>
+                                    )}
 
                                 </div>
                             )}

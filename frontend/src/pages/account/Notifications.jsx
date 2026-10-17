@@ -29,6 +29,9 @@ const NOTIFICATION_VISUALS = {
     "Submission Rejected": { icon: XCircle, tone: "red", category: "rejected" },
     "Revision Requested": { icon: Undo2, tone: "purple", category: "revisions" },
     "Approved Record Needs Amendment": { icon: RefreshCcw, tone: "purple", category: "revisions" },
+    "Account Awaiting Approval": { icon: Bell, tone: "blue", category: "other" },
+    "Account Approved": { icon: CheckCircle, tone: "green", category: "approved" },
+    "Account Not Approved": { icon: XCircle, tone: "red", category: "rejected" },
 };
 
 const DEFAULT_VISUAL = { icon: Bell, tone: "blue", category: "other" };

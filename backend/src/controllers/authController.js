@@ -50,13 +50,6 @@ const login = async (req, res) => {
 
         const user = result.rows[0];
 
-        // Check account status
-        if (user.status && user.status.toLowerCase() !== "active") {
-            return res.status(403).json({
-                message: "This account is inactive."
-            });
-        }
-
         // Verify password
         const passwordMatch = await bcrypt.compare(
             password,
@@ -67,6 +60,21 @@ const login = async (req, res) => {
             return res.status(401).json({
                 message: "Invalid username or password."
             });
+        }
+
+        // Checked after the password, so a wrong guess never reveals
+        // whether an account exists or what state it is in.
+        const status = (user.status || "Active").toLowerCase();
+
+        if (status !== "active") {
+            const message =
+                status === "pending approval"
+                    ? "Your account is waiting for the Principal's approval. You can sign in once it is approved."
+                    : status === "rejected"
+                    ? "Your account was not approved. Please contact your School Administrator."
+                    : "This account is inactive.";
+
+            return res.status(403).json({ message });
         }
 
         // Create JWT

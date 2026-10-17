@@ -17,8 +17,14 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     role VARCHAR(30) NOT NULL,
+    -- 'Active' | 'Inactive' | 'Pending Approval' | 'Rejected' (migration 010)
     status VARCHAR(20) DEFAULT 'Active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- A role change giving more access, waiting for the Principal (migration 010)
+    pending_role VARCHAR(30),
+    approval_remarks TEXT,
+    reviewed_by INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMP
 );
 
 

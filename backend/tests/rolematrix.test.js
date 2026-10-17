@@ -11,6 +11,10 @@ const ALL = ["admin", "principal", "adviser_a", "subject_t"];
 const MATRIX = [
     ["GET", "/api/users", ["admin"]],
     ["GET", "/api/teachers", ["admin"]],
+    ["GET", "/api/account-approvals", ["admin", "principal"]],
+    ["POST", "/api/account-approvals/999999/approve", ["principal"]],
+    ["POST", "/api/account-approvals/999999/reject", ["principal"]],
+    ["POST", "/api/submissions/school-years/1/approve-selected", ["admin"]],
     ["GET", "/api/assignments", ["admin"]],
     ["POST", "/api/assignments/batch", ["admin"]],
     ["GET", "/api/audit-logs", ["admin"]],
