@@ -72,6 +72,8 @@ const login = async (req, res) => {
                     ? "Your account is waiting for the Principal's approval. You can sign in once it is approved."
                     : status === "rejected"
                     ? "Your account was not approved. Please contact your School Administrator."
+                    : status === "awaiting setup"
+                    ? "Your account was approved and is being set up. Your School Administrator will send your password."
                     : "This account is inactive.";
 
             return res.status(403).json({ message });

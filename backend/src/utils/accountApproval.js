@@ -6,6 +6,9 @@ const pool = require("../db");
 
 const PENDING_APPROVAL = "Pending Approval";
 const REJECTED = "Rejected";
+// Approved, but the Administrator has not yet given the employee number
+// and temporary password (migration 011). Cannot sign in.
+const AWAITING_SETUP = "Awaiting Setup";
 
 const ROLE_LABELS = {
     subject: "Subject Teacher",
@@ -67,6 +70,7 @@ const adviserSlotMessage = (held) =>
 module.exports = {
     PENDING_APPROVAL,
     REJECTED,
+    AWAITING_SETUP,
     ROLE_LABELS,
     grantsMoreAccess,
     hasActivePrincipal,

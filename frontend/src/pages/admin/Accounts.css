@@ -322,6 +322,56 @@
     background: var(--ec-primary-50);
 }
 
+.status-pill.setup {
+    color: var(--ec-warning);
+    background: var(--ec-warning-bg);
+}
+
+.temp-password-input {
+    display: flex;
+    gap: 8px;
+}
+
+.temp-password-input input {
+    flex: 1;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    letter-spacing: 0.04em;
+}
+
+.temp-password-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 14px 0 4px;
+    padding: 12px 14px;
+    border: 1px dashed var(--ec-slate-300);
+    border-radius: 8px;
+    background: var(--ec-slate-50);
+}
+
+.temp-password-box span {
+    color: var(--ec-slate-600);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.temp-password-box code {
+    flex: 1;
+    color: var(--ec-slate-900);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.temp-password-box button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .status-pill.rejected {
     color: var(--ec-danger);
     background: var(--ec-danger-bg);

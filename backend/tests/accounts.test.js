@@ -33,8 +33,8 @@ describe("Accounts: account and teacher profile together", () => {
         assert.ok(res.body.user.teacher_id);
     });
 
-    it("ACC-02 a teacher account without name or employee number is refused, nothing saved", async () => {
-        const res = await create({ ...teacher, username: "no.profile", email: "no.profile@deped.gov.ph", employee_number: "" });
+    it("ACC-02 a teacher account without a name is refused, nothing saved", async () => {
+        const res = await create({ ...teacher, username: "no.profile", email: "no.profile@deped.gov.ph", last_name: "" });
         assert.equal(res.status, 400);
         assert.equal(await countUsers("no.profile"), 0);
     });

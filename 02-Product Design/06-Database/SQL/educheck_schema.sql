@@ -18,13 +18,16 @@ CREATE TABLE users (
     email VARCHAR(100) UNIQUE NOT NULL,
     role VARCHAR(30) NOT NULL,
     -- 'Active' | 'Inactive' | 'Pending Approval' | 'Rejected' (migration 010)
+    -- | 'Awaiting Setup' (migration 011)
     status VARCHAR(20) DEFAULT 'Active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     -- A role change giving more access, waiting for the Principal (migration 010)
     pending_role VARCHAR(30),
     approval_remarks TEXT,
     reviewed_by INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
-    reviewed_at TIMESTAMP
+    reviewed_at TIMESTAMP,
+    -- A temporary password to replace on first sign-in (migration 011)
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 
@@ -35,7 +38,8 @@ CREATE TABLE users (
 CREATE TABLE teachers (
     teacher_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE,
-    employee_number VARCHAR(50) UNIQUE NOT NULL,
+    -- Issued by the Administrator after approval (migration 011)
+    employee_number VARCHAR(50) UNIQUE,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     contact_number VARCHAR(20),

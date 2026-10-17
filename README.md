@@ -42,6 +42,11 @@ string (the server refuses to start while it is `change-me`):
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
+To email new accounts their temporary password, set `SMTP_USER` and
+`SMTP_PASS` (a Gmail app password) in `backend/.env`; see `.env.example`.
+Without them, accounts still work: the Administrator sees the temporary
+password on screen and hands it over.
+
 Create the first Administrator account (a fresh database has no users):
 
 ```

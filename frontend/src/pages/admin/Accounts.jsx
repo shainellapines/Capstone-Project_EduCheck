@@ -12,6 +12,8 @@ import {
     Loader2,
     AlertCircle,
     CheckCircle,
+    KeyRound,
+    Copy,
 } from "lucide-react";
 
 import "./Accounts.css";
@@ -51,17 +53,40 @@ const isTeacherRole = (role) => TEACHER_ROLES.includes(role);
 const fullNameOf = (account) =>
     account.first_name ? `${account.first_name} ${account.last_name}` : "";
 
-// New accounts and role raises wait for the Principal (migration 010).
-const isAwaitingApproval = (account) => account.status === "Pending Approval" || Boolean(account.pending_role);
+// A new account goes: Pending Approval (Principal) -> Awaiting Setup
+// (Administrator gives employee number and temporary password) -> Active.
+const isSetUp = (account) => ["Active", "Inactive"].includes(account.status);
 
-// Only the Principal's approval activates a new or rejected account, so
-// its status cannot be picked here.
-const canPickStatus = (account) => !account || ["Active", "Inactive"].includes(account.status);
+// Something about the account is still waiting for the Principal or for setup.
+const isWaiting = (account) =>
+    ["Pending Approval", "Awaiting Setup"].includes(account.status) || Boolean(account.pending_role);
+
+// Only approval and setup activate a new or rejected account, so its
+// status cannot be picked here.
+const canPickStatus = (account) => !account || isSetUp(account);
 
 const STATUS_PILL_CLASS = {
     Active: "active",
     "Pending Approval": "pending",
+    "Awaiting Setup": "setup",
     Rejected: "rejected",
+};
+
+// A readable temporary password that meets the rule (a letter and a
+// number). Confusable characters (0/O, 1/l/I) are left out, since it may be
+// read aloud or copied by hand when the email cannot be sent.
+const generateTemporaryPassword = () => {
+    const letters = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
+    const digits = "23456789";
+    const all = letters + digits;
+    const random = new Uint32Array(10);
+    crypto.getRandomValues(random);
+
+    const chars = Array.from(random, (value, index) =>
+        index === 0 ? letters[value % letters.length] : index === 1 ? digits[value % digits.length] : all[value % all.length]
+    );
+
+    return chars.join("");
 };
 
 // A teacher account made before the merged page may have no profile yet;
@@ -83,6 +108,13 @@ function Accounts() {
     const [saving, setSaving] = useState(false);
     // The username follows the email until the admin edits it themselves.
     const [usernameEdited, setUsernameEdited] = useState(false);
+
+    // Finish setup: employee number and temporary password after approval.
+    const [setupAccount, setSetupAccount] = useState(null);
+    const [setupForm, setSetupForm] = useState({ employee_number: "", temporary_password: "" });
+    const [setupError, setSetupError] = useState("");
+    const [setupResult, setSetupResult] = useState(null);
+    const [settingUp, setSettingUp] = useState(false);
 
     const token = localStorage.getItem("educheck_token");
     const currentUserId = getStoredUser()?.user_id;
@@ -185,12 +217,13 @@ function Accounts() {
             email: formData.email,
             role: formData.role,
             ...(editingAccount && canPickStatus(editingAccount) ? { status: formData.status } : {}),
-            ...(editingAccount ? {} : { password: formData.password }),
             ...(teacher
                 ? {
                       first_name: formData.first_name,
                       last_name: formData.last_name,
-                      employee_number: formData.employee_number,
+                      ...(editingAccount && isSetUp(editingAccount)
+                          ? { employee_number: formData.employee_number }
+                          : {}),
                       contact_number: formData.contact_number,
                   }
                 : {}),
@@ -220,6 +253,7 @@ function Accounts() {
             // A new password on Edit is a reset, sent to its own endpoint so
             // it is checked and audited apart from the account details.
             const resetPassword = editingAccount && formData.password;
+            let resetMessage = "";
 
             if (resetPassword) {
                 const resetResponse = await fetch(
@@ -240,21 +274,79 @@ function Accounts() {
                     await fetchAccounts();
                     throw new Error(resetData.message || "Unable to reset the password.");
                 }
+
+                resetMessage = resetData.message;
             }
 
             closeModal();
             // The server says when a change went to the Principal instead.
-            setMessage(
-                resetPassword
-                    ? `${data.message} The new password is set.`
-                    : data.message
-            );
+            setMessage(resetPassword ? resetMessage : data.message);
 
             await fetchAccounts();
         } catch (saveError) {
             setFormError(saveError.message);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const openSetupModal = (account) => {
+        setSetupAccount(account);
+        setSetupForm({ employee_number: account.employee_number || "", temporary_password: generateTemporaryPassword() });
+        setSetupError("");
+        setSetupResult(null);
+        setMessage("");
+    };
+
+    const closeSetupModal = () => {
+        setSetupAccount(null);
+        setSetupResult(null);
+    };
+
+    const handleFinishSetup = async (event) => {
+        event.preventDefault();
+        setSetupError("");
+
+        try {
+            setSettingUp(true);
+
+            const response = await fetch(`${API_URL}/users/${setupAccount.user_id}/finish-setup`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(setupForm),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Unable to finish the setup.");
+            }
+
+            // Kept on screen when the email could not go out, so the
+            // Administrator can hand the password over in person.
+            setSetupResult({
+                message: data.message,
+                emailSent: data.email_sent,
+                password: setupForm.temporary_password,
+            });
+
+            await fetchAccounts();
+        } catch (setupFailure) {
+            setSetupError(setupFailure.message);
+        } finally {
+            setSettingUp(false);
+        }
+    };
+
+    const copyPassword = async () => {
+        try {
+            await navigator.clipboard.writeText(setupResult.password);
+        } catch {
+            // Clipboard can be blocked on plain-http school servers; the
+            // password stays visible to copy by hand.
         }
     };
 
@@ -302,7 +394,7 @@ function Accounts() {
     );
 
     const activeCount = accounts.filter((account) => account.status === "Active").length;
-    const awaitingCount = accounts.filter(isAwaitingApproval).length;
+    const waitingCount = accounts.filter(isWaiting).length;
     const missingProfileCount = accounts.filter(isProfileMissing).length;
 
     const isSelf = editingAccount && editingAccount.user_id === currentUserId;
@@ -394,8 +486,8 @@ function Accounts() {
                     </div>
 
                     <div>
-                        <span>Awaiting Principal</span>
-                        <strong>{awaitingCount}</strong>
+                        <span>Waiting (approval or setup)</span>
+                        <strong>{waitingCount}</strong>
                     </div>
                 </div>
 
@@ -550,6 +642,17 @@ function Accounts() {
                                             <td>
                                                 <div className="action-buttons">
 
+                                                    {account.status === "Awaiting Setup" && (
+                                                        <button
+                                                            type="button"
+                                                            className="approval-button approve"
+                                                            onClick={() => openSetupModal(account)}
+                                                        >
+                                                            <KeyRound size={15} />
+                                                            Finish setup
+                                                        </button>
+                                                    )}
+
                                                     <button
                                                         className="icon-button edit"
                                                         title="Edit account"
@@ -636,7 +739,8 @@ function Accounts() {
 
                             {!editingAccount && (
                                 <p className="form-hint form-hint-block">
-                                    New accounts are sent to the Principal for approval and can be used once approved.
+                                    The Principal approves new accounts first. Then you finish the setup here: the
+                                    employee number and a temporary password, which is emailed to the DepEd address.
                                 </p>
                             )}
 
@@ -692,28 +796,25 @@ function Accounts() {
 
                             </div>
 
-                            {!isSelf && (
+                            {editingAccount && !isSelf && isSetUp(editingAccount) && (
                                 <div className="form-row">
 
                                     <div className="form-group">
-                                        <label htmlFor="account-password">
-                                            {editingAccount ? "Reset Password" : "Password"}
-                                        </label>
+                                        <label htmlFor="account-password">Reset Password</label>
 
                                         <input
                                             id="account-password"
                                             type="password"
                                             name="password"
                                             autoComplete="new-password"
-                                            placeholder={editingAccount ? "Leave blank to keep it" : ""}
+                                            placeholder="Leave blank to keep it"
                                             value={formData.password}
                                             onChange={handleChange}
-                                            required={!editingAccount}
                                             minLength={8}
                                         />
                                     </div>
 
-                                    {editingAccount && canPickStatus(editingAccount) && (
+                                    {canPickStatus(editingAccount) && (
                                         <div className="form-group">
                                             <label htmlFor="account-status">Status</label>
 
@@ -732,10 +833,10 @@ function Accounts() {
                                 </div>
                             )}
 
-                            {!isSelf && (
+                            {editingAccount && !isSelf && isSetUp(editingAccount) && (
                                 <span className="form-hint form-hint-block">
-                                    Passwords need at least 8 characters with a letter and a number.
-                                    {editingAccount && " Give the new one to the user and ask them to change it in Settings."}
+                                    At least 8 characters with a letter and a number. The new password is emailed to the
+                                    user, who replaces it at their next sign-in.
                                 </span>
                             )}
 
@@ -775,18 +876,20 @@ function Accounts() {
 
                                     <div className="form-row">
 
-                                        <div className="form-group">
-                                            <label htmlFor="account-employee-number">Employee No.</label>
+                                        {editingAccount && isSetUp(editingAccount) && (
+                                            <div className="form-group">
+                                                <label htmlFor="account-employee-number">Employee No.</label>
 
-                                            <input
-                                                id="account-employee-number"
-                                                type="text"
-                                                name="employee_number"
-                                                value={formData.employee_number}
-                                                onChange={handleChange}
-                                                required
-                                            />
-                                        </div>
+                                                <input
+                                                    id="account-employee-number"
+                                                    type="text"
+                                                    name="employee_number"
+                                                    value={formData.employee_number}
+                                                    onChange={handleChange}
+                                                    required
+                                                />
+                                            </div>
+                                        )}
 
                                         <div className="form-group">
                                             <label htmlFor="account-contact">Contact No. (optional)</label>
@@ -832,6 +935,125 @@ function Accounts() {
                             </div>
 
                         </form>
+
+                    </div>
+                </div>
+            )}
+
+            {/* FINISH SETUP MODAL */}
+
+            {setupAccount && (
+                <div className="modal-overlay" onClick={closeSetupModal}>
+                    <div className="user-modal" onClick={(event) => event.stopPropagation()}>
+
+                        <div className="modal-header">
+                            <div>
+                                <h2>Finish Setup</h2>
+                                <p>
+                                    {fullNameOf(setupAccount) || setupAccount.username} ·{" "}
+                                    {ROLE_LABELS[setupAccount.role]} · {setupAccount.email}
+                                </p>
+                            </div>
+
+                            <button className="close-modal" onClick={closeSetupModal} aria-label="Close">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {setupResult ? (
+                            <div className="user-form">
+                                <div className={setupResult.emailSent ? "success-message" : "modal-error"}>
+                                    {setupResult.emailSent ? <CheckCircle size={18} /> : <AlertCircle size={17} />}
+                                    <span>{setupResult.message}</span>
+                                </div>
+
+                                {!setupResult.emailSent && (
+                                    <div className="temp-password-box">
+                                        <span>Temporary password</span>
+                                        <code>{setupResult.password}</code>
+                                        <button type="button" className="cancel-button" onClick={copyPassword}>
+                                            <Copy size={15} /> Copy
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="modal-actions">
+                                    <button type="button" className="save-user-button" onClick={closeSetupModal}>
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <form className="user-form" onSubmit={handleFinishSetup}>
+                                <p className="form-hint form-hint-block">
+                                    The Principal approved this account. Activating it emails the username and the
+                                    temporary password to the DepEd address; the user replaces the password at their first
+                                    sign-in.
+                                </p>
+
+                                {isTeacherRole(setupAccount.role) && (
+                                    <div className="form-group">
+                                        <label htmlFor="setup-employee-number">Employee No.</label>
+                                        <input
+                                            id="setup-employee-number"
+                                            type="text"
+                                            value={setupForm.employee_number}
+                                            onChange={(e) =>
+                                                setSetupForm((previous) => ({ ...previous, employee_number: e.target.value }))
+                                            }
+                                            required
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="form-group">
+                                    <label htmlFor="setup-password">Temporary Password</label>
+                                    <div className="temp-password-input">
+                                        <input
+                                            id="setup-password"
+                                            type="text"
+                                            autoComplete="off"
+                                            spellCheck={false}
+                                            value={setupForm.temporary_password}
+                                            onChange={(e) =>
+                                                setSetupForm((previous) => ({ ...previous, temporary_password: e.target.value }))
+                                            }
+                                            required
+                                            minLength={8}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="cancel-button"
+                                            onClick={() =>
+                                                setSetupForm((previous) => ({
+                                                    ...previous,
+                                                    temporary_password: generateTemporaryPassword(),
+                                                }))
+                                            }
+                                        >
+                                            Generate
+                                        </button>
+                                    </div>
+                                    <span className="form-hint">At least 8 characters with a letter and a number.</span>
+                                </div>
+
+                                {setupError && (
+                                    <div className="modal-error">
+                                        <AlertCircle size={17} />
+                                        {setupError}
+                                    </div>
+                                )}
+
+                                <div className="modal-actions">
+                                    <button type="button" className="cancel-button" onClick={closeSetupModal}>
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="save-user-button" disabled={settingUp}>
+                                        {settingUp ? "Activating..." : "Activate & Send Email"}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
 
                     </div>
                 </div>

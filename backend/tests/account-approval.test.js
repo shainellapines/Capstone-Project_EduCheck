@@ -38,9 +38,8 @@ describe("Accounts: Principal approval", () => {
         assert.equal(res.status, 201, JSON.stringify(res.body));
         assert.equal(res.body.user.status, "Pending Approval");
 
-        const signIn = await login("ana.one", "Welcome123");
-        assert.equal(signIn.status, 403);
-        assert.match(signIn.body.message, /waiting for the Principal's approval/);
+        // It has no usable password until setup, so nobody can sign in with it.
+        assert.equal((await login("ana.one", "Welcome123")).status, 401);
 
         const told = await notices("principal", "Account Awaiting Approval");
         assert.ok(told.some((message) => message.includes("Ana Teacher1")));
@@ -56,16 +55,23 @@ describe("Accounts: Principal approval", () => {
         assert.ok(list.body.requests.some((r) => r.username === "ana.one" && r.request_type === "new_account"));
     });
 
-    it("APR-03 once the Principal approves, it can sign in; the Administrator is told; it is audited", async () => {
+    it("APR-03 once the Principal approves, it waits for setup; the Administrator is told; it is audited", async () => {
         const id = await idOf("ana.one");
         const res = await asPrincipal("POST", `/api/account-approvals/${id}/approve`);
         assert.equal(res.status, 200, JSON.stringify(res.body));
 
+        assert.equal((await login("ana.one", "Welcome123")).status, 401, "still no password before setup");
+        assert.match((await notices("admin", "Account Approved"))[0], /Finish its setup/);
+
+        const setup = await asAdmin("POST", `/api/users/${id}/finish-setup`, {
+            employee_number: "EMP-801",
+            temporary_password: "Welcome123",
+        });
+        assert.equal(setup.status, 200, JSON.stringify(setup.body));
         assert.equal((await login("ana.one", "Welcome123")).status, 200);
-        assert.equal((await notices("admin", "Account Approved")).length, 1);
 
         const audit = await t.pool.query(
-            "SELECT after_data FROM audit_logs WHERE entity_type='user' AND entity_id=$1 ORDER BY audit_log_id DESC LIMIT 1",
+            "SELECT after_data FROM audit_logs WHERE entity_type='user' AND entity_id=$1 AND after_data ? 'approved'",
             [id]
         );
         assert.equal(audit.rows[0].after_data.approved, true);
@@ -81,9 +87,7 @@ describe("Accounts: Principal approval", () => {
         const rejected = await asPrincipal("POST", `/api/account-approvals/${id}/reject`, { remarks: "Wrong employee number." });
         assert.equal(rejected.status, 200);
 
-        const signIn = await login("ana.two", "Welcome123");
-        assert.equal(signIn.status, 403);
-        assert.match(signIn.body.message, /not approved/);
+        assert.equal((await login("ana.two", "Welcome123")).status, 401);
         assert.ok((await notices("admin", "Account Not Approved"))[0].includes("Wrong employee number."));
 
         const fixed = await asAdmin("PUT", `/api/users/${id}`, {
@@ -117,12 +121,12 @@ describe("Accounts: Principal approval", () => {
         await t.pool.query("UPDATE users SET pending_role=NULL WHERE user_id=$1", [id]);
     });
 
-    it("APR-07 with no active Principal, a new account is active at once", async () => {
+    it("APR-07 with no active Principal, a new account skips approval and goes to setup", async () => {
         await t.pool.query("UPDATE users SET status='Inactive' WHERE role='principal'");
         const res = await asAdmin("POST", "/api/users", newTeacher("ana.three", 3));
         await t.pool.query("UPDATE users SET status='Active' WHERE role='principal'");
 
         assert.equal(res.status, 201);
-        assert.equal(res.body.user.status, "Active");
+        assert.equal(res.body.user.status, "Awaiting Setup", "no approval step, straight to setup");
     });
 });

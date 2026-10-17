@@ -3,6 +3,7 @@ const { recordAuditLog } = require("../utils/auditLog");
 const {
     PENDING_APPROVAL,
     REJECTED,
+    AWAITING_SETUP,
     ROLE_LABELS,
     notifyActiveRole,
     findAdviserSlots,
@@ -100,7 +101,7 @@ const approveAccount = async (req, res) => {
         const result = await pool.query(
             `
             UPDATE users
-            SET status = CASE WHEN status = $2 THEN 'Active' ELSE status END,
+            SET status = CASE WHEN status = $2 THEN $4 ELSE status END,
                 role = COALESCE(pending_role, role),
                 pending_role = NULL,
                 approval_remarks = NULL,
@@ -109,7 +110,7 @@ const approveAccount = async (req, res) => {
             WHERE user_id = $1 AND (status = $2 OR pending_role IS NOT NULL)
             RETURNING user_id, username, role, status, pending_role
             `,
-            [row.user_id, PENDING_APPROVAL, req.user.user_id]
+            [row.user_id, PENDING_APPROVAL, req.user.user_id, AWAITING_SETUP]
         );
 
         // Decided by someone else in the meantime.
@@ -131,7 +132,8 @@ const approveAccount = async (req, res) => {
             "admin",
             "Account Approved",
             type === "new_account"
-                ? `The Principal approved ${label}'s ${ROLE_LABELS[row.role]} account. It can now be used.`
+                ? `The Principal approved ${label}'s ${ROLE_LABELS[row.role]} account. Finish its setup in Accounts: ` +
+                  "give the employee number and a temporary password."
                 : `The Principal approved ${label}'s role change to ${ROLE_LABELS[row.pending_role]}.`
         );
 
