@@ -12,8 +12,7 @@ import Dashboard from "./pages/dashboards/Dashboard";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import SubjectDashboard from "./pages/dashboards/SubjectDashboard";
 import PrincipalDashboard from "./pages/dashboards/PrincipalDashboard";
-import UserManagement from "./pages/admin/UserManagement";
-import TeacherManagement from "./pages/admin/TeacherManagement";
+import Accounts from "./pages/admin/Accounts";
 import SectionAssignments from "./pages/sections/SectionAssignments";
 import ClassRecordUpload from "./pages/records/ClassRecordUpload";
 import ValidationResults from "./pages/records/ValidationResults";
@@ -76,22 +75,17 @@ function App() {
                 />
 
                 <Route
-                    path="/users"
+                    path="/accounts"
                     element={
                         <ProtectedRoute allowedRoles={["admin"]}>
-                            <UserManagement />
+                            <Accounts />
                         </ProtectedRoute>
                     }
                 />
 
-                <Route
-                    path="/teachers"
-                    element={
-                        <ProtectedRoute allowedRoles={["admin"]}>
-                            <TeacherManagement />
-                        </ProtectedRoute>
-                    }
-                />
+                {/* User Management and Teacher Management were merged into Accounts. */}
+                <Route path="/users" element={<Navigate to="/accounts" replace />} />
+                <Route path="/teachers" element={<Navigate to="/accounts" replace />} />
 
                 <Route
                     path="/section-assignments"

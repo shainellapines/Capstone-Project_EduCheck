@@ -1,6 +1,6 @@
 // Creates the first School Administrator account. A fresh database (loaded
 // from educheck_schema.sql) has no users, and every other account is made by
-// an Administrator in User Management, so this is the bootstrap step.
+// an Administrator in Accounts, so this is the bootstrap step.
 //
 //   npm run create-admin -- <username> <email> <password>
 //

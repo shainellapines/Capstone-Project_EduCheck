@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Users,
-    UserCog,
+    UserCheck,
     ClipboardCheck,
     BarChart3,
     AlertTriangle,
@@ -358,31 +358,31 @@ function AdminDashboard() {
 
                             <button
                                 className="quick-action blue-action"
-                                onClick={() => navigate("/users")}
+                                onClick={() => navigate("/accounts")}
                             >
                                 <Users size={24} />
 
                                 <strong>
-                                    User Management
+                                    Accounts
                                 </strong>
 
                                 <span>
-                                    Manage EduCheck user accounts
+                                    Add and manage teacher and staff accounts
                                 </span>
                             </button>
 
                             <button
                                 className="quick-action purple-action"
-                                onClick={() => navigate("/teachers")}
+                                onClick={() => navigate("/section-assignments")}
                             >
-                                <UserCog size={24} />
+                                <UserCheck size={24} />
 
                                 <strong>
-                                    Teacher Management
+                                    Section Assignments
                                 </strong>
 
                                 <span>
-                                    Manage teacher information
+                                    Assign teachers to sections and subjects
                                 </span>
                             </button>
 

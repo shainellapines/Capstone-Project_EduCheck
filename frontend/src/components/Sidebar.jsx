@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
     LayoutDashboard,
     Users,
-    UserCog,
     FileText,
     Upload,
     BarChart3,
@@ -47,8 +46,7 @@ const NAV_ITEMS_BY_ROLE = {
     ],
     admin: [
         { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-        { key: "user-management", label: "User Management", icon: Users, path: "/users" },
-        { key: "teacher-management", label: "Teacher Management", icon: UserCog, path: "/teachers" },
+        { key: "accounts", label: "Accounts", icon: Users, path: "/accounts" },
         { key: "section-assignments", label: "Section & Teacher Assignments", icon: UserCheck, path: "/section-assignments" },
         { key: "audit-log", label: "Audit Log", icon: History, path: "/audit-log" },
         { key: "consolidated-records", label: "Submission Review", icon: ClipboardCheck, path: "/consolidated-records" },

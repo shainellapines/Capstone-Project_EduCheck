@@ -400,7 +400,9 @@
 
 .user-modal {
     width: 100%;
-    max-width: 540px;
+    max-width: 580px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
     background: var(--ec-surface);
     border-radius: 12px;
     box-shadow: var(--ec-shadow-popover);
@@ -480,6 +482,46 @@
     color: var(--ec-slate-500);
     font-size: 12px;
     line-height: 1.4;
+}
+
+.form-section-title {
+    margin: 4px 0 12px;
+    color: var(--ec-slate-500);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.form-section-title:not(:first-child) {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--ec-slate-200);
+}
+
+.form-hint-block {
+    display: block;
+    margin: -8px 0 4px;
+}
+
+.profile-missing {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border: 1px solid var(--ec-warning);
+    border-radius: 20px;
+    background: var(--ec-warning-bg);
+    color: var(--ec-warning);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.profile-missing:hover,
+.profile-missing:focus-visible {
+    filter: brightness(0.95);
 }
 
 .form-row {

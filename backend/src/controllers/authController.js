@@ -8,7 +8,7 @@ const pool = require("../db");
 const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 // Names live on the teacher profile (teachers table), which the Admin
-// manages in Teacher Management. Admin and Principal accounts have no
+// manages in Accounts. Admin and Principal accounts have no
 // teacher profile, so they have no name and the UI shows the username.
 const getTeacherProfile = async (userId) => {
     const result = await pool.query(

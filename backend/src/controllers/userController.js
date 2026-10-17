@@ -12,6 +12,66 @@ const VALID_STATUSES = ["Active", "Inactive"];
 
 const isActive = (status) => (status || "Active").toLowerCase() === "active";
 
+// Subject Teachers and Class Advisers need a teacher profile (name and
+// employee number) to be assigned to sections; Admin and Principal do not.
+const TEACHER_ROLES = ["subject", "adviser"];
+
+// Accounts use the person's real DepEd address, so notices reach them.
+const DEPED_EMAIL = /^[^\s@]+@deped\.gov\.ph$/i;
+const DEPED_EMAIL_MESSAGE = "Use the person's DepEd email address (ending in @deped.gov.ph).";
+
+// One row per account with its teacher profile, if it has one.
+const ACCOUNT_SELECT = `
+    SELECT u.user_id, u.username, u.email, u.role, u.status, u.created_at,
+           t.teacher_id, t.first_name, t.last_name, t.employee_number, t.contact_number
+    FROM users u
+    LEFT JOIN teachers t ON t.user_id = u.user_id
+`;
+
+const PROFILE_FIELDS = ["first_name", "last_name", "employee_number", "contact_number"];
+
+// The teacher profile fields sent with an account, trimmed; null when the
+// request sent none of them (the profile is then left as it is).
+const readProfile = (body) => {
+    if (!PROFILE_FIELDS.some((field) => body[field] !== undefined)) return null;
+
+    const value = (field) => (typeof body[field] === "string" ? body[field].trim() : "");
+    return {
+        first_name: value("first_name"),
+        last_name: value("last_name"),
+        employee_number: value("employee_number"),
+        contact_number: value("contact_number") || null,
+    };
+};
+
+const missingProfileMessage = (profile) =>
+    !profile || !profile.first_name || !profile.last_name || !profile.employee_number
+        ? "A Subject Teacher or Class Adviser needs a first name, last name, and employee number."
+        : null;
+
+// Creates the profile, or updates the one the account already has.
+const saveProfile = (client, userId, profile) =>
+    client.query(
+        `
+        INSERT INTO teachers (user_id, employee_number, first_name, last_name, contact_number)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (user_id) DO UPDATE SET
+            employee_number = EXCLUDED.employee_number,
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            contact_number = EXCLUDED.contact_number
+        `,
+        [userId, profile.employee_number, profile.first_name, profile.last_name, profile.contact_number]
+    );
+
+const duplicateMessage = (error) =>
+    error.constraint && error.constraint.includes("employee_number")
+        ? "That employee number is already used by another teacher."
+        : "Username or email already exists.";
+
+const loadAccount = async (userId) =>
+    (await pool.query(`${ACCOUNT_SELECT} WHERE u.user_id = $1`, [userId])).rows[0];
+
 // Rejects a role or status outside the fixed lists; null when both are fine
 // (or not being set).
 const invalidRoleOrStatus = ({ role, status }) => {
@@ -41,11 +101,7 @@ const removesLastActiveAdmin = async (target, nextRole, nextStatus) => {
 // GET all users
 const getUsers = async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT user_id, username, email, role, status, created_at
-             FROM users
-             ORDER BY user_id`
-        );
+        const result = await pool.query(`${ACCOUNT_SELECT} ORDER BY u.user_id`);
 
         res.json(result.rows);
     } catch (error) {
@@ -62,20 +118,15 @@ const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await pool.query(
-            `SELECT user_id, username, email, role, status, created_at
-             FROM users
-             WHERE user_id = $1`,
-            [id]
-        );
+        const account = await loadAccount(id);
 
-        if (result.rows.length === 0) {
+        if (!account) {
             return res.status(404).json({
                 message: "User not found."
             });
         }
 
-        res.json(result.rows[0]);
+        res.json(account);
     } catch (error) {
         console.error("Get user error:", error);
 
@@ -86,7 +137,11 @@ const getUserById = async (req, res) => {
 };
 
 // CREATE user
+// The account and, for a Subject Teacher or Class Adviser, the teacher
+// profile are saved together: either both exist afterwards or neither does.
 const createUser = async (req, res) => {
+    const client = await pool.connect();
+
     try {
         const {
             username,
@@ -108,51 +163,58 @@ const createUser = async (req, res) => {
             return res.status(400).json({ message: invalid });
         }
 
+        if (!DEPED_EMAIL.test(email.trim())) {
+            return res.status(400).json({ message: DEPED_EMAIL_MESSAGE });
+        }
+
         if (!PASSWORD_RULE.test(password)) {
             return res.status(400).json({
                 message: "Password must be at least 8 characters and include both a letter and a number."
             });
         }
 
-        const existingUser = await pool.query(
-            `SELECT user_id
-             FROM users
-             WHERE username = $1 OR email = $2`,
-            [username, email]
-        );
+        const profile = TEACHER_ROLES.includes(role) ? readProfile(req.body) : null;
 
-        if (existingUser.rows.length > 0) {
-            return res.status(409).json({
-                message: "Username or email already exists."
-            });
+        if (TEACHER_ROLES.includes(role)) {
+            const missing = missingProfileMessage(profile);
+            if (missing) return res.status(400).json({ message: missing });
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const result = await pool.query(
+        await client.query("BEGIN");
+
+        const result = await client.query(
             `INSERT INTO users
                 (username, password_hash, email, role, status)
              VALUES ($1, $2, $3, $4, $5)
-             RETURNING user_id, username, email, role, status, created_at`,
-            [
-                username,
-                passwordHash,
-                email,
-                role,
-                status
-            ]
+             RETURNING user_id`,
+            [username.trim(), passwordHash, email.trim(), role, status]
         );
+        const userId = result.rows[0].user_id;
+
+        if (profile) await saveProfile(client, userId, profile);
+
+        await client.query("COMMIT");
 
         res.status(201).json({
-            message: "User created successfully.",
-            user: result.rows[0]
+            message: "Account created successfully.",
+            user: await loadAccount(userId)
         });
     } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+
+        if (error.code === "23505") {
+            return res.status(409).json({ message: duplicateMessage(error) });
+        }
+
         console.error("Create user error:", error);
 
         res.status(500).json({
             message: "Failed to create user."
         });
+    } finally {
+        client.release();
     }
 };
 
@@ -173,7 +235,7 @@ const updateUser = async (req, res) => {
             return res.status(400).json({ message: invalid });
         }
 
-        const existing = await pool.query(`SELECT user_id, role, status FROM users WHERE user_id = $1`, [id]);
+        const existing = await pool.query(`SELECT user_id, email, role, status FROM users WHERE user_id = $1`, [id]);
 
         if (existing.rows.length === 0) {
             return res.status(404).json({
@@ -183,6 +245,18 @@ const updateUser = async (req, res) => {
 
         const target = existing.rows[0];
         const nextRole = role ?? target.role;
+
+        // Accounts made before this rule keep their address until it is changed.
+        if (email && email.trim() !== target.email && !DEPED_EMAIL.test(email.trim())) {
+            return res.status(400).json({ message: DEPED_EMAIL_MESSAGE });
+        }
+
+        const profile = TEACHER_ROLES.includes(nextRole) ? readProfile(req.body) : null;
+
+        if (profile) {
+            const missing = missingProfileMessage(profile);
+            if (missing) return res.status(400).json({ message: missing });
+        }
         const nextStatus = status ?? target.status;
         const isSelf = target.user_id === req.user.user_id;
 
@@ -224,38 +298,45 @@ const updateUser = async (req, res) => {
             }
         }
 
-        const result = await pool.query(
-            `UPDATE users
-             SET username = COALESCE($1, username),
-                 email = COALESCE($2, email),
-                 role = COALESCE($3, role),
-                 status = COALESCE($4, status)
-             WHERE user_id = $5
-             RETURNING user_id, username, email, role, status, created_at`,
-            [
-                username,
-                email,
-                role,
-                status,
-                id
-            ]
-        );
+        // Account and profile change together, as when they are created.
+        const client = await pool.connect();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                message: "User not found."
-            });
+        try {
+            await client.query("BEGIN");
+
+            await client.query(
+                `UPDATE users
+                 SET username = COALESCE($1, username),
+                     email = COALESCE($2, email),
+                     role = COALESCE($3, role),
+                     status = COALESCE($4, status)
+                 WHERE user_id = $5`,
+                [
+                    username ? username.trim() : username,
+                    email ? email.trim() : email,
+                    role,
+                    status,
+                    id
+                ]
+            );
+
+            if (profile) await saveProfile(client, target.user_id, profile);
+
+            await client.query("COMMIT");
+        } catch (error) {
+            await client.query("ROLLBACK").catch(() => {});
+            throw error;
+        } finally {
+            client.release();
         }
 
         res.json({
-            message: "User updated successfully.",
-            user: result.rows[0]
+            message: "Account updated successfully.",
+            user: await loadAccount(target.user_id)
         });
     } catch (error) {
         if (error.code === "23505") {
-            return res.status(409).json({
-                message: "Username or email already exists."
-            });
+            return res.status(409).json({ message: duplicateMessage(error) });
         }
 
         console.error("Update user error:", error);
@@ -323,12 +404,14 @@ const searchUsers = async (req, res) => {
         const { q = "" } = req.query;
 
         const result = await pool.query(
-            `SELECT user_id, username, email, role, status, created_at
-             FROM users
-             WHERE username ILIKE $1
-                OR email ILIKE $1
-                OR role ILIKE $1
-             ORDER BY user_id`,
+            `${ACCOUNT_SELECT}
+             WHERE u.username ILIKE $1
+                OR u.email ILIKE $1
+                OR u.role ILIKE $1
+                OR t.first_name ILIKE $1
+                OR t.last_name ILIKE $1
+                OR t.employee_number ILIKE $1
+             ORDER BY u.user_id`,
             [`%${q}%`]
         );
 
