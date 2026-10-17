@@ -1,4 +1,6 @@
-# EduCheck Handoff v15 - Self-Contained rule, teacher picker, pre-UAT integrity review (2026-10-13 to 2026-10-14)
+# EduCheck Handoff v15 - Self-Contained rule, teacher picker, pre-UAT integrity review (2026-10-13 to 2026-10-14), plus UAT fixes and account approval (2026-10-16 to 2026-10-17)
+
+> **Update 2026-10-17:** issues found during the Atimonan UAT, and the account redesign the capstone adviser asked for, are fixed and committed. See **Issues 6 to 8** below. Issue 4 is now decided and built.
 
 ## Where the project stands
 **Two defects from the owner's manual review, plus three serious and two smaller defects from a pre-UAT code review, are fixed, tested and committed. Some UAT test cases need their wording checked, and three design questions are open.**
@@ -17,6 +19,11 @@
 | `f42d8e2` | Self-Contained sections take the Class Adviser slot only (issue 1) |
 | `6ed592e` | Searchable teacher picker with a role filter on Add Assignment (issue 2) |
 | next commit | Pre-UAT integrity fixes (issue 5) |
+| `74317c8` | UAT fixes: password reset, login autofill, bulk approve, notifications, lock message, mobile paging (issue 6) |
+| `db26f6f` | One Accounts page replaces User and Teacher Management (issue 7) |
+| `e56a2c5` | Principal approval of accounts, migration 010 (issue 8) |
+| `f883966` | Account setup after approval and the emailed temporary password, migration 011 (issue 8) |
+| `927613c` | Temporary password must be replaced at first sign-in (issue 8) |
 
 ---
 
@@ -86,7 +93,7 @@ The Adviser asked whether "Self-Contained" is the term schools really use.
 - Add a plain-language explanation next to the staffing mode, e.g. "Self-Contained - the Class Adviser teaches every subject".
 - Default new Grade 1-3 sections to Self-Contained, with a warning rather than a hard block.
 
-## Issue 4 - Should the Principal approve new accounts? (proposal, no code change)
+## Issue 4 - Should the Principal approve new accounts? (decided 2026-10-17, built: see Issue 8)
 **Raised by the professor.** Today an account is **Active as soon as the admin creates it**. The Principal's role is read-only oversight.
 
 **Recommended design (not approved yet):**
@@ -151,17 +158,79 @@ Today's rules change what some test cases expect.
 
 **Baseline warning:** the dev database was edited during this session (Mabini rows #40-46). Before UAT, restore the official baseline and confirm it already follows the Self-Contained rule. If it still holds subject rows in a Self-Contained section, a staffing switch or a re-assignment on the day will be refused.
 
+## Issue 6 - Problems found during UAT (fixed 2026-10-16)
+**Source:** the Atimonan UAT (one section). The session was guided and rushed, with no orientation, so some problems came from unfamiliarity rather than defects. Commit `74317c8`.
+
+| # | Problem reported | Cause | Fix |
+|---|---|---|---|
+| 1 | The adviser's username and password were already filled in on the login page (web) | The browser's saved password on a shared laptop. On mobile, the grey sample text `e.g. adviser.grade6a` also looked like a default. | **Web:** the login fields stay read-only until clicked, so the browser cannot fill them as the page opens. **Mobile:** the hint now says "Enter your username", and the login is not offered to the phone's password manager. **On the laptops:** delete the saved EduCheck passwords in Chrome. |
+| 2 | "Reset password does not work; the password the admin set still logs in" | Changing one's own password worked (AUTH-08). The real gap: **the admin could not reset another user's password at all**, although the login page says resets go through the admin. The autofill in #1 also kept filling the old password. | The admin can reset a password from Edit (now in Accounts). The old password stops working at once, and the Audit Log records that a reset happened, never the password. |
+| 3 | Teachers could not re-upload because records were locked | Working as designed (D-04): Pending and Approved learners are locked. Teachers did not know who unlocks them or how. | The lock stays. The message now **names the Class Adviser and the steps** (Consolidated Records, expand the learner, Request Revision on the subject), and **the Adviser is notified automatically** ("Upload Blocked by Locked Records"). |
+| 4 | Long student and approval lists on mobile | Mobile showed the whole list at once. | The learner list and My Uploads show **20 per page** with Previous/Next; a new page starts at the top. |
+| 5 | Approving learners one by one is slow | The admin could only approve one record at a time. | **Checkboxes, "Select all pending" and "Approve selected"** on Submission Review. Each record gets the same checks and snapshot as a single approval; any that fail are skipped and listed. Rejection stays one at a time (each needs a reason). Bulk approval sends one summary notification per person. |
+| 6 | Old notifications pile up | Notifications could only be marked read. | **Web:** delete per notification and **Clear read**. **Mobile:** swipe left to delete, and Clear read. Unread ones are never cleared. |
+| 7 | How to bring in old handwritten SF10s; can a photo be attached? | SF10 import reads the Excel SF10 only. | **Not built.** Earlier years can already be typed in by hand on the Permanent Record page (US-014). Reading grades from a photo is unreliable, so attaching a scan is future work for Recommendations / Known Limitations. |
+
+**Also fixed:** a wrong *current* password returned 401, which both apps treat as an expired session, so one typo signed the user out. It now returns 400.
+
+## Issue 7 - User Management and Teacher Management confused the adviser (fixed 2026-10-17)
+**Reported by:** the capstone adviser. Adding a teacher took two pages and a hidden step: create the account, note its **User ID**, then type that ID into Teacher Management. Both pages listed mostly the same people.
+
+**Fix (commit `db26f6f`):** one page, **Accounts**.
+- One **Add Account** form. Choosing Subject Teacher or Class Adviser shows the teacher fields (name, contact) in the same form; the server saves the account and the teacher profile **together or not at all**.
+- The username is suggested from the email (`juan.delacruz@deped.gov.ph` gives `juan.delacruz`).
+- **New and changed emails must end in `@deped.gov.ph`.** Existing accounts keep their old address until it is edited.
+- The table shows the real name first, then role, employee no., email and status, all searchable.
+- The old `/users` and `/teachers` links redirect to `/accounts`. The admin dashboard's "Teacher Management" quick action became "Section Assignments".
+
+## Issue 8 - Principal approval and DepEd email onboarding (built 2026-10-17)
+**Requested by:** the capstone adviser. This decides Issue 4.
+
+**The flow:**
+```
+Admin adds account  ->  Principal approves  ->  Admin finishes setup      ->  Teacher gets email
+(no password yet)       (Awaiting Setup)        employee no. + temporary      signs in, must set
+                                                password -> Active            their own password
+```
+
+| Stage | Commit | What it does |
+|---|---|---|
+| Principal approval | `e56a2c5` (migration **010**) | New accounts start as **Pending Approval**. The Principal is notified, sees an alert on the dashboard, and decides on a new **Account Approvals** page (Reject needs a reason). A **role change that gives more access** also waits; removing access applies at once. The Principal cannot approve their own account. Correcting a rejected account sends it back. Decisions go to the Audit Log, and the admin is notified. With no active Principal (first setup), approval is skipped. |
+| Setup and email | `f883966` (migration **011**) | After approval the admin clicks **Finish setup**: employee no. (teachers) and a temporary password (typed or **Generate**). The account becomes Active and the username and temporary password are **emailed to the DepEd address** from `educheckg10@gmail.com` (nodemailer 10.0.14). If the email cannot be sent, the admin sees the password on screen to hand over. Password resets are emailed the same way. |
+| First sign-in | `927613c` | A temporary password must be replaced first: a **"Set your own password"** screen on web and mobile. Until then the server refuses every other request (403 `PASSWORD_CHANGE_REQUIRED`), and the new password must differ from the temporary one. |
+
+**Decisions made by the owner:** role changes that give more access need approval; email must end in `@deped.gov.ph`; the Principal approves all new accounts (including Admin and Principal), skipped only when no active Principal exists; the sender is `educheckg10@gmail.com`.
+
+**Note for the paper:** the Principal is no longer purely view-only. Approving accounts is their one action, so the SPMP needs **US-015** (account approval and setup) and an updated **US-008**.
+
+## Automated checks (2026-10-17)
+- Backend: **178 of 178** tests pass. New: `notifications.test.js`, `bulk-approve.test.js`, `accounts.test.js`, `account-approval.test.js`, `account-setup.test.js`, plus AUTH-11 and new role-matrix rows. Emails in tests go to an outbox file, never to a real address.
+- Frontend: `npm run build` succeeds. Mobile: `flutter analyze` is clean and 7 of 7 tests pass.
+- **Not yet checked in a browser or on a phone**, and **no real email has been sent yet.**
+
+## Before the next session (from Issues 6 to 8)
+1. **Apply migrations 010 and 011** to `educheck_db`, in order. Without them the Accounts page fails.
+2. **Set `SMTP_PASS`** (Gmail app password) and `APP_URL` in `backend/.env`; see `.env.example`.
+3. **Run the whole account flow once in a browser**, with a DepEd email you can open (check spam).
+4. **Rebuild the APK** from the `C:\dev` copy (mobile login, paging, notifications and the change-password screen changed).
+5. **Clear saved passwords** in Chrome on the UAT laptops.
+6. **Update the UAT Day Kit and workbook:** "Accounts" and "Account Approvals" replace User Management and Teacher Management (for example TC-017 and TC-019), and **UAT test accounts must be approved and set up beforehand**.
+7. **Update the SPMP** (US-015, US-008) and **Known Limitations** (email needs internet; photo SF10 import is future work; mobile alerts only while the app is open, L-01).
+8. **Follow-up session:** a short orientation first, then the **ISO 25010 questionnaire**, which was missed.
+
 ## Decisions made (do not reopen)
 - **Self-Contained:** Class Adviser slot only. No subject rows for anyone, and Subject Teacher accounts cannot be assigned. The rule is enforced in the API, not only in the UI.
 - **The Adviser's subjects in a Self-Contained section are derived, not stored.**
 - **Teacher selection:** search plus a role filter, no pagination.
 - **"Self-Contained" and "Departmentalized"** stay as labels, because they are DepEd terms.
 - **Inactive accounts** still appear in the teacher picker. The owner chose to leave this for now.
+- **Accounts (2026-10-17):** one Accounts page; DepEd emails only; the Principal approves new accounts and role raises; the admin gives the employee number and a temporary password after approval; the temporary password must be replaced at first sign-in.
+- **D-04 lock stays.** The fix for UAT issue 3 was a clearer message and an Adviser notification, not loosening the lock.
 
 ## Open items (in order)
 1. **Check the teacher picker in a browser:** light and dark mode, the Self-Contained lock with Mabini, and search by surname.
 2. **Update the UAT workbook** as in the table above, and re-check the baseline.
-3. **Decide on Principal account approval** (Issue 4) and whether it covers role changes.
+3. ~~Decide on Principal account approval~~ Done: built as Issue 8. Follow the list "Before the next session" above.
 4. **Decide on the Self-Contained explanation text and the Grade 1-3 default** (Issue 3).
 5. **Tell the capstone adviser about the D-04 change** (issue 5, fix 2).
 6. **Decide on audit log coverage** (issue 5, #5) if the paper claims a full audit trail.
