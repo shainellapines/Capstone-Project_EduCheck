@@ -118,8 +118,9 @@ function Login() {
                 JSON.stringify(data.user)
             );
 
-            // /dashboard sends each role to its own home page.
-            navigate("/dashboard");
+            // /dashboard sends each role to its own home page; a temporary
+            // password is replaced first.
+            navigate(data.user?.must_change_password ? "/change-password" : "/dashboard");
 
         } catch (error) {
             setError(error.message);

@@ -33,6 +33,9 @@ class SessionStore {
   String baseUrl = defaultBaseUrl;
 
   String? get role => user?['role'] as String?;
+
+  /// Signed in with a temporary password that must be replaced first.
+  bool get mustChangePassword => user?['must_change_password'] == true;
   bool get isLoggedIn => token != null && user != null && !_isExpired(token!);
 
   Future<void> load() async {

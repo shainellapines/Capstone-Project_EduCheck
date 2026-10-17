@@ -63,7 +63,7 @@ describe("Authentication (EPIC-01)", () => {
             token: t.tokens.principal,
             body: { current_password: "wrong", new_password: "LongEnough1" },
         });
-        assert.equal(wrongCurrent.status, 401);
+        assert.equal(wrongCurrent.status, 400, "a typo must not end the session");
 
         const ok = await t.request("POST", "/api/auth/change-password", {
             token: t.tokens.principal,

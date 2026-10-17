@@ -1,6 +1,12 @@
 const jwt = require("jsonwebtoken");
 const pool = require("../db");
 
+// While an account still has a temporary password (from setup or a reset,
+// migration 011), only these calls work: reading the account and changing
+// the password. Everything else answers 403 PASSWORD_CHANGE_REQUIRED, which
+// both apps answer by opening their change-password screen.
+const ALLOWED_BEFORE_PASSWORD_CHANGE = new Set(["/api/auth/me", "/api/auth/change-password"]);
+
 const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -29,7 +35,7 @@ const authenticateToken = async (req, res, next) => {
     // account stops working at once, and a role change applies at once.
     try {
         const account = await pool.query(
-            `SELECT username, role, status FROM users WHERE user_id = $1`,
+            `SELECT username, role, status, must_change_password FROM users WHERE user_id = $1`,
             [decoded.user_id]
         );
         const user = account.rows[0];
@@ -37,6 +43,16 @@ const authenticateToken = async (req, res, next) => {
         if (!user || (user.status && user.status.toLowerCase() !== "active")) {
             return res.status(401).json({
                 message: "This account is no longer active. Please contact your Administrator."
+            });
+        }
+
+        const path = req.originalUrl.split("?")[0].replace(/\/+$/, "");
+
+        if (user.must_change_password && !ALLOWED_BEFORE_PASSWORD_CHANGE.has(path)) {
+            res.set("X-Password-Change-Required", "1");
+            return res.status(403).json({
+                code: "PASSWORD_CHANGE_REQUIRED",
+                message: "Replace your temporary password before continuing."
             });
         }
 

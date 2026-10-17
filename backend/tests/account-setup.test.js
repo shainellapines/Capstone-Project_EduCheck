@@ -87,4 +87,27 @@ describe("Accounts: setup after approval and the account email", () => {
         assert.ok(rows.some((r) => r.includes('"setup_finished":true')));
         assert.ok(rows.every((r) => !r.includes("Temp12345") && !r.includes("Again1234")));
     });
+
+    it("SET-06 a temporary password must be replaced before anything else works", async () => {
+        const signIn = await t.request("POST", "/api/auth/login", { body: { username: "bea.reyes", password: "Again1234" } });
+        assert.equal(signIn.status, 200);
+        assert.equal(signIn.body.user.must_change_password, true);
+        const token = signIn.body.token;
+
+        const blocked = await t.request("GET", "/api/notifications", { token });
+        assert.equal(blocked.status, 403);
+        assert.equal(blocked.body.code, "PASSWORD_CHANGE_REQUIRED");
+        assert.equal((await t.request("GET", "/api/auth/me", { token })).body.user.must_change_password, true);
+
+        const change = (current_password, new_password) =>
+            t.request("POST", "/api/auth/change-password", { token, body: { current_password, new_password } });
+
+        assert.equal((await change("Again1234", "Again1234")).status, 400, "the temporary one cannot be kept");
+        assert.equal((await change("typo", "MyOwnPass9")).status, 400, "a typo does not end the session");
+        assert.equal((await change("Again1234", "MyOwnPass9")).status, 200);
+
+        assert.equal((await t.request("GET", "/api/notifications", { token })).status, 200);
+        const relogin = await t.request("POST", "/api/auth/login", { body: { username: "bea.reyes", password: "MyOwnPass9" } });
+        assert.equal(relogin.body.user.must_change_password, false);
+    });
 });

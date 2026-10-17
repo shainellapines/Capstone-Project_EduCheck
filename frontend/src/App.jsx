@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import Login from "./pages/auth/Login";
+import ChangePassword from "./pages/auth/ChangePassword";
 import Dashboard from "./pages/dashboards/Dashboard";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import SubjectDashboard from "./pages/dashboards/SubjectDashboard";
@@ -40,6 +41,10 @@ function RoleBasedDashboard() {
 
     const user = getStoredUser();
 
+    if (user.must_change_password) {
+        return <Navigate to="/change-password" replace />;
+    }
+
     if (user.role === "admin") {
         return <AdminDashboard />;
     }
@@ -68,6 +73,11 @@ function App() {
                 <Route
                     path="/"
                     element={<Login />}
+                />
+
+                <Route
+                    path="/change-password"
+                    element={<ChangePassword />}
                 />
 
                 <Route

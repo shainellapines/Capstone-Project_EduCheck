@@ -36,7 +36,7 @@ const login = async (req, res) => {
 
         // Find user
         const result = await pool.query(
-            `SELECT user_id, username, password_hash, email, role, status
+            `SELECT user_id, username, password_hash, email, role, status, must_change_password
              FROM users
              WHERE username = $1`,
             [username]
@@ -102,7 +102,10 @@ const login = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                full_name: fullNameOf(profile)
+                full_name: fullNameOf(profile),
+                // A temporary password from setup or a reset: the apps send
+                // the user to replace it before anything else.
+                must_change_password: user.must_change_password
             }
         });
 
@@ -126,7 +129,7 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
     try {
         const result = await pool.query(
-            `SELECT user_id, username, email, role, status, created_at
+            `SELECT user_id, username, email, role, status, created_at, must_change_password
              FROM users
              WHERE user_id = $1`,
             [req.user.user_id]
@@ -225,16 +228,25 @@ const changePassword = async (req, res) => {
 
         const currentMatch = await bcrypt.compare(current_password, result.rows[0].password_hash);
 
+        // 400, not 401: the apps treat 401 as an expired session and sign
+        // the user out, which a typo in this field should not do.
         if (!currentMatch) {
-            return res.status(401).json({
+            return res.status(400).json({
                 message: "Current password is incorrect.",
+            });
+        }
+
+        // Keeping the emailed temporary password would defeat the change.
+        if (await bcrypt.compare(new_password, result.rows[0].password_hash)) {
+            return res.status(400).json({
+                message: "Choose a new password that is different from your current one.",
             });
         }
 
         const newHash = await bcrypt.hash(new_password, 10);
 
         await pool.query(
-            `UPDATE users SET password_hash = $1 WHERE user_id = $2`,
+            `UPDATE users SET password_hash = $1, must_change_password = FALSE WHERE user_id = $2`,
             [newHash, req.user.user_id]
         );
 
