@@ -10,6 +10,9 @@
     --cr-columns: 22px minmax(0, 1fr) 110px 200px 220px;
     --cr-gap: 14px;
     --cr-pad-x: 24px;
+    /* The list responds to the card's own width, not the window's: the
+       space left over depends on the sidebar (full, narrow or collapsed). */
+    container-type: inline-size;
 }
 
 /* ---------- Buttons ---------- */
@@ -600,14 +603,18 @@
 
 /* ---------- Responsive ---------- */
 
-@media (max-width: 1100px) {
-    .cr-card {
+/* A container can't query itself, so the narrower column set goes on its
+   children (custom properties inherit from there). */
+@container (max-width: 900px) {
+    .cr-card > * {
         --cr-columns: 22px minmax(0, 1fr) 90px 180px 170px;
         --cr-pad-x: 18px;
     }
 }
 
-@media (max-width: 800px) {
+/* Too narrow for a learner name beside three fixed columns: stack each
+   row instead (name + status on top, subjects and actions below). */
+@container (max-width: 760px) {
     .cr-list-head {
         display: none;
     }
