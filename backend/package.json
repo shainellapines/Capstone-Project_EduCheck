@@ -8,6 +8,8 @@
     "dev": "nodemon src/server.js",
     "backup": "node scripts/backup-db.js",
     "restore": "node scripts/restore-db.js",
+    "remote": "node scripts/remote-eval.js",
+    "remote:reset": "node scripts/reset-eval-db.js",
     "test": "node --test --test-concurrency=1 --test-timeout=120000 \"tests/*.test.js\"",
     "create-admin": "node scripts/create-admin.js"
   },
