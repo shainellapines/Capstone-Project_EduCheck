@@ -1,5 +1,10 @@
 const pool = require("../db");
 const { recordAuditLog } = require("../utils/auditLog");
+const {
+    SECTION_BLOCKER_COUNTS,
+    sectionBlockerMessage,
+    isForeignKeyViolation,
+} = require("../utils/deleteBlockers");
 
 const VALID_STAFFING_MODES = ["Self-Contained", "Departmentalized"];
 
@@ -7,9 +12,10 @@ const VALID_STAFFING_MODES = ["Self-Contained", "Departmentalized"];
 const getSections = async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT section_id, section_name, grade_level, staffing_mode
-            FROM sections
-            ORDER BY grade_level, section_name
+            SELECT s.section_id, s.section_name, s.grade_level, s.staffing_mode,
+                   ${SECTION_BLOCKER_COUNTS}
+            FROM sections s
+            ORDER BY s.grade_level, s.section_name
         `);
 
         res.json(result.rows);
@@ -161,6 +167,22 @@ const deleteSection = async (req, res) => {
     try {
         const { id } = req.params;
 
+        const blockers = await pool.query(
+            `SELECT ${SECTION_BLOCKER_COUNTS} FROM sections s WHERE s.section_id = $1`,
+            [id]
+        );
+
+        if (blockers.rows.length === 0) {
+            return res.status(404).json({
+                message: "Section not found."
+            });
+        }
+
+        const blockedMessage = sectionBlockerMessage(blockers.rows[0]);
+        if (blockedMessage) {
+            return res.status(409).json({ message: blockedMessage });
+        }
+
         const result = await pool.query(
             `DELETE FROM sections WHERE section_id = $1 RETURNING *`,
             [id]
@@ -186,6 +208,12 @@ const deleteSection = async (req, res) => {
             section: result.rows[0]
         });
     } catch (error) {
+        if (isForeignKeyViolation(error)) {
+            return res.status(409).json({
+                message: "This section can't be deleted because other records still use it."
+            });
+        }
+
         console.error("Delete section error:", error);
 
         res.status(500).json({

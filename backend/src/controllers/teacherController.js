@@ -1,4 +1,5 @@
 const pool = require("../db");
+const { isForeignKeyViolation } = require("../utils/deleteBlockers");
 
 // GET all teachers
 const getTeachers = async (req, res) => {
@@ -244,6 +245,13 @@ const deleteTeacher = async (req, res) => {
         });
 
     } catch (error) {
+        if (isForeignKeyViolation(error)) {
+            return res.status(409).json({
+                message: "This teacher can't be deleted because their class records or submissions are still on file. " +
+                    "Set their account status to Inactive instead."
+            });
+        }
+
         console.error("Delete teacher error:", error);
 
         res.status(500).json({

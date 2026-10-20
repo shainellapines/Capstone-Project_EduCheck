@@ -3,6 +3,11 @@ const bcrypt = require("bcryptjs");
 const pool = require("../db");
 const { recordAuditLog } = require("../utils/auditLog");
 const {
+    ACCOUNT_BLOCKER_COUNT,
+    accountBlockerMessage,
+    isForeignKeyViolation,
+} = require("../utils/deleteBlockers");
+const {
     PENDING_APPROVAL,
     REJECTED,
     AWAITING_SETUP,
@@ -37,7 +42,8 @@ const DEPED_EMAIL_MESSAGE = "Use the person's DepEd email address (ending in @de
 const ACCOUNT_SELECT = `
     SELECT u.user_id, u.username, u.email, u.role, u.status, u.created_at,
            u.pending_role, u.approval_remarks, u.reviewed_at,
-           t.teacher_id, t.first_name, t.last_name, t.employee_number, t.contact_number
+           t.teacher_id, t.first_name, t.last_name, t.employee_number, t.contact_number,
+           ${ACCOUNT_BLOCKER_COUNT}
     FROM users u
     LEFT JOIN teachers t ON t.user_id = u.user_id
 `;
@@ -473,6 +479,12 @@ const deleteUser = async (req, res) => {
             });
         }
 
+        const blockers = await pool.query(`${ACCOUNT_SELECT} WHERE u.user_id = $1`, [id]);
+        const blockedMessage = accountBlockerMessage(blockers.rows[0]);
+        if (blockedMessage) {
+            return res.status(409).json({ message: blockedMessage });
+        }
+
         const result = await pool.query(
             `DELETE FROM users
              WHERE user_id = $1
@@ -491,6 +503,13 @@ const deleteUser = async (req, res) => {
             user: result.rows[0]
         });
     } catch (error) {
+        if (isForeignKeyViolation(error)) {
+            return res.status(409).json({
+                message: "This account can't be deleted because other records still use it. " +
+                    "Set its status to Inactive instead."
+            });
+        }
+
         console.error("Delete user error:", error);
 
         res.status(500).json({

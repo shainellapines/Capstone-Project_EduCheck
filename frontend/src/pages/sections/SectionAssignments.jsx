@@ -184,7 +184,31 @@ function SectionAssignments() {
         }
     };
 
+    // A section that already has class records or learners can't be
+    // deleted (the database keeps them), so say why instead of trying.
+    const sectionDeleteBlocker = (section) => {
+        const parts = [];
+        if (section.class_record_count > 0) {
+            parts.push(`${section.class_record_count} class record${section.class_record_count === 1 ? "" : "s"}`);
+        }
+        if (section.learner_count > 0) {
+            parts.push(`${section.learner_count} learner${section.learner_count === 1 ? "" : "s"}`);
+        }
+        return parts.length
+            ? `Can't delete: ${section.section_name} already has ${parts.join(" and ")}.`
+            : null;
+    };
+
     const handleDeleteSection = async (section) => {
+        const blocker = sectionDeleteBlocker(section);
+        if (blocker) {
+            setActionMessage("");
+            setActionError(
+                `${blocker} Sections with records are kept so their grades and permanent records stay intact.`
+            );
+            return;
+        }
+
         const confirmed = window.confirm(
             `Delete section "${section.section_name}"? This also removes any teacher assignments tied to it.`
         );
@@ -897,7 +921,11 @@ function SectionAssignments() {
                                                     <td>
                                                         <button
                                                             type="button"
-                                                            className="sa-delete-button"
+                                                            className={`sa-delete-button${
+                                                                sectionDeleteBlocker(section) ? " is-blocked" : ""
+                                                            }`}
+                                                            title={sectionDeleteBlocker(section) || "Delete section"}
+                                                            aria-disabled={Boolean(sectionDeleteBlocker(section))}
                                                             onClick={() => handleDeleteSection(section)}
                                                         >
                                                             <Trash2 size={15} />

@@ -480,6 +480,14 @@
     border-color: var(--ec-status-danger-border);
 }
 
+/* Delete is refused for an account with records; clicking explains why. */
+.icon-button.delete.is-blocked {
+    color: var(--ec-slate-400);
+    background: var(--ec-slate-50);
+    border-color: var(--ec-slate-200);
+    cursor: not-allowed;
+}
+
 /* TABLE STATES */
 
 .table-state {

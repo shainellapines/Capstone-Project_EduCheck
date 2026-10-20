@@ -412,6 +412,18 @@
     background: var(--ec-status-danger-bg);
 }
 
+/* Delete is refused for a section with records; clicking explains why. */
+.sa-delete-button.is-blocked {
+    border-color: var(--ec-slate-200);
+    background: var(--ec-slate-50);
+    color: var(--ec-slate-400);
+    cursor: not-allowed;
+}
+
+.sa-delete-button.is-blocked:hover {
+    background: var(--ec-slate-100);
+}
+
 /* ASSIGNMENT SLOT CHECKLIST */
 
 .sa-slot-picker {

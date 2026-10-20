@@ -353,6 +353,17 @@ function Accounts() {
     const handleDelete = async (account) => {
         const label = fullNameOf(account) || account.username;
 
+        // An account with uploads, reviews, or audit-log activity can't be
+        // deleted (the database keeps that history); deactivating is the way.
+        if (account.linked_record_count > 0) {
+            setMessage("");
+            setError(
+                `Can't delete "${label}" because the account already has records in EduCheck. ` +
+                "Edit the account and set its status to Inactive to stop it from signing in."
+            );
+            return;
+        }
+
         if (!window.confirm(`Delete the account of "${label}"? This cannot be undone.`)) {
             return;
         }
@@ -663,8 +674,15 @@ function Accounts() {
                                                     </button>
 
                                                     <button
-                                                        className="icon-button delete"
-                                                        title="Delete account"
+                                                        className={`icon-button delete${
+                                                            account.linked_record_count > 0 ? " is-blocked" : ""
+                                                        }`}
+                                                        title={
+                                                            account.linked_record_count > 0
+                                                                ? "Can't delete: this account has records. Set it to Inactive instead."
+                                                                : "Delete account"
+                                                        }
+                                                        aria-disabled={account.linked_record_count > 0}
                                                         aria-label={`Delete ${name || account.username}`}
                                                         onClick={() => handleDelete(account)}
                                                     >
