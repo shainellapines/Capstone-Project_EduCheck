@@ -1,0 +1,215 @@
+/* Help & Support (Help.jsx) */
+
+.help-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 24px;
+    align-items: start;
+}
+
+.help-main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+}
+
+/* ---------- Search ---------- */
+
+.help-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    color: var(--ec-text-muted);
+    transition: border-color 0.15s ease;
+}
+
+.help-search:focus-within {
+    border-color: var(--ec-focus);
+    box-shadow: 0 0 0 1px var(--ec-focus);
+}
+
+.help-search input {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    border: none;
+    background: transparent;
+    color: var(--ec-text);
+    font: inherit;
+    font-size: 15px;
+    outline: none;
+}
+
+.help-empty {
+    padding: 16px;
+    border: 1px dashed var(--ec-border);
+    border-radius: var(--ec-radius);
+    color: var(--ec-text-muted);
+    font-size: 14px;
+}
+
+/* ---------- Questions ---------- */
+
+.help-section h2 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ec-text-muted);
+}
+
+.help-list {
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    overflow: hidden;
+}
+
+.help-item + .help-item {
+    border-top: 1px solid var(--ec-border);
+}
+
+.help-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    list-style: none;
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 500;
+    color: var(--ec-text);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.help-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.help-item summary:hover {
+    background: var(--ec-hover);
+}
+
+.help-item summary:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: -2px;
+}
+
+.help-item summary svg {
+    flex: none;
+    color: var(--ec-text-muted);
+    transition: transform 0.2s ease;
+}
+
+.help-item[open] summary {
+    font-weight: 600;
+}
+
+.help-item[open] summary svg {
+    transform: rotate(180deg);
+}
+
+.help-item p {
+    margin: 0;
+    padding: 0 18px 16px;
+    max-width: 68ch;
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--ec-text-muted);
+}
+
+/* ---------- Side cards ---------- */
+
+.help-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: sticky;
+    top: 24px;
+}
+
+.help-card {
+    padding: 20px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+}
+
+.help-card.is-quiet {
+    background: transparent;
+}
+
+.help-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-600);
+}
+
+.help-card h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 600;
+    color: var(--ec-text);
+}
+
+.help-card p {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 20px;
+    color: var(--ec-text-muted);
+}
+
+.help-card p strong {
+    color: var(--ec-text);
+}
+
+.help-card-tip {
+    margin-top: 12px !important;
+    padding-top: 12px;
+    border-top: 1px solid var(--ec-border);
+    font-size: 12.5px !important;
+}
+
+.help-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 9px 14px;
+    border-radius: var(--ec-radius);
+    background: var(--ec-action);
+    color: var(--ec-on-action);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.help-download:hover {
+    background: var(--ec-action-hover);
+}
+
+@media (max-width: 1000px) {
+    .help-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .help-aside {
+        position: static;
+    }
+}

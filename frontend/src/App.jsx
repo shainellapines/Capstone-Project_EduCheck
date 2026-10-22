@@ -26,6 +26,7 @@ import RecordsRepository from "./pages/records/RecordsRepository";
 import PermanentRecord from "./pages/records/PermanentRecord";
 import Notifications from "./pages/account/Notifications";
 import Settings from "./pages/account/Settings";
+import Help from "./pages/account/Help";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { isSessionValid, getStoredUser, clearSession } from "./utils/session";
 
@@ -209,6 +210,15 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={["adviser", "admin", "subject", "principal"]}>
                             <Settings />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/help"
+                    element={
+                        <ProtectedRoute allowedRoles={["adviser", "admin", "subject", "principal"]}>
+                            <Help />
                         </ProtectedRoute>
                     }
                 />

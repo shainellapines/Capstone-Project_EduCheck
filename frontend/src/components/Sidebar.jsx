@@ -17,6 +17,8 @@ import {
     History,
     PanelLeftClose,
     PanelLeftOpen,
+    Compass,
+    LifeBuoy,
 } from "lucide-react";
 
 import "../styles/Dashboard.css";
@@ -26,6 +28,8 @@ import { getStoredUser, getToken, clearSession } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
 import { isSidebarCollapsed, setSidebarCollapsed } from "../utils/sidebar";
 import { API_URL } from "../config";
+import WelcomeTour from "./WelcomeTour";
+import { hasSeenTour, hasTourFor } from "../utils/welcomeTour";
 
 const POLL_INTERVAL_MS = 30000;
 
@@ -98,6 +102,9 @@ function Sidebar({ activeKey }) {
 
     const [unreadCount, setUnreadCount] = useState(0);
     const [collapsed, setCollapsed] = useState(isSidebarCollapsed);
+    // The welcome guide opens by itself the first time an account signs in
+    // on this browser; "Guide" below reopens it.
+    const [tourOpen, setTourOpen] = useState(() => hasTourFor(user.role) && !hasSeenTour(user));
 
     const toggleCollapsed = () => {
         setSidebarCollapsed(!collapsed);
@@ -208,6 +215,30 @@ function Sidebar({ activeKey }) {
 
             <div className="sidebar-bottom">
 
+                {hasTourFor(user.role) && (
+                    <button
+                        type="button"
+                        className="nav-item"
+                        onClick={() => setTourOpen(true)}
+                        title={tip("Guide")}
+                        aria-label="Open the EduCheck guide"
+                    >
+                        <Compass size={19} />
+                        <span className="nav-label">Guide</span>
+                    </button>
+                )}
+
+                <a
+                    className={activeKey === "help" ? "nav-item active" : "nav-item"}
+                    onClick={() => navigate("/help")}
+                    style={{ cursor: "pointer" }}
+                    title={tip("Help & Support")}
+                    aria-label="Help & Support"
+                >
+                    <LifeBuoy size={19} />
+                    <span className="nav-label">Help &amp; Support</span>
+                </a>
+
                 <a
                     className={activeKey === "settings" ? "nav-item active" : "nav-item"}
                     onClick={() => navigate("/settings")}
@@ -230,6 +261,8 @@ function Sidebar({ activeKey }) {
                 </button>
 
             </div>
+
+            {tourOpen && <WelcomeTour user={user} onClose={() => setTourOpen(false)} />}
 
         </aside>
     );

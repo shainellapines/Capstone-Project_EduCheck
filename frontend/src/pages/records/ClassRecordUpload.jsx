@@ -36,6 +36,19 @@ function formatFileSize(bytes) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// Where a subject stands for this teacher, from its latest upload: shown on
+// its tile so it's clear which subjects are done and which one is next.
+const UPLOAD_STATE = {
+    validated: { label: "Validated", icon: CheckCircle2 },
+    "needs-fixes": { label: "Needs fixes", icon: TriangleAlert },
+    "not-uploaded": { label: "Not uploaded yet", icon: null },
+};
+
+function uploadStateOf(latestUpload) {
+    if (!latestUpload) return "not-uploaded";
+    return latestUpload.status === "Validated" ? "validated" : "needs-fixes";
+}
+
 function formatShortDate(isoString) {
     return new Date(isoString).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
@@ -52,8 +65,9 @@ function ClassRecordUpload() {
     const [selectedOptionKey, setSelectedOptionKey] = useState("");
     const [loadingOptions, setLoadingOptions] = useState(true);
 
-    // This user's earlier uploads, only to show "Last uploaded" on a tile.
+    // This user's earlier uploads, newest first: each tile's status and date.
     const [previousUploads, setPreviousUploads] = useState([]);
+    const [uploadsLoaded, setUploadsLoaded] = useState(false);
 
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState("");
@@ -107,6 +121,8 @@ function ClassRecordUpload() {
             setPreviousUploads(data.records || []);
         } catch {
             setPreviousUploads([]);
+        } finally {
+            setUploadsLoaded(true);
         }
     };
 
@@ -115,19 +131,27 @@ function ClassRecordUpload() {
         fetchPreviousUploads();
     }, []);
 
-    // my-records has no section, so a last-upload date is only shown when
-    // the subject + school year points at exactly one of this user's options.
-    const lastUploadFor = (option) => {
-        const sameSubjectOptions = options.filter(
-            (other) => other.subject_id === option.subject_id && other.school_year_id === option.school_year_id
-        );
-        if (sameSubjectOptions.length !== 1) return null;
+    // my-records is newest first, so the first match is the latest upload.
+    const latestUploadFor = (option) =>
+        previousUploads.find(
+            (record) =>
+                record.subject_id === option.subject_id &&
+                record.section_id === option.section_id &&
+                record.school_year_id === option.school_year_id
+        ) || null;
 
-        const latest = previousUploads.find(
-            (record) => record.subject_id === option.subject_id && record.school_year_id === option.school_year_id
-        );
-        return latest ? latest.upload_date : null;
-    };
+    const uploadedCount = options.filter((option) => latestUploadFor(option)).length;
+
+    // With nothing picked, start on the first subject not uploaded yet, so
+    // the next one to do is already selected. Every tile stays clickable:
+    // a validated subject can still be re-uploaded with corrections.
+    const nextOption = options.find((option) => !latestUploadFor(option));
+    const nextOptionKey = nextOption ? optionKey(nextOption) : "";
+
+    useEffect(() => {
+        if (loadingOptions || !uploadsLoaded || result || selectedOptionKey || !nextOptionKey) return;
+        setSelectedOptionKey(nextOptionKey);
+    }, [loadingOptions, uploadsLoaded, result, selectedOptionKey, nextOptionKey]);
 
     const schoolYears = Array.from(new Set(options.map((option) => option.school_year)));
     const singleSchoolYear = schoolYears.length === 1 ? schoolYears[0] : null;
@@ -397,6 +421,27 @@ function ClassRecordUpload() {
                                     )}
                                 </div>
 
+                                {!loadingOptions && uploadsLoaded && options.length > 1 && (
+                                    <div className="cru-progress">
+                                        <span>
+                                            <strong>{uploadedCount}</strong> of {options.length} uploaded
+                                        </span>
+                                        <span
+                                            className="cru-progress-bar"
+                                            role="img"
+                                            aria-label={`${uploadedCount} of ${options.length} subjects uploaded`}
+                                        >
+                                            <span style={{ width: `${(uploadedCount / options.length) * 100}%` }} />
+                                        </span>
+                                        {uploadedCount === options.length && (
+                                            <span className="cru-progress-done">
+                                                <CheckCircle2 size={14} aria-hidden="true" />
+                                                All subjects uploaded
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+
                                 {loadingOptions ? (
                                     <div className="cru-tiles" aria-busy="true">
                                         {[0, 1, 2, 3].map((index) => (
@@ -416,7 +461,9 @@ function ClassRecordUpload() {
                                         {options.map((option) => {
                                             const key = optionKey(option);
                                             const isSelected = key === selectedOptionKey;
-                                            const lastUpload = lastUploadFor(option);
+                                            const latestUpload = latestUploadFor(option);
+                                            const state = uploadStateOf(latestUpload);
+                                            const StateIcon = UPLOAD_STATE[state].icon;
 
                                             return (
                                                 <button
@@ -424,7 +471,7 @@ function ClassRecordUpload() {
                                                     role="radio"
                                                     aria-checked={isSelected}
                                                     key={key}
-                                                    className={`cru-tile${isSelected ? " is-selected" : ""}`}
+                                                    className={`cru-tile is-${state}${isSelected ? " is-selected" : ""}`}
                                                     onClick={() => {
                                                         setSelectedOptionKey(key);
                                                         setError("");
@@ -439,10 +486,14 @@ function ClassRecordUpload() {
                                                         Grade {option.grade_level} · {option.section_name}
                                                         {!singleSchoolYear && ` · ${option.school_year}`}
                                                     </span>
-                                                    <span className="cru-tile-foot">
-                                                        {lastUpload
-                                                            ? `Last uploaded ${formatShortDate(lastUpload)}`
-                                                            : "Not uploaded yet"}
+                                                    <span className={`cru-tile-state is-${state}`}>
+                                                        {StateIcon && <StateIcon size={13} aria-hidden="true" />}
+                                                        {UPLOAD_STATE[state].label}
+                                                        {latestUpload && (
+                                                            <span className="cru-tile-date">
+                                                                · {formatShortDate(latestUpload.upload_date)}
+                                                            </span>
+                                                        )}
                                                     </span>
                                                 </button>
                                             );

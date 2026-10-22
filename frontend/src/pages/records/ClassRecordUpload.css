@@ -152,12 +152,86 @@
     color: var(--ec-text-muted);
 }
 
-.cru-tile-foot {
+/* Upload status on each tile: validated / needs fixes / not uploaded */
+.cru-tile-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     margin-top: auto;
     padding-top: 8px;
-    font-size: 11.5px;
-    line-height: 14px;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
     color: var(--ec-text-muted);
+}
+
+.cru-tile-state.is-validated {
+    color: var(--ec-status-success-fg);
+}
+
+.cru-tile-state.is-needs-fixes {
+    color: var(--ec-severity-warning-fg);
+}
+
+.cru-tile-state.is-not-uploaded {
+    font-weight: 500;
+}
+
+.cru-tile-date {
+    font-weight: 400;
+    color: var(--ec-text-muted);
+}
+
+/* A done subject reads as done at a glance: a coloured edge on the left */
+.cru-tile.is-validated:not(.is-selected) {
+    border-left: 3px solid var(--ec-status-success-border);
+    padding-left: 12px;
+}
+
+.cru-tile.is-needs-fixes:not(.is-selected) {
+    border-left: 3px solid var(--ec-severity-warning-border);
+    padding-left: 12px;
+}
+
+/* "2 of 4 uploaded" above the tiles */
+.cru-progress {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: -6px 0 14px;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--ec-text-muted);
+}
+
+.cru-progress strong {
+    color: var(--ec-text);
+}
+
+.cru-progress-bar {
+    position: relative;
+    flex: 0 1 160px;
+    height: 6px;
+    overflow: hidden;
+    border-radius: var(--ec-radius-pill);
+    background: var(--ec-surface-sunken);
+}
+
+.cru-progress-bar > span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: inherit;
+    background: var(--ec-status-success-fg);
+    transition: width 0.3s ease-out;
+}
+
+.cru-progress-done {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    color: var(--ec-status-success-fg);
 }
 
 .cru-tile-check {

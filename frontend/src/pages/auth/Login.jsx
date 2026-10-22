@@ -1,7 +1,18 @@
 import { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CircleAlert, Eye, EyeOff, LockKeyhole, UserRound } from "lucide-react";
+import {
+    ArrowRight,
+    BookOpenCheck,
+    CircleAlert,
+    Eye,
+    EyeOff,
+    LockKeyhole,
+    School,
+    ShieldCheck,
+    Upload,
+    UserRound,
+} from "lucide-react";
 import logo from "../../assets/educheck-logo-white.png";
 import logoOnPage from "../../assets/educheck-logo.png";
 import schoolPhoto from "../../assets/login-photo.jpg";
@@ -9,6 +20,35 @@ import { API_URL } from "../../config";
 // The school's name, set once per installation in frontend/.env
 // (VITE_SCHOOL_NAME=...). Hidden when not set.
 const SCHOOL_NAME = (import.meta.env.VITE_SCHOOL_NAME || "").trim();
+
+// What each role does, so a first-time user knows what to expect after
+// signing in. Each account has one role, set by the School Administrator.
+const ROLE_GUIDE = [
+    { icon: Upload, name: "Subject Teacher", text: "Upload e-Class Records and fix flagged grades" },
+    { icon: BookOpenCheck, name: "Class Adviser", text: "Consolidate section grades and submit records" },
+    { icon: ShieldCheck, name: "Administrator", text: "Set up accounts and sections, approve records" },
+    { icon: School, name: "Principal", text: "Approve new accounts and oversee school records" },
+];
+
+function RoleGuide({ className }) {
+    return (
+        <ul className={className}>
+            {ROLE_GUIDE.map(({ icon: Icon, name, text }) => (
+                <li key={name}>
+                    <span className="login-role-icon" aria-hidden="true">
+                        <Icon size={16} strokeWidth={1.9} />
+                    </span>
+                    <span>
+                        <strong>{name}</strong>
+                        <span>{text}</span>
+                    </span>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+const SLOW_SERVER_MS = 4000;
 
 const WRONG_CREDENTIALS = "Username or password is incorrect. Check both and try again.";
 
@@ -31,6 +71,9 @@ function Login() {
     // Anything that isn't about one field (server down, inactive account).
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    // A hosted server on a free plan sleeps when idle and takes up to a
+    // minute to wake; after a few seconds, say so instead of looking stuck.
+    const [slowServer, setSlowServer] = useState(false);
     // Display only: lets the user check what they typed.
     const [showPassword, setShowPassword] = useState(false);
     // School laptops are shared. Browsers fill a saved login into the form
@@ -68,6 +111,7 @@ function Login() {
 
         submittingRef.current = true;
         setLoading(true);
+        const slowTimer = setTimeout(() => setSlowServer(true), SLOW_SERVER_MS);
 
         try {
             let response;
@@ -125,6 +169,8 @@ function Login() {
         } catch (error) {
             setError(error.message);
         } finally {
+            clearTimeout(slowTimer);
+            setSlowServer(false);
             submittingRef.current = false;
             setLoading(false);
         }
@@ -153,6 +199,9 @@ function Login() {
                     <p className="login-brand-tagline">
                         Catch grade errors before records are submitted.
                     </p>
+
+                    <p className="login-roles-title">Who uses EduCheck</p>
+                    <RoleGuide className="login-roles" />
                 </div>
 
                 {SCHOOL_NAME && <p className="login-brand-school">{SCHOOL_NAME}</p>}
@@ -266,9 +315,26 @@ function Login() {
 
                     </form>
 
+                    {loading && slowServer && (
+                        <p className="login-waking" role="status">
+                            <span className="login-spinner" aria-hidden="true" />
+                            <span>
+                                The server is starting up. The first sign-in after a quiet period can take up to
+                                a minute. Please keep this page open.
+                            </span>
+                        </p>
+                    )}
+
                     <p className="login-note">
                         Password resets are handled by your School Administrator.
                     </p>
+
+                    {/* The photo panel, and the role list on it, is hidden
+                        on narrow screens; the list folds in here instead. */}
+                    <details className="login-roles-compact">
+                        <summary>What can I do in EduCheck?</summary>
+                        <RoleGuide className="login-roles-compact-list" />
+                    </details>
 
                 </div>
             </main>

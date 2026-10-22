@@ -642,11 +642,141 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 1px;
 }
 
+/* Shown while a sleeping hosted server wakes up */
+.login-waking {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 16px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--ec-status-info-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-status-info-bg);
+    font-size: 13px;
+    line-height: 19px;
+    color: var(--ec-status-info-fg);
+}
+
+.login-waking .login-spinner {
+    flex: none;
+    margin-top: 2px;
+}
+
 .login-note {
     margin: 16px 0 0;
     font-size: 13px;
     line-height: 18px;
     color: var(--login-note);
+}
+
+/* ---------- Role guide ---------- */
+
+.login-roles-title {
+    margin: 32px 0 12px;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.login-roles {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.login-roles li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.login-roles .login-role-icon {
+    flex: none;
+    display: flex;
+    color: #aed0d3;
+}
+
+.login-roles li > span:last-child,
+.login-roles-compact-list li > span:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.login-roles strong {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.login-roles strong + span {
+    font-size: 13px;
+    line-height: 18px;
+    color: #d6e7e8;
+}
+
+/* Narrow screens: the same list, folded under the form */
+.login-roles-compact {
+    display: none;
+    margin-top: 24px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+}
+
+.login-roles-compact summary {
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--ec-link);
+    cursor: pointer;
+}
+
+.login-roles-compact-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 2px 14px 14px;
+    list-style: none;
+}
+
+.login-roles-compact-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.login-roles-compact-list .login-role-icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--ec-primary-50);
+    color: var(--ec-primary-600);
+}
+
+.login-roles-compact-list strong {
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--ec-text);
+}
+
+.login-roles-compact-list strong + span {
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--ec-text-muted);
 }
 
 /* Logo + name above the form; only used when the photo panel is hidden */
@@ -687,6 +817,21 @@ h1, h2, h3, h4, h5, h6 {
     }
 }
 
+/* Short laptop screens: the role list drops its descriptions */
+@media (max-height: 700px) and (min-width: 900px) {
+    .login-roles-title {
+        margin-top: 24px;
+    }
+
+    .login-roles strong + span {
+        display: none;
+    }
+
+    .login-roles li {
+        padding: 8px 0;
+    }
+}
+
 /* ---------- Below 900px: no photo, logo and name above the form ---------- */
 
 @media (max-width: 899.98px) {
@@ -709,6 +854,10 @@ h1, h2, h3, h4, h5, h6 {
         gap: 10px;
         margin-bottom: 32px;
         text-align: center;
+    }
+
+    .login-roles-compact {
+        display: block;
     }
 
     .login-compact-brand img {

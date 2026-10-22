@@ -164,7 +164,8 @@
     gap: 2px;
 }
 
-.logout-button {
+.logout-button,
+button.nav-item {
     width: 100%;
     background: transparent;
     border: none;
