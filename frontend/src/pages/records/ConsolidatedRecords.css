@@ -647,3 +647,27 @@
         flex: 1 1 100%;
     }
 }
+
+/* Section picker beside the school year in the header */
+.cr-header-sep {
+    display: inline-block;
+    width: 1px;
+    height: 20px;
+    margin: 0 14px;
+    vertical-align: middle;
+    background: var(--ec-border);
+}
+
+#cr-section-select {
+    max-width: 220px;
+}
+
+@media (max-width: 700px) {
+    .cr-header-sep {
+        display: block;
+        width: auto;
+        height: 0;
+        margin: 8px 0;
+        background: none;
+    }
+}

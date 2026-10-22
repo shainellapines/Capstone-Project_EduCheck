@@ -21,6 +21,8 @@ import { API_URL } from "../../config";
 
 const PAGE_SIZE = 20;
 
+const isAdviserRole = (role) => role === "adviser";
+
 function ConsolidatedRecords() {
     const [searchParams, setSearchParams] = useSearchParams();
 
@@ -56,6 +58,9 @@ function ConsolidatedRecords() {
     const [loadingSchoolYears, setLoadingSchoolYears] = useState(true);
 
     const [students, setStudents] = useState(null);
+    // Sections visible to this user in the selected year: names each
+    // learner's section and fills the section picker.
+    const [sections, setSections] = useState([]);
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -165,6 +170,51 @@ function ConsolidatedRecords() {
             if (!silent) setLoadingStudents(false);
         }
     };
+
+    useEffect(() => {
+        if (!selectedSchoolYearId) return;
+        let active = true;
+
+        // Best effort: without it rows just leave the section name out.
+        fetch(`${API_URL}/consolidation/school-years/${selectedSchoolYearId}/sections`, {
+            headers: authHeaders(),
+        })
+            .then((response) => (response.ok ? response.json() : { sections: [] }))
+            .then((data) => {
+                if (active) setSections(data.sections || []);
+            })
+            .catch(() => {
+                if (active) setSections([]);
+            });
+
+        return () => {
+            active = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSchoolYearId]);
+
+    const sectionLabel = (section) => `Grade ${section.grade_level} · ${section.section_name}`;
+    const sectionNameById = new Map(sections.map((section) => [String(section.section_id), section.section_name]));
+
+    // Same ?section= filter Section Progress links to, so the backend
+    // narrows the list and those links keep working.
+    const changeSectionFilter = (sectionId) => {
+        const section = sections.find((item) => String(item.section_id) === sectionId);
+        setSearchParams((previous) => {
+            const next = new URLSearchParams(previous);
+            if (section) {
+                next.set("section", sectionId);
+                next.set("section_label", sectionLabel(section));
+            } else {
+                next.delete("section");
+                next.delete("section_label");
+            }
+            return next;
+        });
+    };
+
+    // An Adviser of one section has nothing to choose between.
+    const showSectionPicker = sections.length > 1 || (!isAdviserRole(user.role) && sections.length > 0);
 
     useEffect(() => {
         fetchStudents();
@@ -514,6 +564,27 @@ function ConsolidatedRecords() {
                         ) : (
                             <strong>None set up yet</strong>
                         )}
+
+                        {showSectionPicker && (
+                            <>
+                                <span className="cr-header-sep" aria-hidden="true" />
+                                <label htmlFor="cr-section-select">Section:</label>
+                                <select
+                                    id="cr-section-select"
+                                    className="school-year-select"
+                                    value={sectionFilterId || ""}
+                                    onChange={(e) => changeSectionFilter(e.target.value)}
+                                    disabled={loadingSchoolYears}
+                                >
+                                    <option value="">All sections</option>
+                                    {sections.map((section) => (
+                                        <option key={section.section_id} value={section.section_id}>
+                                            {sectionLabel(section)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </>
+                        )}
                     </div>
                 </header>
 
@@ -543,7 +614,11 @@ function ConsolidatedRecords() {
                     {!loadingSchoolYears && !loadingStudents && students && students.length === 0 && (
                         <div className="content-card empty-state-card">
                             <Users size={20} />
-                            No students to show for this school year yet. Advisers only see learners in the section they are assigned to as Class Adviser.
+                            {sectionFilterId
+                                ? `No learners in ${sectionFilterLabel || "this section"} yet. Learners appear here once their subjects are uploaded.`
+                                : isAdviser
+                                    ? "No students to show for this school year yet. Advisers only see learners in the section they are assigned to as Class Adviser."
+                                    : "No students to show for this school year yet. Learners appear here once their subjects are uploaded."}
                         </div>
                     )}
 
@@ -567,7 +642,7 @@ function ConsolidatedRecords() {
                                         />
                                     </label>
 
-                                    {sectionFilterId && (
+                                    {sectionFilterId && !showSectionPicker && (
                                         <span className="cr-filter-chip">
                                             Section: {sectionFilterLabel || `#${sectionFilterId}`}
                                             <button
@@ -688,6 +763,9 @@ function ConsolidatedRecords() {
                                                     </span>
                                                     <span className="meta">
                                                         LRN <span className="record-lrn">{student.lrn}</span> · Grade {student.grade_level}
+                                                        {sectionNameById.has(String(student.section_id)) && (
+                                                            <> · {sectionNameById.get(String(student.section_id))}</>
+                                                        )}
                                                     </span>
                                                 </span>
                                             </button>
