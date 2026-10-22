@@ -648,7 +648,26 @@
     }
 }
 
-/* Section picker beside the school year in the header */
+/* Section picker beside the school year in the header. Each label stays
+   on one line with its dropdown; the pair wraps as a whole when narrow. */
+.cr-header-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    row-gap: 8px;
+}
+
+.cr-header-filter {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.cr-header-filter label {
+    margin-right: 5px;
+}
+
 .cr-header-sep {
     display: inline-block;
     width: 1px;

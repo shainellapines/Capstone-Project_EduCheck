@@ -543,7 +543,8 @@ function ConsolidatedRecords() {
                         </p>
                     </div>
 
-                    <div className="school-year">
+                    <div className="school-year cr-header-filters">
+                        <span className="cr-header-filter">
                         School Year:{" "}
                         {schoolYears.length > 0 ? (
                             <select
@@ -564,9 +565,10 @@ function ConsolidatedRecords() {
                         ) : (
                             <strong>None set up yet</strong>
                         )}
+                        </span>
 
                         {showSectionPicker && (
-                            <>
+                            <span className="cr-header-filter">
                                 <span className="cr-header-sep" aria-hidden="true" />
                                 <label htmlFor="cr-section-select">Section:</label>
                                 <select
@@ -583,7 +585,7 @@ function ConsolidatedRecords() {
                                         </option>
                                     ))}
                                 </select>
-                            </>
+                            </span>
                         )}
                     </div>
                 </header>
