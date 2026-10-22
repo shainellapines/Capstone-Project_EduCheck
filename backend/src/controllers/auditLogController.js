@@ -1,6 +1,6 @@
 const pool = require("../db");
 
-const VALID_ENTITY_TYPES = ["section", "teacher_assignment", "user"];
+const VALID_ENTITY_TYPES = ["section", "teacher_assignment", "user", "school_year"];
 
 // ==========================================
 // LIST AUDIT LOG ENTRIES (Admin only)

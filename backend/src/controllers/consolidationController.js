@@ -253,11 +253,12 @@ const fetchConsolidatedStudent = async (schoolYearId, lrn) => {
 // ==========================================
 // Advisers/admins need this to pick which school year to review — the
 // existing /api/uploads/options endpoint is restricted to subject teachers.
-
+// The current (Active) year comes first, so every page that defaults to the
+// first entry opens on it rather than on a newly opened, still empty year.
 const getSchoolYears = async (req, res) => {
     try {
         const result = await pool.query(
-            "SELECT school_year_id, school_year, status FROM school_years ORDER BY school_year_id DESC"
+            "SELECT school_year_id, school_year, status FROM school_years ORDER BY (status = 'Active') DESC, school_year DESC"
         );
 
         return res.json({ school_years: result.rows });

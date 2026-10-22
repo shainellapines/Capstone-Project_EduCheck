@@ -34,7 +34,7 @@ const getUploadOptions = async (req, res) => {
         const schoolYearsResult = await pool.query(`
             SELECT school_year_id, school_year, status
             FROM school_years
-            ORDER BY school_year_id DESC
+            ORDER BY school_year DESC
         `);
 
         if (teacherResult.rows.length === 0) {

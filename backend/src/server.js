@@ -14,6 +14,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const parserTestRoutes = require("./routes/parserTestRoutes");
 const sf10Routes = require("./routes/sf10Routes");
+const schoolYearRoutes = require("./routes/schoolYearRoutes");
 
 const express = require("express");
 const cors = require("cors");
@@ -64,6 +65,7 @@ app.use("/api/repository", repositoryRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/audit-logs", auditLogRoutes);
 app.use("/api/sf10", sf10Routes);
+app.use("/api/school-years", schoolYearRoutes);
 
 app.use(
     "/api/parser-test",

@@ -10,6 +10,7 @@ import {
     ShieldCheck,
     ListChecks,
     BookOpen,
+    CalendarDays,
 } from "lucide-react";
 
 import "../../styles/Dashboard.css";
@@ -115,6 +116,12 @@ function Settings() {
     const [passwordSuccess, setPasswordSuccess] = useState("");
     const [changingPassword, setChangingPassword] = useState(false);
 
+    const [schoolYears, setSchoolYears] = useState([]);
+    const [newSchoolYear, setNewSchoolYear] = useState("");
+    const [schoolYearError, setSchoolYearError] = useState("");
+    const [schoolYearSuccess, setSchoolYearSuccess] = useState("");
+    const [savingSchoolYear, setSavingSchoolYear] = useState(false);
+
     const authHeaders = (extra = {}) => {
         const token = getToken();
 
@@ -154,6 +161,86 @@ function Settings() {
 
         fetchAccount();
     }, []);
+
+    const fetchSchoolYears = async () => {
+        try {
+            const response = await fetch(`${API_URL}/school-years`, { headers: authHeaders() });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to load school years.");
+            }
+
+            setSchoolYears(data.school_years || []);
+        } catch (fetchError) {
+            setSchoolYearError(fetchError.message || "Failed to load school years.");
+        }
+    };
+
+    useEffect(() => {
+        if (isAdmin) fetchSchoolYears();
+    }, [isAdmin]);
+
+    // Shared by "Add" and "Set as current": both change the list, so it is
+    // reloaded afterwards rather than patched locally.
+    const saveSchoolYear = async ({ url, method, body, success }) => {
+        setSchoolYearError("");
+        setSchoolYearSuccess("");
+        setSavingSchoolYear(true);
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: authHeaders({ "Content-Type": "application/json" }),
+                body: body ? JSON.stringify(body) : undefined,
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || "Failed to save the school year.");
+            }
+
+            setSchoolYearSuccess(success(data.school_year));
+            await fetchSchoolYears();
+            return true;
+        } catch (saveError) {
+            setSchoolYearError(saveError.message || "Failed to save the school year.");
+            return false;
+        } finally {
+            setSavingSchoolYear(false);
+        }
+    };
+
+    const handleAddSchoolYear = async (e) => {
+        e.preventDefault();
+
+        const added = await saveSchoolYear({
+            url: `${API_URL}/school-years`,
+            method: "POST",
+            body: { school_year: newSchoolYear.trim() },
+            success: (year) =>
+                `School year ${year.school_year} added. Assign teachers to it in Section & Teacher Assignments.`,
+        });
+
+        if (added) setNewSchoolYear("");
+    };
+
+    const handleActivateSchoolYear = (year) => {
+        if (
+            !window.confirm(
+                `Make ${year.school_year} the current school year?\n\n` +
+                    "Pages open on the current school year by default. Records of other school years stay available."
+            )
+        ) {
+            return;
+        }
+
+        saveSchoolYear({
+            url: `${API_URL}/school-years/${year.school_year_id}/activate`,
+            method: "PATCH",
+            success: (updated) => `${updated.school_year} is now the current school year.`,
+        });
+    };
 
     const handleThemeSelect = (next) => {
         setTheme(next);
@@ -463,6 +550,94 @@ function Settings() {
                                 </button>
                             </form>
                         </div>
+
+                        {/* SCHOOL YEARS (Administrator) */}
+                        {isAdmin && (
+                            <div className="content-card settings-card settings-card-wide">
+                                <div className="card-header">
+                                    <h3>
+                                        <CalendarDays size={18} className="settings-header-icon" />
+                                        School Years
+                                    </h3>
+                                </div>
+
+                                <div className="settings-rules-body">
+                                    <p className="settings-theme-hint">
+                                        Open a new school year before assigning teachers to it. A learner keeps the
+                                        same LRN every year, so they can be uploaded under a new grade and section in
+                                        the new school year.
+                                    </p>
+
+                                    <ul className="settings-rules-list">
+                                        {schoolYears.map((year) => (
+                                            <li key={year.school_year_id} className="settings-rule">
+                                                <div>
+                                                    <strong>{year.school_year}</strong>
+                                                </div>
+
+                                                {year.status === "Active" ? (
+                                                    <span className="ec-badge ec-badge-success-outline">Current</span>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        className="settings-secondary-button"
+                                                        onClick={() => handleActivateSchoolYear(year)}
+                                                        disabled={savingSchoolYear}
+                                                    >
+                                                        Set as current
+                                                    </button>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    <form className="settings-school-year-form" onSubmit={handleAddSchoolYear}>
+                                        <div className="settings-field">
+                                            <label htmlFor="new_school_year">Add School Year</label>
+                                            <input
+                                                id="new_school_year"
+                                                type="text"
+                                                placeholder="e.g. 2026-2027"
+                                                pattern="\d{4}-\d{4}"
+                                                title="Two consecutive years, for example 2026-2027"
+                                                value={newSchoolYear}
+                                                onChange={(e) => setNewSchoolYear(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            className="settings-submit-button"
+                                            disabled={savingSchoolYear}
+                                        >
+                                            {savingSchoolYear ? (
+                                                <>
+                                                    <Loader2 size={16} className="spin-icon" />
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                "Add"
+                                            )}
+                                        </button>
+                                    </form>
+
+                                    {schoolYearError && (
+                                        <div className="error-banner">
+                                            <AlertTriangle size={18} />
+                                            <span>{schoolYearError}</span>
+                                        </div>
+                                    )}
+
+                                    {schoolYearSuccess && (
+                                        <div className="success-banner">
+                                            <CheckCircle size={18} />
+                                            <span>{schoolYearSuccess}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* VALIDATION RULES (Administrator, read-only) */}
                         {isAdmin && (

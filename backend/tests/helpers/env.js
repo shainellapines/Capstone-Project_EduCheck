@@ -286,11 +286,11 @@ const setup = async () => {
         tokens[username] = res.body.token;
     }
 
-    const upload = ({ token, subjectId, sectionId, file }) => {
+    const upload = ({ token, subjectId, sectionId, file, schoolYearId = ids.schoolYear }) => {
         const form = new FormData();
         form.append("subject_id", String(subjectId));
         form.append("section_id", String(sectionId));
-        form.append("school_year_id", String(ids.schoolYear));
+        form.append("school_year_id", String(schoolYearId));
         form.append(
             "file",
             new Blob([fs.readFileSync(file)], {
