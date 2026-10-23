@@ -80,3 +80,7 @@ backend/src/uploads/*
 .DS_Store
 Thumbs.db
 desktop.ini
+# ------------------------------------------
+# E2E (black-box UI) test run output
+# ------------------------------------------
+e2e/.run/

@@ -1,0 +1,13 @@
+{
+  "name": "educheck-e2e",
+  "private": true,
+  "description": "Automated black-box UI tests: drives the real web app in Chrome against an isolated database (educheck_e2e).",
+  "scripts": {
+    "test": "playwright test",
+    "report": "node scripts/build-report.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "docx": "^9.5.1"
+  }
+}
