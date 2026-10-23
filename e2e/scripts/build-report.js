@@ -20,14 +20,21 @@ const OUTPUT = path.join(ROOT, "03-Testing", "EduCheck_Automated_UI_Test_Results
 // Seen while writing and running the tests. None stops a test case from
 // passing; they are listed for the team to decide on.
 const OBSERVATIONS = [
-    ["TC-002", "The wrong-password message reads \"Username or password is incorrect. Check both and try again.\", not \"Invalid username or password.\" as written in the test case. It still does not say which field was wrong, so the intent is met; the test case wording can be updated."],
-    ["TC-051", "The sidebar notification badge keeps the old count after Mark all read until its next timed refresh or a page load."],
     ["TC-035", "A record waiting for approval shows the badge \"Submitted\", while its tab is named \"Pending approval\". The two words mean the same state."],
     ["TC-042", "A revision request covers the subject's whole upload, so the section's other records waiting for approval are sent back too (by design: the Administrator should not approve grades the Adviser has flagged). They show the status \"Amendment Requested\" even though they were never approved, which users may misread."],
     ["Audit Log", "The Entity filter dropdown has no visible label, so screen readers announce it only as a list box."],
 ];
 
-const C = { ink: "1F2937", muted: "6B7280", line: "D1D5DB", head: "E8EEF7", pass: "DCFCE7", passInk: "166534", fail: "FEE2E2", failInk: "991B1B", skip: "F3F4F6" };
+// Test cases whose checks passed but whose result differs from the written
+// Expected Result in a way the reader should know about.
+const REMARKS = {
+    "TC-002": "The message is worded differently from the Expected Result (\"Username or password is incorrect. Check both and try again.\"), although it also does not say which field was wrong.",
+    "TC-051": "The unread count on the Notifications page drops to 0 at once; the sidebar badge updates only after the page is refreshed.",
+    "TC-062": "Measured on the local server only. The first load of the hosted (Render) system after a quiet period is still slow (DEF-003).",
+};
+const PASS_REMARKS = "Pass with remarks";
+
+const C = { ink: "1F2937", muted: "6B7280", line: "D1D5DB", head: "E8EEF7", pass: "DCFCE7", passInk: "166534", remark: "FEF3C7", remarkInk: "92400E", fail: "FEE2E2", failInk: "991B1B", skip: "F3F4F6" };
 
 const text = (value, opts = {}) => new TextRun({ text: String(value), font: "Calibri", size: opts.size || 20, color: opts.color || C.ink, bold: opts.bold, italics: opts.italics });
 const para = (value, opts = {}) => new Paragraph({ spacing: { after: opts.after ?? 120 }, alignment: opts.align, children: Array.isArray(value) ? value : [text(value, opts)] });
@@ -51,7 +58,7 @@ const table = (headers, rows, widths) => new Table({
 });
 
 const resultCell = (status, width) => {
-    const look = { Pass: [C.pass, C.passInk], Fail: [C.fail, C.failInk] }[status] || [C.skip, C.muted];
+    const look = { Pass: [C.pass, C.passInk], [PASS_REMARKS]: [C.remark, C.remarkInk], Fail: [C.fail, C.failInk] }[status] || [C.skip, C.muted];
     return cell(status, { width, fill: look[0], color: look[1], bold: true });
 };
 
@@ -72,10 +79,12 @@ function readRuns() {
     const runs = specs.map((spec) => {
         const result = spec.tests[0].results.at(-1) || {};
         const id = spec.title.match(/^TC-\d+/)[0];
-        const status = { passed: "Pass", failed: "Fail", timedOut: "Fail", skipped: "Not run", interrupted: "Not run" }[result.status] || "Not run";
+        let status = { passed: "Pass", failed: "Fail", timedOut: "Fail", skipped: "Not run", interrupted: "Not run" }[result.status] || "Not run";
+        if (status === "Pass" && REMARKS[id]) status = PASS_REMARKS;
         const notes = [...(spec.tests[0].annotations || []), ...(result.annotations || [])]
             .filter((a) => a.type === "measured" || a.type === "finding")
             .map((a) => (a.type === "measured" ? `Measured: ${a.description}` : `Observation: ${a.description}`));
+        if (status === PASS_REMARKS) notes.unshift(`Remark: ${REMARKS[id]}`);
         if (status === "Fail" && result.errors?.length) notes.push(result.errors[0].message.replace(/\u001b\[[0-9;]*m/g, "").split("\n")[0]);
         const shot = (result.attachments || []).find((a) => a.contentType === "image/png" && a.path && fs.existsSync(a.path));
         return { id, title: spec.title.replace(/^TC-\d+\s*/, ""), file: spec.file, status, ms: result.duration || 0, start: result.startTime, notes: [...new Set(notes)], shot: shot && shot.path };
@@ -116,7 +125,8 @@ async function main() {
     // Manual results are whatever the testers entered in the workbook's Status column.
     const manualStatus = (tc) => (/^pass/i.test(tc.Status || "") ? "Pass" : /^fail/i.test(tc.Status || "") ? "Fail" : "Not run");
     const manualCount = (s) => manual.filter((tc) => manualStatus(tc) === s).length;
-    const totalPass = count("Pass") + manualCount("Pass");
+    const remarked = count(PASS_REMARKS);
+    const totalPass = count("Pass") + remarked + manualCount("Pass");
     const started = new Date(stats.startTime);
     const date = started.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
     const time = started.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" });
@@ -145,11 +155,11 @@ async function main() {
         ], [30, 70]),
 
         heading("3. Summary"),
-        table(["Result", "Automated (Section 4)", "Manual (Section 6)", "All test cases"], ["Pass", "Fail", "Not run"].map((s) => [
+        table(["Result", "Automated (Section 4)", "Manual (Section 6)", "All test cases"], ["Pass", PASS_REMARKS, "Fail", "Not run"].map((s) => [
             resultCell(s, 25), cell(count(s), { width: 25 }), cell(manualCount(s), { width: 25 }), cell(count(s) + manualCount(s), { width: 25 }),
         ]).concat([[cell("Total", { bold: true }), cell(runs.length, { bold: true }), cell(manual.length, { bold: true }), cell(cases.size, { bold: true })]]), [25, 25, 25, 25]),
         para(""),
-        para(`${runs.length} of ${cases.size} test cases (${Math.round((runs.length / cases.size) * 100)}%) are automated; the other ${manual.length} were run by hand. ${totalPass} of ${cases.size} test cases passed (${Math.round((totalPass / cases.size) * 100)}%).`),
+        para(`${runs.length} of ${cases.size} test cases (${Math.round((runs.length / cases.size) * 100)}%) are automated; the other ${manual.length} were run by hand. ${totalPass} of ${cases.size} test cases passed (${Math.round((totalPass / cases.size) * 100)}%)${remarked ? `, ${remarked} of them with remarks (Section 4)` : ""}.`),
 
         heading("4. Results by test case"),
         table(["TC ID", "Module", "Test case", "Result", "Time", "Remarks"], sorted.map((r) => {
@@ -195,7 +205,7 @@ async function main() {
         }],
     });
     fs.writeFileSync(OUTPUT, await Packer.toBuffer(doc));
-    console.log(`Wrote ${path.relative(ROOT, OUTPUT)}: ${count("Pass")} pass, ${count("Fail")} fail, ${count("Not run")} not run, ${manual.length} manual (${manualCount("Pass")} pass).`);
+    console.log(`Wrote ${path.relative(ROOT, OUTPUT)}: ${count("Pass")} pass, ${remarked} pass with remarks, ${count("Fail")} fail, ${count("Not run")} not run, ${manual.length} manual (${manualCount("Pass")} pass).`);
 }
 
 main().catch((err) => {
