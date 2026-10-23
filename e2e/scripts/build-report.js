@@ -56,7 +56,8 @@ const resultCell = (status, width) => {
 };
 
 function readTestCases() {
-    const rows = XLSX.utils.sheet_to_json(XLSX.readFile(WORKBOOK).Sheets["Test Cases"]);
+    // raw: false keeps the Date column as the date shown in Excel.
+    const rows = XLSX.utils.sheet_to_json(XLSX.readFile(WORKBOOK).Sheets["Test Cases"], { raw: false });
     return new Map(rows.filter((r) => /^TC-\d+/.test(r["TC ID"] || "")).map((r) => [r["TC ID"], r]));
 }
 
@@ -112,6 +113,10 @@ async function main() {
     const runIds = new Set(runs.map((r) => r.id));
     const manual = [...cases.values()].filter((tc) => !runIds.has(tc["TC ID"]));
     const count = (s) => runs.filter((r) => r.status === s).length;
+    // Manual results are whatever the testers entered in the workbook's Status column.
+    const manualStatus = (tc) => (/^pass/i.test(tc.Status || "") ? "Pass" : /^fail/i.test(tc.Status || "") ? "Fail" : "Not run");
+    const manualCount = (s) => manual.filter((tc) => manualStatus(tc) === s).length;
+    const totalPass = count("Pass") + manualCount("Pass");
     const started = new Date(stats.startTime);
     const date = started.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
     const time = started.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" });
@@ -125,7 +130,7 @@ async function main() {
         new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 240 }, children: [new TextRun({ text: "Automated Black-Box UI Test Results", font: "Calibri", bold: true, size: 32, color: C.ink })] }),
 
         heading("1. Purpose and approach"),
-        para("This report records an automated black-box test of the EduCheck web application. The tests use the same test case IDs as the UAT workbook (EduCheck_UAT_Test_Cases.xlsx), so each result can be traced to its test case. The Status column of that workbook is filled in by the human testers and is not changed by this report."),
+        para("This report records an automated black-box test of the EduCheck web application. The tests use the same test case IDs as the UAT workbook (EduCheck_UAT_Test_Cases.xlsx), so each result can be traced to its test case. The Status column of that workbook is filled in by the human testers and is not changed by this report; the results of the test cases run by hand are copied from it into Section 6."),
         para("Black-box means the tests know nothing about the code. A script opens the real web app in Google Chrome and does what a tester would do: it signs in, clicks the sidebar, fills in forms, uploads the e-Class Record files in 03-Testing/UAT-files, downloads the SF10, and checks what the screen shows against the Expected Result of the test case. The tool is Playwright."),
         para("Every run starts from an empty, separate database (educheck_e2e). It is built from the project schema and seeded with test accounts, one school year (2025-2026) and two sections (Grade 6 Rizal, Grade 3 Mabini). The development database and the deployed site are never touched. Emails are written to a file instead of being sent."),
 
@@ -140,16 +145,11 @@ async function main() {
         ], [30, 70]),
 
         heading("3. Summary"),
-        table(["Result", "Test cases"], [
-            [resultCell("Pass", 50), cell(count("Pass"), { width: 50 })],
-            [resultCell("Fail", 50), cell(count("Fail"), { width: 50 })],
-            [resultCell("Not run", 50), cell(count("Not run"), { width: 50 })],
-            [cell("Automated (total)", { bold: true }), cell(runs.length, { bold: true })],
-            [cell("Manual only (Section 6)"), cell(manual.length)],
-            [cell("Test cases in the UAT workbook", { bold: true }), cell(cases.size, { bold: true })],
-        ], [50, 50]),
+        table(["Result", "Automated (Section 4)", "Manual (Section 6)", "All test cases"], ["Pass", "Fail", "Not run"].map((s) => [
+            resultCell(s, 25), cell(count(s), { width: 25 }), cell(manualCount(s), { width: 25 }), cell(count(s) + manualCount(s), { width: 25 }),
+        ]).concat([[cell("Total", { bold: true }), cell(runs.length, { bold: true }), cell(manual.length, { bold: true }), cell(cases.size, { bold: true })]]), [25, 25, 25, 25]),
         para(""),
-        para(`${runs.length} of ${cases.size} test cases (${Math.round((runs.length / cases.size) * 100)}%) are automated. Pass rate of the automated test cases: ${Math.round((count("Pass") / runs.length) * 100)}%.`),
+        para(`${runs.length} of ${cases.size} test cases (${Math.round((runs.length / cases.size) * 100)}%) are automated; the other ${manual.length} were run by hand. ${totalPass} of ${cases.size} test cases passed (${Math.round((totalPass / cases.size) * 100)}%).`),
 
         heading("4. Results by test case"),
         table(["TC ID", "Module", "Test case", "Result", "Time", "Remarks"], sorted.map((r) => {
@@ -161,9 +161,11 @@ async function main() {
         para((count("Fail") ? "Failed test cases are listed in Section 4 with their error. " : "No test case failed. ") + "The points below were seen while writing and running the tests. They do not stop a test case from passing, but the team may want to review them."),
         table(["Ref", "Observation"], OBSERVATIONS, [14, 86]),
 
-        heading("6. Test cases kept manual"),
-        para("These test cases are not automated and stay in the manual UAT run."),
-        table(["TC ID", "Module", "Test case", "Reason"], manual.map((tc) => [tc["TC ID"], tc.Module || "", tc["Test Case"] || "", manualReason(tc)]), [10, 18, 36, 36]),
+        heading("6. Manual test cases"),
+        para("These test cases are not automated. They were run by hand, and their results are taken from the Status, Tester and Date columns of the UAT workbook."),
+        table(["TC ID", "Module", "Test case", "Why manual", "Result", "Tester", "Date"], manual.map((tc) => [
+            tc["TC ID"], tc.Module || "", tc["Test Case"] || "", manualReason(tc), resultCell(manualStatus(tc), 9), tc.Tester || "", tc.Date || "",
+        ]), [9, 12, 24, 22, 9, 12, 12]),
 
         new Paragraph({ children: [new PageBreak()] }),
         heading("Appendix A. Screenshot evidence"),
@@ -193,7 +195,7 @@ async function main() {
         }],
     });
     fs.writeFileSync(OUTPUT, await Packer.toBuffer(doc));
-    console.log(`Wrote ${path.relative(ROOT, OUTPUT)}: ${count("Pass")} pass, ${count("Fail")} fail, ${count("Not run")} not run, ${manual.length} manual.`);
+    console.log(`Wrote ${path.relative(ROOT, OUTPUT)}: ${count("Pass")} pass, ${count("Fail")} fail, ${count("Not run")} not run, ${manual.length} manual (${manualCount("Pass")} pass).`);
 }
 
 main().catch((err) => {

@@ -19,7 +19,7 @@ follow-up work. None blocks the system from being used.
 |---|---|---|---|
 | 5 | TC-002 | Expected Result says "Invalid username or password." The app shows "Username or password is incorrect. Check both and try again." (still does not say which field was wrong). Update the test case wording. | `EduCheck_UAT_Test_Cases.xlsx`, Test Cases sheet, TC-002 |
 | 6 | DEF-001 to DEF-005 | Fixed (DEF-003 In Progress) but **Retest Result** is still blank. Retest each one and fill in Retest Result. | `EduCheck_UAT_Test_Cases.xlsx`, Defect Log sheet |
-| 7 | Manuscript | Cite the automated results in the testing chapter: 63 of 76 test cases automated, 100% pass; 13 kept manual (mobile, compatibility, usability). | `EduCheck_Automated_UI_Test_Results.docx` |
+| 7 | Manuscript | Cite the black-box results in the testing chapter: 76 of 76 test cases passed (63 automated, 13 run by hand on 2026-10-16: mobile, compatibility, usability). | `EduCheck_Automated_UI_Test_Results.docx` |
 
 ## 3. Hosting
 
@@ -27,10 +27,10 @@ follow-up work. None blocks the system from being used.
 |---|---|---|---|
 | 8 | DEF-003 | The Render free plan sleeps after 15 minutes, so the first visit can take up to a minute. The login page already shows a "waking up" notice. | Set up UptimeRobot (free): add an HTTP(s) monitor on `https://<backend>.onrender.com/api/health/db`, every 5 minutes. Then retest TC-062 on the hosted link and set DEF-003 to Fixed. Note: keeping the service awake uses the free plan's monthly hours. |
 
-## 4. Still manual (not automated)
+## 4. Manual test cases (passed 2026-10-16)
 
 TC-052 to TC-060 (Android app), TC-063 and TC-064 (other browsers and screen sizes),
-TC-065 and TC-066 (usability; SUS). The ISO 25010 questionnaire was missed at the
+TC-065 and TC-066 (usability; SUS) are recorded as Pass in the UAT workbook. The ISO 25010 questionnaire was missed at the
 2026-10-16 UAT and needs a follow-up session.
 
 ## How to check a fix
