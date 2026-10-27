@@ -42,7 +42,8 @@ counted.
 ## How to check a fix
 
 ```
-cd backend && npm test          # backend API tests (about 150)
+cd backend && npm test          # 205 backend tests (white box and grey box)
+cd backend && npm run coverage  # same tests with code coverage (backend/coverage/index.html)
 cd e2e && npm test              # 63 UI tests, about 3 minutes
 cd e2e && npm run report        # rebuilds EduCheck_Automated_UI_Test_Results.docx
 ```

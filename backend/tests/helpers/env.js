@@ -214,11 +214,27 @@ const buildEcr = ({ lrnFor, limit, header = {} }) => {
 // 12-digit LRN: 4-digit class prefix + 8-digit running number.
 const lrnGenerator = (prefix) => (index) => `${prefix}${String(index + 1).padStart(8, "0")}`;
 
+// Set by c8 during `npm run coverage`: the server must then exit normally
+// (see exit-on-message.js) so its coverage is saved.
+const COVERAGE = Boolean(process.env.NODE_V8_COVERAGE);
+
+const stopServer = (child) => {
+    if (!COVERAGE || !child.connected) {
+        child.kill();
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+        child.once("exit", resolve);
+        child.send("educheck:exit");
+    });
+};
+
 const startServer = async () => {
     const port = await getFreePort();
     const baseUrl = `http://127.0.0.1:${port}`;
 
-    const child = spawn(process.execPath, ["src/server.js"], {
+    const args = COVERAGE ? ["--require", "./tests/helpers/exit-on-message.js", "src/server.js"] : ["src/server.js"];
+    const child = spawn(process.execPath, args, {
         cwd: BACKEND_DIR,
         env: {
             ...process.env,
@@ -229,7 +245,7 @@ const startServer = async () => {
             // Account emails go to a file, never to a real address.
             MAIL_OUTBOX: outboxFile(),
         },
-        stdio: ["ignore", "pipe", "pipe"],
+        stdio: COVERAGE ? ["ignore", "pipe", "pipe", "ipc"] : ["ignore", "pipe", "pipe"],
     });
 
     let log = "";
@@ -247,7 +263,7 @@ const startServer = async () => {
         await new Promise((resolve) => setTimeout(resolve, 150));
     }
 
-    child.kill();
+    await stopServer(child);
     throw new Error(`Test server failed to start:\n${log}`);
 };
 
@@ -302,7 +318,7 @@ const setup = async () => {
     };
 
     const teardown = async () => {
-        server.child.kill();
+        await stopServer(server.child);
         await pool.end();
         removeRunDir();
     };

@@ -11,7 +11,8 @@
     "remote": "node scripts/remote-eval.js",
     "remote:reset": "node scripts/reset-eval-db.js",
     "test": "node --test --test-concurrency=1 --test-timeout=120000 \"tests/*.test.js\"",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "coverage": "c8 --include=src/** --reporter=text --reporter=html --reporter=json-summary --reports-dir=coverage npm test"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +32,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "c8": "^10.1.3",
     "nodemon": "^3.1.14"
   }
 }

@@ -1,6 +1,11 @@
 # EduCheck - Automated Backend Test Coverage
 
-Run: `cd backend && npm test` (147 tests, about 90 s).
+Run: `cd backend && npm test` (205 tests, about 2 minutes).
+Code coverage: `cd backend && npm run coverage` (c8; HTML report in `backend/coverage/index.html`).
+On 2026-10-27: 85.45% statements, 80.95% branches, 91.18% functions; the validation engine
+(`src/services/classRecord`) 99.63% statements. 32 tests are white box (they call the parser and
+validator directly; `validator-whitebox.test.js` WB-01 to WB-22 cover each decision of the
+validator) and 173 are grey box (HTTP requests to the running server, checked against the database).
 
 The suite uses its own PostgreSQL database `educheck_test`, dropped and rebuilt from
 `02-Product Design/06-Database/SQL/educheck_schema.sql` on every file, and spawns the
@@ -25,6 +30,7 @@ permission to create a database.
 | §6.2, US-009, US-011 | Partial departmentalization: an Adviser assigned their own subjects in a Departmentalized section uploads only those, not other teachers' subjects, and their consolidated record holds every teacher's subjects | `departmentalized.test.js` | DEP-01 to DEP-06 |
 | EPIC-03/06 | A record is complete only when every subject of the learner's own grade level has a grade; another grade's subject is ignored by completeness, Section Progress and the approval snapshot | `completeness.test.js` | COMP-01 to COMP-04 |
 | EPIC-02, EPIC-04, US-004 | Parser reads learners, LRNs and header; validator marks a clean record ready | `parser.test.js` | PRS-01 to PRS-03, VAL-01, VAL-02, INT-H1, INT-H2 |
+| EPIC-04, US-004 | Every validation rule of the validator, one branch at a time: score range, missing term or summary, incomplete term, term and final grade mismatch, duplicate list number, empty sheets, parser warnings (white box) | `validator-whitebox.test.js` | WB-01 to WB-22 |
 | EPIC-06, US-006, US-007 | Adviser submit, Admin approve/reject, state rules, ownership, revision requests, notifications | `workflow.test.js`, `completeness.test.js` | WF-01 to WF-14, COMP-05 (Administrators notified of every submission, one summary for submit-all) |
 | EPIC-06 / §11 risk table | Approval freezes a snapshot; approved records cannot be silently re-uploaded until the Adviser reopens them | `workflow.test.js` | WF-04, WF-06, WF-09, WF-10 |
 | EPIC-05, US-005, US-014 | SF10: historical entry (own learners, validation, audit log), cumulative record, readiness report, generation onto the official SF10-ES template, 3-term years printed as Terms 1-3 (never converted), import of earlier years from an existing SF10 file (round trip, LRN check, access) | `sf10.test.js` | SF-01 to SF-16 |
