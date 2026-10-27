@@ -194,4 +194,27 @@ describe("Adviser read scoping (CON-06, ANA-02)", () => {
         });
         assert.equal(invalid.status, 400);
     });
+
+    // Runs last: it re-uploads Mabini's English and changes upload statuses.
+    it("an upload replaced by a corrected one no longer counts as needing attention", async () => {
+        const summary = async () => (await list("admin")).body.upload_summary;
+        const setStatus = (status, where, params = []) =>
+            t.pool.query(`UPDATE class_records SET status='${status}' WHERE ${where}`, params);
+
+        await setStatus("Validated", "TRUE");
+        await setStatus("Needs Attention", "section_id=$1", [t.ids.mabini]);
+        assert.deepEqual(await summary(), { total_uploads: 2, validated: 1, needs_attention: 1 });
+
+        // The teacher uploads the corrected file for the same subject and section.
+        const corrected = await t.upload({
+            token: t.tokens.subject_t,
+            subjectId: t.ids.english4,
+            sectionId: t.ids.mabini,
+            file: buildEcr({ lrnFor: lrnGenerator("1111"), limit: 5 }).file,
+        });
+        assert.equal(corrected.status, 201, JSON.stringify(corrected.body));
+        await setStatus("Validated", "class_record_id=$1", [corrected.body.class_record.class_record_id]);
+
+        assert.deepEqual(await summary(), { total_uploads: 3, validated: 2, needs_attention: 0 });
+    });
 });

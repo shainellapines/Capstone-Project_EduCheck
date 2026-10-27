@@ -271,31 +271,43 @@ const getSchoolYears = async (req, res) => {
     }
 };
 
-// Raw upload counts by status for this school year — every class_records
-// row, not deduped to "latest per subject" like the grades above, since
-// this is about upload activity, not which grade currently counts.
+// Upload counts for this school year's dashboards. total_uploads counts
+// every class_records row (upload activity); validated and needs_attention
+// count each subject's latest upload per section, the same "latest wins"
+// rule as the grades above.
 const getUploadSummary = async (schoolYearId, visibleSectionIds) => {
     const result = await pool.query(
         `
-        SELECT status, COUNT(*) AS upload_count
-        FROM class_records
-        WHERE school_year_id = $1
-          AND ($2::int[] IS NULL OR section_id = ANY($2::int[]))
+        SELECT status, COUNT(*) AS upload_count, COUNT(*) FILTER (WHERE rn = 1) AS current_count
+        FROM (
+            SELECT
+                status,
+                ROW_NUMBER() OVER (
+                    PARTITION BY section_id, subject_id
+                    ORDER BY upload_date DESC, class_record_id DESC
+                ) AS rn
+            FROM class_records
+            WHERE school_year_id = $1
+              AND ($2::int[] IS NULL OR section_id = ANY($2::int[]))
+        ) uploads
         GROUP BY status
         `,
         [schoolYearId, visibleSectionIds === null ? null : [...visibleSectionIds]]
     );
 
-    const countsByStatus = Object.fromEntries(
-        result.rows.map((row) => [row.status, Number(row.upload_count)])
+    const currentByStatus = Object.fromEntries(
+        result.rows.map((row) => [row.status, Number(row.current_count)])
     );
 
-    const totalUploads = Object.values(countsByStatus).reduce((sum, count) => sum + count, 0);
+    const totalUploads = result.rows.reduce((sum, row) => sum + Number(row.upload_count), 0);
 
+    // validated / needs_attention count only each subject's latest upload in
+    // its section: a file corrected by a later upload no longer needs
+    // attention, so it is not counted once the teacher has fixed it.
     return {
         total_uploads: totalUploads,
-        validated: countsByStatus["Validated"] ?? 0,
-        needs_attention: countsByStatus["Needs Attention"] ?? 0,
+        validated: currentByStatus["Validated"] ?? 0,
+        needs_attention: currentByStatus["Needs Attention"] ?? 0,
     };
 };
 
