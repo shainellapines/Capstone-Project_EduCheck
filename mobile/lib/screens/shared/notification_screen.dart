@@ -192,7 +192,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                   padding: const EdgeInsets.only(right: 20),
                   decoration: BoxDecoration(
                     color: AppTheme.danger.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppTheme.corners,
                   ),
                   child: const Icon(Icons.delete_outline_rounded, color: AppTheme.danger),
                 ),

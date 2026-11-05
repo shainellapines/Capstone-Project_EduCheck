@@ -46,8 +46,6 @@ class OverviewHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = SessionStore.instance.role;
-    final user = SessionStore.instance.user;
-    final displayName = '${user?['full_name'] ?? user?['username'] ?? ''}'.trim();
 
     return AsyncView<Json>(
       load: _load,
@@ -70,12 +68,16 @@ class OverviewHome extends StatelessWidget {
             .map((a) => 'Grade ${a['grade_level']} - ${a['section_name']}')
             .toList();
 
-        final detail = switch (role) {
-          'adviser' => adviserSections.isEmpty
-              ? 'Class Adviser • no section assigned yet'
-              : 'Class Adviser • ${adviserSections.join(', ')}',
-          'admin' => 'School Administrator • ${sections.length} sections',
-          _ => 'Principal • school-wide view',
+        // The web dashboard header for each role: eyebrow, title, description.
+        final eyebrow = switch (role) {
+          'adviser' => adviserSections.isEmpty ? 'Class Adviser' : 'Class Adviser · ${adviserSections.join(', ')}',
+          'admin' => 'School Administrator',
+          _ => 'Principal',
+        };
+        final description = switch (role) {
+          'adviser' => 'Track your academic records and student performance',
+          'admin' => 'Monitor users, submissions, records, and academic system activity',
+          _ => 'A read-only view of submission progress across every section: approvals, rejections, and uploads still needing attention.',
         };
 
         // What this role should act on first.
@@ -102,9 +104,9 @@ class OverviewHome extends StatelessWidget {
 
         return [
           WelcomeCard(
-            greeting: 'Good day, $displayName!',
-            detail: '$detail\nSchool year ${schoolYear['school_year']}',
-            icon: role == 'principal' ? Icons.account_balance_rounded : Icons.school_rounded,
+            eyebrow: eyebrow,
+            greeting: 'Dashboard',
+            detail: '$description\nSchool year ${schoolYear['school_year']}',
           ),
           const SectionTitle('Overview'),
           // The same cards, names and order as the web dashboard for each role.

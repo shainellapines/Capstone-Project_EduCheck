@@ -78,7 +78,7 @@ class UploadDetailScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: AppTheme.dangerBg,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: AppTheme.corners,
                   border: Border.all(color: AppTheme.dangerBorder),
                 ),
                 child: Column(

@@ -122,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: AppTheme.corners,
         border: Border.all(color: _borderColor),
         boxShadow: [
           BoxShadow(color: AppTheme.textDark.withValues(alpha: 0.03), blurRadius: 18, offset: const Offset(0, 6)),
@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppTheme.dangerBg,
-                  borderRadius: BorderRadius.circular(11),
+                  borderRadius: AppTheme.corners,
                   border: Border.all(color: AppTheme.dangerBorder),
                 ),
                 child: Row(
@@ -209,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   foregroundColor: AppTheme.onPrimary,
                   disabledBackgroundColor: AppTheme.primary.withValues(alpha: 0.6),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+                  shape: RoundedRectangleBorder(borderRadius: AppTheme.corners),
                 ),
                 child: _loading
                     ? const SizedBox(
@@ -265,11 +265,11 @@ class _LoginScreenState extends State<LoginScreen> {
       fillColor: AppTheme.background,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: AppTheme.corners,
         borderSide: const BorderSide(color: _borderColor),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: AppTheme.corners,
         borderSide: const BorderSide(color: AppTheme.primary, width: 1.4),
       ),
     );

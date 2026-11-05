@@ -61,37 +61,38 @@ String statusLabel(String? status) {
 }
 
 class StatusStyle {
-  const StatusStyle(this.foreground, this.background, this.icon);
+  const StatusStyle(this.foreground, this.background, this.icon, [this.border]);
 
   final Color foreground;
   final Color background;
   final IconData icon;
+  final Color? border;
 
   // Same mapping as the web StatusBadge (frontend/src/components/StatusBadge.jsx).
   static StatusStyle of(String? status) {
     switch (status) {
       case 'Approved':
-        return const StatusStyle(AppTheme.onStatusSolid, AppTheme.success, Icons.verified_outlined);
+        return const StatusStyle(AppTheme.onStatusSolid, AppTheme.success, Icons.verified_outlined, AppTheme.success);
       case 'Pending Approval':
-        return const StatusStyle(AppTheme.onStatusSolid, AppTheme.infoSolid, Icons.send_outlined);
+        return const StatusStyle(AppTheme.onStatusSolid, AppTheme.infoSolid, Icons.send_outlined, AppTheme.infoSolid);
       case 'Validated':
       case 'Uploaded':
-        return const StatusStyle(AppTheme.info, AppTheme.infoBg, Icons.upload_outlined);
+        return const StatusStyle(AppTheme.info, AppTheme.infoBg, Icons.upload_outlined, AppTheme.infoBorder);
       case 'Complete':
       case 'Passed':
-        return const StatusStyle(AppTheme.success, AppTheme.successBg, Icons.check_circle_outline_rounded);
+        return const StatusStyle(AppTheme.success, AppTheme.successBg, Icons.check_circle_outline_rounded, AppTheme.successBorder);
       case 'Needs Attention':
       case 'Needs Revision':
-        return const StatusStyle(AppTheme.revision, AppTheme.revisionBg, Icons.edit_outlined);
+        return const StatusStyle(AppTheme.revision, AppTheme.revisionBg, Icons.edit_outlined, AppTheme.revisionBorder);
       case 'Amendment Requested':
-        return const StatusStyle(AppTheme.revision, AppTheme.revisionBg, Icons.replay_rounded);
+        return const StatusStyle(AppTheme.revision, AppTheme.revisionBg, Icons.replay_rounded, AppTheme.revisionBorder);
       case 'Partial':
-        return const StatusStyle(AppTheme.warning, AppTheme.warningBg, Icons.warning_amber_rounded);
+        return const StatusStyle(AppTheme.warning, AppTheme.warningBg, Icons.warning_amber_rounded, AppTheme.warningBorder);
       case 'Rejected':
       case 'Failed':
-        return const StatusStyle(AppTheme.danger, AppTheme.dangerBg, Icons.undo_rounded);
+        return const StatusStyle(AppTheme.danger, AppTheme.dangerBg, Icons.undo_rounded, AppTheme.dangerBorder);
       default:
-        return const StatusStyle(AppTheme.neutral, AppTheme.neutralBg, Icons.schedule_rounded);
+        return const StatusStyle(AppTheme.neutral, AppTheme.neutralBg, Icons.schedule_rounded, AppTheme.neutralBorder);
     }
   }
 }
@@ -105,11 +106,23 @@ class StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = StatusStyle.of(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(color: style.background, borderRadius: BorderRadius.circular(20)),
-      child: Text(
-        statusLabel(status),
-        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: style.foreground),
+      height: 22,
+      padding: const EdgeInsets.only(left: 6, right: 8),
+      decoration: BoxDecoration(
+        color: style.background,
+        borderRadius: BorderRadius.circular(AppTheme.radiusXs),
+        border: Border.all(color: style.border ?? style.background),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(style.icon, size: 13, color: style.foreground),
+          const SizedBox(width: 4),
+          Text(
+            statusLabel(status),
+            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: style.foreground, height: 1.1),
+          ),
+        ],
       ),
     );
   }
@@ -127,15 +140,15 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppTheme.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppTheme.corners,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppTheme.corners,
         onTap: onTap,
         child: Container(
           width: double.infinity,
           padding: padding,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppTheme.corners,
             border: Border.all(color: borderColor ?? AppTheme.border),
           ),
           child: child,
@@ -158,7 +171,7 @@ class IconTile extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(11)),
+      decoration: BoxDecoration(color: background, borderRadius: AppTheme.corners),
       child: Icon(icon, color: color, size: size * 0.52),
     );
   }
@@ -179,6 +192,9 @@ class StatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
+
+  /// Kept for callers; the web cards show every number in the text color
+  /// and the icon in the muted color, so these no longer tint the card.
   final Color color;
   final Color background;
   final VoidCallback? onTap;
@@ -188,39 +204,46 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          IconTile(icon: icon, color: color, background: background, size: 40),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11, color: AppTheme.textGray, height: 1.2),
-                ),
-                const SizedBox(height: 3),
-                Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-                if (hint != null) ...[
-                  const SizedBox(height: 2),
-                  Text(hint!, style: const TextStyle(fontSize: 10.5, color: AppTheme.textGray, height: 1.25)),
+    return Material(
+      color: AppTheme.surface,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.textGray, height: 1.3),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(icon, size: 20, color: AppTheme.textGray),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(value, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w500, color: AppTheme.textDark, height: 1.15)),
+              if (hint != null) ...[
+                const SizedBox(height: 4),
+                Text(hint!, style: const TextStyle(fontSize: 11.5, color: AppTheme.textGray, height: 1.3)),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Two StatCards per row.
+/// Two StatCards per row in one bordered block with 1px dividers, like
+/// the web dashboard's overview grid.
 class StatGrid extends StatelessWidget {
   const StatGrid({super.key, required this.cards});
 
@@ -230,6 +253,7 @@ class StatGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <Widget>[];
     for (var i = 0; i < cards.length; i += 2) {
+      if (i > 0) rows.add(const SizedBox(height: 1));
       // IntrinsicHeight + stretch keeps both cards in a row the same height
       // when one title wraps to two lines.
       rows.add(IntrinsicHeight(
@@ -237,14 +261,21 @@ class StatGrid extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(child: cards[i]),
-            const SizedBox(width: 10),
-            Expanded(child: i + 1 < cards.length ? cards[i + 1] : const SizedBox()),
+            const SizedBox(width: 1),
+            Expanded(child: i + 1 < cards.length ? cards[i + 1] : const ColoredBox(color: AppTheme.surface)),
           ],
         ),
       ));
-      if (i + 2 < cards.length) rows.add(const SizedBox(height: 10));
     }
-    return Column(children: rows);
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.border,
+        borderRadius: AppTheme.corners,
+        border: Border.all(color: AppTheme.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: rows),
+    );
   }
 }
 
@@ -263,7 +294,7 @@ class SectionTitle extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: AppTheme.textDark),
             ),
           ),
           if (action != null) action!,
@@ -372,7 +403,7 @@ class OfflineBanner extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: AppTheme.warningBg, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: AppTheme.warningBg, borderRadius: AppTheme.corners),
       child: Row(
         children: [
           const Icon(Icons.cloud_off_rounded, size: 18, color: AppTheme.warning),
@@ -473,7 +504,7 @@ class _ErrorCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.dangerBg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppTheme.corners,
         border: Border.all(color: AppTheme.dangerBorder),
       ),
       child: Row(
@@ -530,7 +561,7 @@ class DashboardHeader extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   color: AppTheme.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppTheme.corners,
                   border: Border.all(color: AppTheme.border),
                 ),
                 child: Stack(
@@ -572,42 +603,37 @@ class DashboardHeader extends StatelessWidget {
   }
 }
 
-/// Welcome banner (blue card) used at the top of each home tab.
+/// Top of each home tab, laid out like the web page header: a small
+/// eyebrow line (role), the page title, and a muted description.
 class WelcomeCard extends StatelessWidget {
-  const WelcomeCard({super.key, required this.greeting, required this.detail, this.icon = Icons.school_rounded});
+  const WelcomeCard({super.key, required this.greeting, required this.detail, this.icon = Icons.school_rounded, this.eyebrow});
 
+  /// The page title, e.g. "Dashboard".
   final String greeting;
+
+  /// The description under the title.
   final String detail;
+
+  /// Kept for callers; the web header has no icon.
   final IconData icon;
+
+  /// Small line above the title, e.g. "Class Adviser".
+  final String? eyebrow;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(20)),
-      child: Row(
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: AppTheme.onPrimary.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AppTheme.onPrimary, size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(greeting, style: const TextStyle(color: AppTheme.onPrimary, fontSize: 19, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 5),
-                Text(detail, style: const TextStyle(color: AppTheme.primarySoft, fontSize: 12, height: 1.35)),
-              ],
-            ),
-          ),
+          if (eyebrow != null) ...[
+            Text(eyebrow!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primary)),
+            const SizedBox(height: 4),
+          ],
+          Text(greeting, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppTheme.textDark, height: 1.2)),
+          const SizedBox(height: 6),
+          Text(detail, style: const TextStyle(fontSize: 14, color: AppTheme.textGray, height: 1.45)),
         ],
       ),
     );
@@ -644,11 +670,11 @@ Future<String?> askForRemarks(
                 hintText: hint,
                 fillColor: AppTheme.background,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppTheme.corners,
                   borderSide: const BorderSide(color: AppTheme.border),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppTheme.corners,
                   borderSide: const BorderSide(color: AppTheme.border),
                 ),
               ),

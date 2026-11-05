@@ -195,7 +195,7 @@ class _GradeBlock extends StatelessWidget {
                 width: 32,
                 height: 32,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(color: AppTheme.surfaceSunken, borderRadius: BorderRadius.circular(9)),
+                decoration: BoxDecoration(color: AppTheme.surfaceSunken, borderRadius: AppTheme.corners),
                 child: Text(
                   '${block['grade_level']}',
                   style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textDark),
@@ -223,7 +223,7 @@ class _GradeBlock extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
                   color: StatusStyle.of(pillStatus).background,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppTheme.corners,
                 ),
                 child: Text(
                   label,

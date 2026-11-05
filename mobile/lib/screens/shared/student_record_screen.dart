@@ -183,7 +183,7 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.dangerBg, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppTheme.dangerBg, borderRadius: AppTheme.corners),
                 child: Text(
                   'Administrator remarks: ${submission['remarks']}',
                   style: const TextStyle(fontSize: 12, color: AppTheme.danger, height: 1.35),
@@ -295,7 +295,7 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
   Widget _chip(IconData icon, String label, {Color color = AppTheme.textGray}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(color: AppTheme.surfaceSunken, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: AppTheme.surfaceSunken, borderRadius: AppTheme.corners),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

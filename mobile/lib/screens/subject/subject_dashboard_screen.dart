@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/api/educheck_api.dart';
-import '../../core/session/session_store.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui.dart';
 import '../shared/profile_screen.dart';
@@ -67,8 +66,6 @@ class _SubjectHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final username = SessionStore.instance.user?['username']?.toString() ?? '';
-
     return AsyncView<Json>(
       load: _loadUploads,
       builder: (context, data, reload) {
@@ -77,15 +74,16 @@ class _SubjectHome extends StatelessWidget {
         final needsAction = uploads.where((u) => _actionStatuses.contains(u['status'])).toList();
 
         return [
-          WelcomeCard(
-            greeting: 'Good day, $username!',
-            detail: 'Subject Teacher\nTrack your e-Class Record uploads and validation results.',
-            icon: Icons.menu_book_rounded,
+          const WelcomeCard(
+            eyebrow: 'Subject Teacher',
+            greeting: 'Dashboard',
+            detail: 'Manage your e-Class Record submissions and monitor validation status',
           ),
           const SectionTitle('My uploads'),
+          // Same cards, names and order as the web Subject Teacher dashboard.
           StatGrid(cards: [
             StatCard(
-              title: 'Total uploaded',
+              title: 'Files Uploaded',
               value: '${summary['total_uploaded'] ?? 0}',
               icon: Icons.upload_file_rounded,
               color: AppTheme.primary,
@@ -93,27 +91,28 @@ class _SubjectHome extends StatelessWidget {
               onTap: () => goTo(1),
             ),
             StatCard(
-              title: 'Validated',
+              title: 'Pending Validation',
+              value: '${summary['pending_validation'] ?? 0}',
+              icon: Icons.schedule_rounded,
+              color: AppTheme.warning,
+              background: AppTheme.warningBg,
+              onTap: () => goTo(1),
+            ),
+            StatCard(
+              title: 'Validated Records',
               value: '${summary['validated'] ?? 0}',
-              icon: Icons.verified_outlined,
+              icon: Icons.check_circle_outline_rounded,
               color: AppTheme.success,
               background: AppTheme.successBg,
               onTap: () => goTo(1),
             ),
             StatCard(
-              title: 'Needs attention',
+              title: 'Needs Attention',
               value: '${summary['needs_attention'] ?? 0}',
+              hint: 'Your uploads with validation errors',
               icon: Icons.warning_amber_rounded,
               color: AppTheme.danger,
               background: AppTheme.dangerBg,
-              onTap: () => goTo(1),
-            ),
-            StatCard(
-              title: 'Awaiting validation',
-              value: '${summary['pending_validation'] ?? 0}',
-              icon: Icons.hourglass_top_rounded,
-              color: AppTheme.warning,
-              background: AppTheme.warningBg,
               onTap: () => goTo(1),
             ),
           ]),

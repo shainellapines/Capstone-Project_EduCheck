@@ -42,6 +42,18 @@ class AppTheme {
   static const Color warningBg = Color(0xFFFDE3C6);
   static const Color onStatusSolid = Color(0xFFFFFFFF);
 
+  // Badge borders (ec-status-*-border), so badges match the web StatusBadge.
+  static const Color neutralBorder = Color(0xFFCDC6B8);
+  static const Color infoBorder = Color(0xFFB3CBE8);
+  static const Color revisionBorder = Color(0xFFDCC650);
+  static const Color successBorder = Color(0xFF9FC9AA);
+  static const Color warningBorder = Color(0xFFEAAE68);
+
+  // Corners: the web uses 6px everywhere (ec-radius) and 4px on badges.
+  static const double radius = 6;
+  static const double radiusXs = 4;
+  static final BorderRadius corners = BorderRadius.circular(radius);
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -56,27 +68,70 @@ class AppTheme {
         error: danger,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: primary,
-        foregroundColor: onPrimary,
+        backgroundColor: surface,
+        foregroundColor: textDark,
+        surfaceTintColor: surface,
         elevation: 0,
       ),
       dividerColor: border,
       progressIndicatorTheme: const ProgressIndicatorThemeData(color: primary, linearTrackColor: surfaceSunken),
+      // Flat, 6px corners and thin borders, as on the web (no pill shapes).
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: corners),
+          textStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: textDark,
+          side: const BorderSide(color: borderStrong),
+          shape: RoundedRectangleBorder(borderRadius: corners),
+          textStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primary,
+          shape: RoundedRectangleBorder(borderRadius: corners),
+          textStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: surface,
+        shape: RoundedRectangleBorder(borderRadius: corners),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: surface,
+        selectedColor: primaryTint,
+        side: const BorderSide(color: border),
+        shape: RoundedRectangleBorder(borderRadius: corners),
+        labelStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: textDark),
+      ),
+      snackBarTheme: SnackBarThemeData(shape: RoundedRectangleBorder(borderRadius: corners)),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: surface,
+        indicatorColor: primaryTint,
+        indicatorShape: RoundedRectangleBorder(borderRadius: corners),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+            color: states.contains(WidgetState.selected) ? primary : textGray,
+          ),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primary, width: 1.5),
-        ),
+        border: OutlineInputBorder(borderRadius: corners, borderSide: const BorderSide(color: borderStrong)),
+        enabledBorder: OutlineInputBorder(borderRadius: corners, borderSide: const BorderSide(color: borderStrong)),
+        focusedBorder: OutlineInputBorder(borderRadius: corners, borderSide: const BorderSide(color: primary, width: 2)),
       ),
     );
   }

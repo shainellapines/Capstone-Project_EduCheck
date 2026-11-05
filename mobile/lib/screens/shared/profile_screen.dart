@@ -330,7 +330,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
         labelText: label,
         fillColor: AppTheme.background,
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppTheme.corners,
           borderSide: const BorderSide(color: AppTheme.border),
         ),
       );

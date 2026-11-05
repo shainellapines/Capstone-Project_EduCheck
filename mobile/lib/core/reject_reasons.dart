@@ -35,7 +35,7 @@ Future<String?> askForRejectReason(BuildContext context) {
       builder: (context, setState) {
         final remarks = buildRejectRemarks(reason, details.text);
         final border = OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppTheme.corners,
           borderSide: const BorderSide(color: AppTheme.border),
         );
 

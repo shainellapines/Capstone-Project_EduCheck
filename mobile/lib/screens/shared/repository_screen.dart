@@ -84,7 +84,7 @@ class _RepositoryScreenState extends State<RepositoryScreen> {
             prefixIcon: const Icon(Icons.search_rounded),
             suffixIcon: IconButton(onPressed: _search, icon: const Icon(Icons.arrow_forward_rounded)),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppTheme.corners,
               borderSide: const BorderSide(color: AppTheme.border),
             ),
           ),

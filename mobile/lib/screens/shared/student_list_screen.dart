@@ -127,7 +127,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     hintText: 'Search name or LRN',
                     prefixIcon: const Icon(Icons.search_rounded),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppTheme.corners,
                       borderSide: const BorderSide(color: AppTheme.border),
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
