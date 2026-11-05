@@ -2,7 +2,7 @@ const { describe, it, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
 const { buildEcr, lrnGenerator, removeRunDir } = require("./helpers/env");
-const { parseClassRecord } = require("../src/services/classRecord/classRecordParser");
+const { parseClassRecord, validateWorkbookStructure } = require("../src/services/classRecord/classRecordParser");
 const { validateClassRecord } = require("../src/services/classRecord/classRecordValidator");
 const { compareHeader, checkHeaderSubject, checkGradeLevel } = require("../src/services/classRecord/rosterCheck");
 
@@ -115,6 +115,16 @@ describe("e-Class Record parser, validator and integrity helpers", () => {
                 section: { section_name: "Mabini", grade_level: "4" },
             }),
             null
+        );
+    });
+});
+
+describe("Workbook structure message", () => {
+    it("names the missing sheet and what to do", () => {
+        assert.throws(
+            () => validateWorkbookStructure({ SheetNames: ["INPUT", "TERM1", "TERM2", "SUMMARY OF GRADES"] }),
+            (error) => error.userMessage ===
+                "This file has no TERM3 sheet. Use the DepEd e-Class Record template without renaming or deleting its sheets, then upload again."
         );
     });
 });

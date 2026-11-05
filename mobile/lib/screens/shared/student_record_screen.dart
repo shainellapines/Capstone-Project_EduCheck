@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/api/educheck_api.dart';
+import '../../core/reject_reasons.dart';
 import '../../core/session/session_store.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui.dart';
@@ -60,9 +61,9 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
   Future<void> _requestRevision(Json subject) async {
     final remarks = await askForRemarks(
       context,
-      title: 'Return ${subject['subject_name']}?',
+      title: 'Request revision for ${subject['subject_name']}?',
       hint: 'What should ${subject['teacher_name']} correct?',
-      confirmLabel: 'Return to teacher',
+      confirmLabel: 'Request revision',
       confirmColor: AppTheme.warning,
     );
     if (remarks == null) return;
@@ -80,13 +81,7 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
   }
 
   Future<void> _reject() async {
-    final remarks = await askForRemarks(
-      context,
-      title: 'Return this record?',
-      hint: 'Reason for returning it to the Adviser',
-      confirmLabel: 'Return',
-      confirmColor: AppTheme.danger,
-    );
+    final remarks = await askForRejectReason(context);
     if (remarks == null) return;
     await _run(() => EduCheckApi.instance.reject(widget.schoolYearId, widget.lrn, remarks));
   }
@@ -261,8 +256,8 @@ class _StudentRecordScreenState extends State<StudentRecordScreen> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _busy ? null : _reject,
-                icon: const Icon(Icons.undo_rounded, size: 18),
-                label: const Text('Return'),
+                icon: const Icon(Icons.cancel_outlined, size: 18),
+                label: const Text('Reject'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.danger,
                   side: const BorderSide(color: AppTheme.danger),
@@ -373,7 +368,7 @@ class _SubjectCard extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onReturn,
                 icon: const Icon(Icons.undo_rounded, size: 16),
-                label: const Text('Return to teacher'),
+                label: const Text('Request revision'),
                 style: TextButton.styleFrom(foregroundColor: AppTheme.warning),
               ),
             ),

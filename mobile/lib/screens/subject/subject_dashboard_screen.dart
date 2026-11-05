@@ -22,7 +22,7 @@ class SubjectDashboardScreen extends StatelessWidget {
     return RoleShell(
       subtitle: 'Subject Teacher',
       tabs: [
-        ShellTab(label: 'Home', icon: Icons.home_rounded, builder: (context, goTo) => _SubjectHome(goTo: goTo)),
+        ShellTab(label: 'Dashboard', icon: Icons.dashboard_outlined, builder: (context, goTo) => _SubjectHome(goTo: goTo)),
         ShellTab(
           label: 'My Uploads',
           icon: Icons.upload_file_rounded,

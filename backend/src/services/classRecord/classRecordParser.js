@@ -44,7 +44,11 @@ const validateWorkbookStructure = (workbook) => {
 
     const missingSheets = REQUIRED_SHEETS.filter((sheetName) => !workbook.SheetNames.includes(sheetName));
     if (missingSheets.length > 0) {
-        throw new Error(`Required worksheet(s) missing: ${missingSheets.join(", ")}`);
+        const error = new Error(`Required worksheet(s) missing: ${missingSheets.join(", ")}`);
+        error.userMessage =
+            `This file has no ${missingSheets.join(", ")} sheet${missingSheets.length > 1 ? "s" : ""}. ` +
+            "Use the DepEd e-Class Record template without renaming or deleting its sheets, then upload again.";
+        throw error;
     }
 
     return true;
@@ -115,7 +119,7 @@ const checkLrnIssues = (learners, hasLrnSheet) => {
     if (!hasLrnSheet) {
         return [{
             type: "LRN_SHEET_MISSING",
-            message: "This workbook has no LRN sheet, so learners cannot yet be matched across subjects for consolidation. Add an LRN sheet listing each learner's name and 12-digit LRN.",
+            message: "No LRN sheet found, so no grades were saved. Add an LRN sheet with each learner's 12-digit LRN, then upload again.",
         }];
     }
 
@@ -128,7 +132,7 @@ const checkLrnIssues = (learners, hasLrnSheet) => {
                 type: "MISSING_LRN",
                 learner: learner.learner_name,
                 learner_number: learner.learner_number,
-                message: `${learner.learner_name} has no LRN recorded in the LRN sheet.`,
+                message: "No LRN in the LRN sheet, so this learner's grades were not saved. Enter the 12-digit LRN, then upload again.",
             });
             return;
         }
@@ -138,7 +142,7 @@ const checkLrnIssues = (learners, hasLrnSheet) => {
                 type: "INVALID_LRN_FORMAT",
                 learner: learner.learner_name,
                 learner_number: learner.learner_number,
-                message: `${learner.learner_name}'s LRN "${learner.lrn}" must be exactly 12 digits.`,
+                message: `LRN "${learner.lrn}" is not 12 digits, so this learner's grades were not saved. Correct it in the LRN sheet, then upload again.`,
             });
             return;
         }
@@ -198,6 +202,8 @@ const extractTermData = (workbook, sheetName) => {
         termRecords.push({
             learner_number: Number(learnerNumber),
             learner_name: learnerName.trim(),
+            // Worksheet row, so validation messages can point at the exact cell.
+            row_number: rowNumber,
             written_oral: writtenOral,
             performance_tasks: performanceTasks,
             summative,
@@ -242,6 +248,7 @@ const extractSummary = (workbook) => {
         summaryRecords.push({
             learner_number: Number(learnerNumber),
             learner_name: learnerName.trim(),
+            row_number: rowNumber,
             term1_grade: getCellValue(sheet, workbookStructure.summary.term1Grade, rowNumber),
             term2_grade: getCellValue(sheet, workbookStructure.summary.term2Grade, rowNumber),
             term3_grade: getCellValue(sheet, workbookStructure.summary.term3Grade, rowNumber),
@@ -260,7 +267,13 @@ const crossCheckLearners = (learners, term1, term2, term3, summary) => {
     const warnings = [];
     const checkRecords = (records, source) => records.forEach((record) => {
         if (!learnerKeys.has(getRecordKey(record))) {
-            warnings.push({ type: "LEARNER_MISMATCH", source, learner: record.learner_name });
+            warnings.push({
+                type: "LEARNER_MISMATCH",
+                source,
+                learner: record.learner_name,
+                learner_number: record.learner_number,
+                message: `Listed in ${source} (row ${record.row_number}) but not in INPUT. Make the name and list number match the INPUT sheet, then upload again.`,
+            });
         }
     });
 

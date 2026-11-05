@@ -26,6 +26,14 @@ String formatGrade(dynamic value) {
   return number % 1 == 0 ? number.toInt().toString() : number.toStringAsFixed(2);
 }
 
+// Averages always show two decimal places (90 -> 90.00, 89.5 -> 89.50).
+String formatAverage(dynamic value) {
+  if (value == null) return '-';
+  final number = num.tryParse(value.toString());
+  if (number == null) return value.toString();
+  return number.toStringAsFixed(2);
+}
+
 /// The words shown for a stored status, the same as the web StatusBadge
 /// (frontend/src/components/StatusBadge.jsx RAW_TO_STATUS). Display only:
 /// logic keeps comparing the stored values. Anything not listed (SF10
@@ -165,6 +173,7 @@ class StatCard extends StatelessWidget {
     required this.color,
     required this.background,
     this.onTap,
+    this.hint,
   });
 
   final String title;
@@ -173,6 +182,9 @@ class StatCard extends StatelessWidget {
   final Color color;
   final Color background;
   final VoidCallback? onTap;
+
+  /// One line under the number saying what it counts, as on the web cards.
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +207,10 @@ class StatCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+                if (hint != null) ...[
+                  const SizedBox(height: 2),
+                  Text(hint!, style: const TextStyle(fontSize: 10.5, color: AppTheme.textGray, height: 1.25)),
+                ],
               ],
             ),
           ),
@@ -502,7 +518,7 @@ class DashboardHeader extends StatelessWidget {
               children: [
                 Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
                 const SizedBox(height: 2),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textGray)),
+                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: AppTheme.textGray)),
               ],
             ),
           ),

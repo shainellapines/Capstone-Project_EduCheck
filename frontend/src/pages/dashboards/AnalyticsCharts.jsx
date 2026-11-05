@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { formatGrade } from "../../utils/format";
 
 // Hand-built SVG/HTML charts for the Analytics page (no chart library in
 // the app). Colors come from the design system's chart tokens in App.css
@@ -56,9 +57,6 @@ function gradeTicks([low, high]) {
     return ticks;
 }
 
-function formatGrade(value) {
-    return value === null || value === undefined ? "—" : value.toFixed(2);
-}
 
 // ==========================================
 // TERM TREND (line chart)

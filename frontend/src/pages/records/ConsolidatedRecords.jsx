@@ -18,6 +18,7 @@ import "./ConsolidatedRecords.css";
 import Sidebar from "../../components/Sidebar";
 import StatusBadge, { GradeCell } from "../../components/StatusBadge";
 import { API_URL } from "../../config";
+import { REJECT_GUIDANCE, REJECT_REASONS, buildRejectRemarks } from "../../utils/rejectReasons";
 
 const PAGE_SIZE = 20;
 
@@ -74,6 +75,8 @@ function ConsolidatedRecords() {
     const [pendingLrns, setPendingLrns] = useState(new Set());
     const [rejectingLrn, setRejectingLrn] = useState(null);
     const [rejectReason, setRejectReason] = useState("");
+    const [rejectDetails, setRejectDetails] = useState("");
+    const rejectRemarks = buildRejectRemarks(rejectReason, rejectDetails);
     // Pending records the Administrator ticked for "Approve selected".
     const [selectedLrns, setSelectedLrns] = useState(new Set());
     const [approvingSelected, setApprovingSelected] = useState(false);
@@ -379,7 +382,7 @@ function ConsolidatedRecords() {
                 {
                     method: "POST",
                     headers: authHeaders({ "Content-Type": "application/json" }),
-                    body: JSON.stringify({ remarks: rejectReason }),
+                    body: JSON.stringify({ remarks: rejectRemarks }),
                 }
             );
 
@@ -392,6 +395,7 @@ function ConsolidatedRecords() {
             setActionMessage(`Rejected ${lrn}.`);
             setRejectingLrn(null);
             setRejectReason("");
+            setRejectDetails("");
             await fetchStudents({ silent: true });
         });
 
@@ -859,11 +863,29 @@ function ConsolidatedRecords() {
 
                                         {rejectingLrn === student.lrn && (
                                             <div className="cr-reject-panel">
-                                                <textarea
-                                                    className="cr-reject-textarea"
+                                                <p className="cr-reject-guidance">{REJECT_GUIDANCE}</p>
+
+                                                <select
+                                                    className="cr-reject-select"
+                                                    aria-label="Reason for rejection"
                                                     value={rejectReason}
                                                     onChange={(e) => setRejectReason(e.target.value)}
-                                                    placeholder="Reason for rejection (shown to the adviser)"
+                                                >
+                                                    <option value="">Choose a reason…</option>
+                                                    {REJECT_REASONS.map((reason) => (
+                                                        <option key={reason} value={reason}>{reason}</option>
+                                                    ))}
+                                                </select>
+
+                                                <textarea
+                                                    className="cr-reject-textarea"
+                                                    value={rejectDetails}
+                                                    onChange={(e) => setRejectDetails(e.target.value)}
+                                                    placeholder={
+                                                        rejectReason === "Other"
+                                                            ? "Describe the problem (required)"
+                                                            : "Details, e.g. which subject or what to correct (optional)"
+                                                    }
                                                     rows={2}
                                                 />
 
@@ -871,7 +893,7 @@ function ConsolidatedRecords() {
                                                     type="button"
                                                     className="cr-btn cr-btn-reject"
                                                     onClick={() => rejectRecord(student.lrn)}
-                                                    disabled={pendingLrns.has(student.lrn)}
+                                                    disabled={pendingLrns.has(student.lrn) || !rejectRemarks}
                                                 >
                                                     Confirm Reject
                                                 </button>
@@ -882,6 +904,7 @@ function ConsolidatedRecords() {
                                                     onClick={() => {
                                                         setRejectingLrn(null);
                                                         setRejectReason("");
+                                                        setRejectDetails("");
                                                     }}
                                                 >
                                                     Cancel

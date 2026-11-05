@@ -60,6 +60,14 @@ describe("Submission workflow, snapshot and re-upload guard", () => {
         assert.equal((await submit("adviser_b")).status, 403);
     });
 
+    it("WF-02b a rejection without a reason is refused (400) and the record stays pending", async () => {
+        const blank = await decide("reject", { remarks: "   " });
+        assert.equal(blank.status, 400);
+        assert.match(blank.body.message, /Choose a reason/);
+        assert.equal((await decide("reject")).status, 400);
+        assert.equal((await status()).status, "Pending Approval");
+    });
+
     it("WF-03 reject stores no snapshot; resubmitting and re-approving does", async () => {
         const rejected = await decide("reject", { remarks: "Check Math" });
         assert.equal(rejected.status, 200);

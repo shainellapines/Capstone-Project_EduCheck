@@ -291,6 +291,16 @@ const decideRecord = async ({ targetStatus, schoolYearId, lrn, remarks, adminUse
         return { error: { status: 409, body: { message: "This record is not currently pending approval." } } };
     }
 
+    // A rejection always says why, so the Adviser knows what to correct.
+    if (targetStatus === "Rejected" && !String(remarks ?? "").trim()) {
+        return {
+            error: {
+                status: 400,
+                body: { message: "Choose a reason for rejecting this record, so the Adviser knows what to correct." },
+            },
+        };
+    }
+
     const { reviewed_by: reviewedBy, first_name: firstName, last_name: lastName } = existing.rows[0];
     const studentName = `${lastName}, ${firstName}`;
 

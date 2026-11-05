@@ -44,14 +44,14 @@ test.describe("Upload and validation", () => {
     test("TC-026 Wrong-section roster is rejected", async ({ page }) => {
         await openUpload(page);
         await upload(page, "Mathematics", uatFile("TC-026_ecr-other-section.xlsx"));
-        await expect(page.locator(".cru-error")).toContainText("None of the learners in this file are on this section's class list");
+        await expect(page.locator(".cru-error")).toContainText("Upload cancelled: none of the learners in this file are on this section's class list");
         await expect(tile(page, "Mathematics")).toContainText("Not uploaded yet");
     });
 
     test("TC-068 A file for another subject is refused", async ({ page }) => {
         await openUpload(page);
         await upload(page, "Mathematics", perSubjectFile("English"));
-        await expect(page.locator(".cru-error")).toContainText('This file is the e-Class Record for "English", but you selected Mathematics');
+        await expect(page.locator(".cru-error")).toContainText('This file is for "English", but you selected Mathematics');
         // Nothing is saved.
         await expect(tile(page, "Mathematics")).toContainText("Not uploaded yet");
     });

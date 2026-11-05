@@ -286,7 +286,7 @@ function Dashboard() {
 
                     <div>
                         <p className="dashboard-eyebrow">
-                            Class Adviser · {getDisplayName(user)}
+                            Class Adviser<span className="eyebrow-name"> · {getDisplayName(user)}</span>
                         </p>
 
                         <h1>Dashboard</h1>
@@ -385,6 +385,7 @@ function Dashboard() {
                                         <strong className="red-text">
                                             {uploadSummary?.needs_attention ?? 0}
                                         </strong>
+                                        <small className="overview-card-hint">e-Class Record files with validation errors</small>
                                     </div>
 
                                     <div className="card-icon red">

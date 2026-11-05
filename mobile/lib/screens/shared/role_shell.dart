@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/notifications/notification_poller.dart';
+import '../../core/session/session_store.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/ui.dart';
 import 'notification_screen.dart';
@@ -60,6 +61,12 @@ class _RoleShellState extends State<RoleShell> {
     });
   }
 
+  String _signedInAs() {
+    final user = SessionStore.instance.user;
+    final name = '${user?['full_name'] ?? user?['username'] ?? ''}'.trim();
+    return name.isEmpty ? widget.subtitle : '$name · ${widget.subtitle}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,7 +74,8 @@ class _RoleShellState extends State<RoleShell> {
       body: SafeArea(
         child: Column(
           children: [
-            DashboardHeader(title: 'EduCheck', subtitle: widget.subtitle, onBell: _openNotifications),
+            // Who is signed in, as on the web sidebar: "Ana Santos · Class Adviser".
+            DashboardHeader(title: 'EduCheck', subtitle: _signedInAs(), onBell: _openNotifications),
             Expanded(
               child: IndexedStack(
                 index: _index,

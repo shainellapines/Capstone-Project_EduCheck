@@ -468,6 +468,29 @@
     padding: 4px 0;
 }
 
+.cr-reject-guidance {
+    flex: 1 1 100%;
+    margin: 0;
+    color: var(--ec-text-muted);
+    font: 400 12px/16px var(--ec-font-sans);
+}
+
+.cr-reject-select {
+    flex: 0 1 300px;
+    padding: 8px 10px;
+    border: 1px solid var(--ec-border-strong);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    color: var(--ec-text);
+    font: 400 13px/19px var(--ec-font-sans);
+}
+
+.cr-reject-select:focus {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 1px;
+    border-color: var(--ec-action);
+}
+
 .cr-reject-textarea {
     flex: 1 1 300px;
     padding: 8px 10px;

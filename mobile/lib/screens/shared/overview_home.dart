@@ -34,6 +34,7 @@ class OverviewHome extends StatelessWidget {
       {
         'school_year': year.data,
         'students': records.data['students'],
+        'upload_summary': records.data['upload_summary'],
         'sections': sections.data,
         'assignments': assignments,
       },
@@ -45,7 +46,8 @@ class OverviewHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = SessionStore.instance.role;
-    final username = SessionStore.instance.user?['username']?.toString() ?? '';
+    final user = SessionStore.instance.user;
+    final displayName = '${user?['full_name'] ?? user?['username'] ?? ''}'.trim();
 
     return AsyncView<Json>(
       load: _load,
@@ -60,14 +62,8 @@ class OverviewHome extends StatelessWidget {
 
         int count(String status) =>
             students.where((s) => (asMap(s['submission'])['status'] ?? 'Not Submitted') == status).length;
-        final needsRevision = students
-            .where((s) => asList(s['subjects']).any((subject) => subject['status'] == 'Needs Revision'))
-            .length;
-        final ready = students
-            .where((s) =>
-                s['ready_for_submission'] == true &&
-                const {'Not Submitted', 'Rejected', 'Amendment Requested'}.contains(asMap(s['submission'])['status']))
-            .length;
+        final complete = students.where((s) => s['all_subjects_submitted'] == true).length;
+        final uploadsNeedingAttention = '${asMap(data['upload_summary'])['needs_attention'] ?? 0}';
 
         final adviserSections = asList(data['assignments'])
             .where((a) => a['subject_id'] == null)
@@ -106,53 +102,72 @@ class OverviewHome extends StatelessWidget {
 
         return [
           WelcomeCard(
-            greeting: 'Good day, $username!',
+            greeting: 'Good day, $displayName!',
             detail: '$detail\nSchool year ${schoolYear['school_year']}',
             icon: role == 'principal' ? Icons.account_balance_rounded : Icons.school_rounded,
           ),
           const SectionTitle('Overview'),
+          // The same cards, names and order as the web dashboard for each role.
           StatGrid(cards: [
-            if (role == 'adviser')
+            if (role == 'adviser') ...[
               StatCard(
-                title: 'Ready to submit',
-                value: '$ready',
-                icon: Icons.task_alt_rounded,
-                color: AppTheme.success,
-                background: AppTheme.successBg,
-                onTap: () => goTo(recordsTab),
-              )
-            else
-              StatCard(
-                title: 'Learners with records',
+                title: 'Total Students',
                 value: '${students.length}',
                 icon: Icons.groups_rounded,
                 color: AppTheme.primary,
                 background: AppTheme.primaryTint,
                 onTap: () => goTo(recordsTab),
               ),
+              StatCard(
+                title: 'Complete Records',
+                value: '$complete',
+                icon: Icons.task_alt_rounded,
+                color: AppTheme.success,
+                background: AppTheme.successBg,
+                onTap: () => goTo(recordsTab),
+              ),
+              StatCard(
+                title: 'Incomplete Records',
+                value: '${students.length - complete}',
+                icon: Icons.description_outlined,
+                color: AppTheme.neutral,
+                background: AppTheme.neutralBg,
+                onTap: () => goTo(recordsTab),
+              ),
+            ] else ...[
+              StatCard(
+                title: 'Pending Submissions',
+                value: '${count('Pending Approval')}',
+                icon: Icons.hourglass_top_rounded,
+                color: AppTheme.info,
+                background: AppTheme.infoBg,
+                onTap: () => openList('Pending Approval'),
+              ),
+              StatCard(
+                title: 'Approved Records',
+                value: '${count('Approved')}',
+                icon: Icons.verified_outlined,
+                color: AppTheme.success,
+                background: AppTheme.successBg,
+                onTap: () => openList('Approved'),
+              ),
+              StatCard(
+                title: 'Rejected Records',
+                value: '${count('Rejected')}',
+                hint: 'Returned by the Administrator during approval',
+                icon: Icons.cancel_outlined,
+                color: AppTheme.warning,
+                background: AppTheme.warningBg,
+                onTap: () => openList('Rejected'),
+              ),
+            ],
             StatCard(
-              title: 'Pending approval',
-              value: '${count('Pending Approval')}',
-              icon: Icons.hourglass_top_rounded,
-              color: AppTheme.primary,
-              background: AppTheme.primaryTint,
-              onTap: () => openList('Pending Approval'),
-            ),
-            StatCard(
-              title: 'Approved',
-              value: '${count('Approved')}',
-              icon: Icons.verified_outlined,
-              color: AppTheme.success,
-              background: AppTheme.successBg,
-              onTap: () => openList('Approved'),
-            ),
-            StatCard(
-              title: 'Need revision',
-              value: '$needsRevision',
-              icon: Icons.edit_note_rounded,
+              title: 'Uploads Needing Attention',
+              value: uploadsNeedingAttention,
+              hint: 'e-Class Record files with validation errors',
+              icon: Icons.warning_amber_rounded,
               color: AppTheme.danger,
               background: AppTheme.dangerBg,
-              onTap: () => goTo(recordsTab),
             ),
           ]),
           if (role != 'principal') ...[

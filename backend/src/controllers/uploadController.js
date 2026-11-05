@@ -639,7 +639,9 @@ const uploadClassRecord = async (req, res) => {
             removeUploadedFile(file.path);
 
             return res.status(422).json({
-                message: "The uploaded file is not a supported E-Class Record workbook.",
+                message:
+                    error.userMessage ||
+                    "EduCheck could not read this file. Upload the DepEd e-Class Record template (.xlsx), saved in Excel.",
                 detail: error.message,
             });
         }
@@ -656,9 +658,9 @@ const uploadClassRecord = async (req, res) => {
 
             return res.status(422).json({
                 message:
-                    `The LRN sheet gives the same LRN to more than one learner: ` +
+                    `Upload cancelled: the same LRN is given to more than one learner. ` +
                     duplicateLrns.map((warning) => warning.message).join(" ") +
-                    " Correct the LRN sheet and upload again.",
+                    " Give each learner their own LRN in the LRN sheet, then upload again.",
                 duplicate_lrns: duplicateLrns,
             });
         }

@@ -12,6 +12,7 @@ import "../../styles/Dashboard.css";
 import "./Analytics.css";
 import Sidebar from "../../components/Sidebar";
 import { SubjectRangeChart, TermTrendChart } from "./AnalyticsCharts";
+import { formatGrade } from "../../utils/format";
 import { getToken, getStoredUser } from "../../utils/session";
 import { API_URL } from "../../config";
 
@@ -264,7 +265,7 @@ function Analytics() {
                                     <div>
                                         <span>Average Final Grade</span>
                                         <strong className="green-text">
-                                            {overview.average_final_grade}
+                                            {formatGrade(overview.average_final_grade)}
                                         </strong>
                                     </div>
 
@@ -531,7 +532,7 @@ function Analytics() {
                                                         <td>Grade {subject.grade_level}</td>
                                                         <td className="an-num">{subject.graded_entries}</td>
                                                         <td className="an-num an-cell-strong">
-                                                            {subject.average_final_grade}
+                                                            {formatGrade(subject.average_final_grade)}
                                                         </td>
                                                         <td className="an-num">{subject.lowest_final_grade}</td>
                                                         <td className="an-num">{subject.highest_final_grade}</td>
@@ -590,7 +591,7 @@ function Analytics() {
                                                             <td>Grade {section.grade_level}</td>
                                                             <td className="an-num">{section.graded_entries}</td>
                                                             <td className="an-num an-cell-strong">
-                                                                {section.average_final_grade}
+                                                                {formatGrade(section.average_final_grade)}
                                                             </td>
                                                             <td className="an-num">{section.pass_rate}%</td>
                                                             <td className="an-num">

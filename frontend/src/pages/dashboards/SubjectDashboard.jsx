@@ -242,7 +242,7 @@ function SubjectDashboard() {
 
                     <div>
                         <p className="dashboard-eyebrow">
-                            Subject Teacher · {getDisplayName(user)}
+                            Subject Teacher<span className="eyebrow-name"> · {getDisplayName(user)}</span>
                         </p>
 
                         <h1>Dashboard</h1>
@@ -318,6 +318,7 @@ function SubjectDashboard() {
                                 <strong className="red-text">
                                     {summary.needs_attention}
                                 </strong>
+                                <small className="overview-card-hint">Your uploads with validation errors</small>
                             </div>
 
                             <div className="card-icon red">

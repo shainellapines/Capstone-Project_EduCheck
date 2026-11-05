@@ -156,12 +156,16 @@ test.describe("Consolidation, submission and review", () => {
     });
 
     test("TC-040 Reject a submitted record with a reason", async ({ page }) => {
-        const reason = "Check the MAPEH Term 3 grade.";
+        const details = "Check the MAPEH Term 3 grade.";
+        const reason = `Grades do not match the teacher's class record: ${details}`;
         await loginAs(page, "admin.educheck");
         await openFromSidebar(page, "Submission Review");
         const row = await findLearner(page, "100000000006");
         await row.getByRole("button", { name: "Reject" }).click();
-        await page.getByPlaceholder("Reason for rejection (shown to the adviser)").fill(reason);
+        // A reason must be chosen before the rejection can be confirmed.
+        await expect(page.getByRole("button", { name: "Confirm Reject" })).toBeDisabled();
+        await page.getByLabel("Reason for rejection").selectOption("Grades do not match the teacher's class record");
+        await page.getByPlaceholder(/Details, e\.g\./).fill(details);
         await page.getByRole("button", { name: "Confirm Reject" }).click();
         await expect(page.getByText("Rejected 100000000006.")).toBeVisible();
         await expect(row).toContainText(`Returned by the Administrator: ${reason}`);

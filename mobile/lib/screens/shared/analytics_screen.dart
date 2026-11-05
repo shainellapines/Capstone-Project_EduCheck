@@ -95,7 +95,7 @@ class AnalyticsScreen extends StatelessWidget {
           StatGrid(cards: [
             StatCard(
               title: 'Average final grade',
-              value: formatGrade(overview['average_final_grade']),
+              value: formatAverage(overview['average_final_grade']),
               icon: Icons.insights_rounded,
               color: AppTheme.primary,
               background: AppTheme.primaryTint,

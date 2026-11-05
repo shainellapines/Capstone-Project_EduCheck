@@ -17,15 +17,15 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RoleShell(
-      subtitle: 'Administrator',
+      subtitle: 'School Administrator',
       tabs: [
         ShellTab(
-          label: 'Home',
-          icon: Icons.home_rounded,
+          label: 'Dashboard',
+          icon: Icons.dashboard_outlined,
           builder: (context, goTo) => OverviewHome(goTo: goTo, recordsTab: 1, analyticsTab: 3),
         ),
         ShellTab(
-          label: 'Approvals',
+          label: 'Review',
           icon: Icons.fact_check_outlined,
           builder: (context, goTo) => const StudentListScreen(initialStatus: 'Pending Approval'),
           opensFor: const {
@@ -34,7 +34,7 @@ class AdminDashboardScreen extends StatelessWidget {
             NotificationTitles.amendmentNeeded,
           },
         ),
-        ShellTab(label: 'Repository', icon: Icons.manage_search_rounded, builder: (context, goTo) => const RepositoryScreen()),
+        ShellTab(label: 'SF10', icon: Icons.manage_search_rounded, builder: (context, goTo) => const RepositoryScreen()),
         ShellTab(label: 'Analytics', icon: Icons.insights_rounded, builder: (context, goTo) => const AnalyticsScreen()),
         ShellTab(label: 'Account', icon: Icons.person_outline_rounded, builder: (context, goTo) => const ProfileScreen()),
       ],

@@ -59,7 +59,7 @@ describe("White box: classRecordValidator decision paths", () => {
         assert.equal(result.learners[0].ready_for_submission, true);
     });
 
-    it("WB-02 a score above the highest possible score is flagged (line 44: score > maximum)", () => {
+    it("WB-02 a score above the highest possible score is flagged (line 90: score > maximum)", () => {
         const result = validateClassRecord(record({ termOverrides: { term2: { written_oral: assessment([21, 19], [20, 20]) } } }));
         const issue = result.issues.find((i) => i.code === "INVALID_SCORE_RANGE");
         assert.ok(issue);
@@ -68,34 +68,34 @@ describe("White box: classRecordValidator decision paths", () => {
         assert.equal(result.ready_for_submission, false);
     });
 
-    it("WB-03 a negative score is flagged (line 44: score < 0)", () => {
+    it("WB-03 a negative score is flagged (line 90: score < 0)", () => {
         const result = validateClassRecord(record({ termOverrides: { term1: { summative: assessment([-1], [30]) } } }));
         assert.deepEqual(codes(result), ["INVALID_SCORE_RANGE"]);
         assert.equal(result.issues[0].field, "Summative[1]");
     });
 
-    it("WB-04 a non-numeric score is flagged (line 44: !isNumber(score))", () => {
+    it("WB-04 a non-numeric score is flagged (line 90: !isNumber(score))", () => {
         const result = validateClassRecord(record({ termOverrides: { term3: { performance_tasks: assessment(["abc"], [50]) } } }));
         assert.deepEqual(codes(result), ["INVALID_SCORE_RANGE"]);
         assert.equal(result.issues[0].field, "Performance Task[1]");
     });
 
-    it("WB-05 a blank score or blank highest score is skipped, not flagged (line 40)", () => {
+    it("WB-05 a blank score or blank highest score is skipped, not flagged (line 86)", () => {
         const result = validateClassRecord(record({ termOverrides: { term1: { written_oral: assessment([null, 19], [20, null]) } } }));
         assert.deepEqual(codes(result), []);
     });
 
-    it("WB-06 a score equal to the highest possible score is accepted (boundary of line 44)", () => {
+    it("WB-06 a score equal to the highest possible score is accepted (boundary of line 90)", () => {
         const result = validateClassRecord(record({ termOverrides: { term1: { written_oral: assessment([20, 0], [20, 20]) } } }));
         assert.deepEqual(codes(result), []);
     });
 
-    it("WB-07 an assessment without a score list is treated as empty (line 32)", () => {
+    it("WB-07 an assessment without a score list is treated as empty (line 78)", () => {
         const result = validateClassRecord(record({ termOverrides: { term1: { summative: {} } } }));
         assert.deepEqual(codes(result), []);
     });
 
-    it("WB-08 a learner missing from a term sheet is flagged (line 63)", () => {
+    it("WB-08 a learner missing from a term sheet is flagged (line 111)", () => {
         const base = record();
         base.terms.term3 = [term(learner(2, "Other, Learner"), 85)];
         const result = validateClassRecord(base);
@@ -103,23 +103,23 @@ describe("White box: classRecordValidator decision paths", () => {
         assert.equal(result.issues.find((i) => i.code === "MISSING_TERM_RECORD").term, "TERM3");
     });
 
-    it("WB-09 a term with missing assessment scores is incomplete (line 76)", () => {
+    it("WB-09 a term with missing assessment scores is incomplete (line 124)", () => {
         const result = validateClassRecord(record({ termOverrides: { term2: { calculation: { ready: false } } } }));
         assert.ok(codes(result).includes("INCOMPLETE_TERM"));
         assert.equal(result.ready_for_submission, false);
     });
 
-    it("WB-10 a term marked complete without a valid term grade is flagged (line 87)", () => {
+    it("WB-10 a term marked complete without a valid term grade is flagged (line 149)", () => {
         const result = validateClassRecord(record({ termOverrides: { term1: { term_grade: null } } }));
         assert.ok(codes(result).includes("MISSING_TERM_GRADE"));
     });
 
-    it("WB-11 a learner missing from the Summary of Grades is flagged (line 111)", () => {
+    it("WB-11 a learner missing from the Summary of Grades is flagged (line 175)", () => {
         const result = validateClassRecord(record({ summaries: [summary(learner(2, "Other, Learner"), [85, 86, 86], 86)] }));
         assert.ok(codes(result).includes("MISSING_SUMMARY_RECORD"));
     });
 
-    it("WB-12 summary checks are skipped while a term is not ready (line 127)", () => {
+    it("WB-12 summary checks are skipped while a term is not ready (line 191)", () => {
         const result = validateClassRecord(record({
             termOverrides: { term2: { calculation: { ready: false } } },
             summaries: [summary(learner(1, "Cruz, Ana"), [99, 99, 99], 99)],
@@ -127,7 +127,7 @@ describe("White box: classRecordValidator decision paths", () => {
         assert.deepEqual(codes(result), ["INCOMPLETE_TERM"]);
     });
 
-    it("WB-13 a Summary of Grades term grade that differs from the term sheet is flagged (line 135)", () => {
+    it("WB-13 a Summary of Grades term grade that differs from the term sheet is flagged (line 199)", () => {
         const result = validateClassRecord(record({ summaries: [summary(learner(1, "Cruz, Ana"), [85, 90, 86], 86)] }));
         const issue = result.issues.find((i) => i.code === "SUMMARY_TERM_MISMATCH");
         assert.ok(issue);
@@ -135,34 +135,34 @@ describe("White box: classRecordValidator decision paths", () => {
         assert.equal(issue.field, "term2_grade");
     });
 
-    it("WB-14 a final grade that is not the rounded average of the terms is flagged (line 153)", () => {
+    it("WB-14 a final grade that is not the rounded average of the terms is flagged (line 220)", () => {
         const result = validateClassRecord(record({ finalGrade: 85 }));
         assert.deepEqual(codes(result), ["FINAL_GRADE_MISMATCH"]);
         assert.match(result.issues[0].message, /Expected final grade is 86/);
     });
 
-    it("WB-15 the final grade is rounded: (85 + 86 + 86) / 3 = 85.67 -> 86 is accepted (line 148)", () => {
+    it("WB-15 the final grade is rounded: (85 + 86 + 86) / 3 = 85.67 -> 86 is accepted (line 215)", () => {
         const result = validateClassRecord(record({ grades: [85, 86, 86], finalGrade: 86 }));
         assert.deepEqual(codes(result), []);
     });
 
-    it("WB-16 the same list number twice in one gender group is a duplicate (line 193)", () => {
+    it("WB-16 the same list number twice in one gender group is a duplicate (line 263)", () => {
         const result = validateClassRecord(record({ learners: [learner(1, "Cruz, Ana"), learner(1, "Reyes, Ben")] }));
         assert.ok(codes(result).includes("DUPLICATE_LEARNER_NUMBER"));
     });
 
-    it("WB-17 the same list number in the Male and Female groups is not a duplicate (line 183)", () => {
+    it("WB-17 the same list number in the Male and Female groups is not a duplicate (line 253)", () => {
         const result = validateClassRecord(record({ learners: [learner(1, "Cruz, Ana", "Female"), learner(1, "Reyes, Ben", "Male")] }));
         assert.ok(!codes(result).includes("DUPLICATE_LEARNER_NUMBER"));
     });
 
-    it("WB-18 a workbook with no learners is flagged (line 217)", () => {
+    it("WB-18 a workbook with no learners is flagged (line 287)", () => {
         const result = validateClassRecord(record({ learners: [] }));
         assert.ok(codes(result).includes("NO_LEARNERS_DETECTED"));
         assert.equal(result.ready_for_submission, false);
     });
 
-    it("WB-19 a term sheet with no records is flagged per term (line 234)", () => {
+    it("WB-19 a term sheet with no records is flagged per term (line 304)", () => {
         const base = record();
         base.terms.term2 = [];
         const result = validateClassRecord(base);
@@ -171,12 +171,12 @@ describe("White box: classRecordValidator decision paths", () => {
         assert.equal(issue.term, "TERM2");
     });
 
-    it("WB-20 an empty Summary of Grades is flagged (line 246)", () => {
+    it("WB-20 an empty Summary of Grades is flagged (line 316)", () => {
         const result = validateClassRecord(record({ summaries: [] }));
         assert.ok(codes(result).includes("NO_SUMMARY_RECORDS_DETECTED"));
     });
 
-    it("WB-21 parser warnings are carried over as warnings and do not block submission (line 293)", () => {
+    it("WB-21 parser warnings are carried over as warnings and do not block submission (line 363)", () => {
         const result = validateClassRecord(record({ warnings: [{ type: "LRN_FORMAT", message: "LRN should be 12 digits.", learner: "Cruz, Ana", learner_number: 1 }] }));
         assert.equal(result.warning_count, 1);
         assert.equal(result.error_count, 0);
@@ -185,11 +185,51 @@ describe("White box: classRecordValidator decision paths", () => {
         assert.equal(result.ready_for_submission, true);
     });
 
-    it("WB-22 a parser warning without a type or severity gets safe defaults (line 295)", () => {
+    it("WB-22 a parser warning without a type or severity gets safe defaults (line 365)", () => {
         const result = validateClassRecord(record({ warnings: [{ source: "INPUT" }] }));
         assert.equal(result.issues[0].code, "PARSER_WARNING");
         assert.equal(result.issues[0].severity, "warning");
         assert.equal(result.issues[0].learner_name, "Unknown");
         assert.match(result.issues[0].message, /INPUT/);
+    });
+
+    // Messages say where the problem is and what to do (panel revision):
+    // the sheet, the cell, and "then upload again".
+    it("WB-23 a score-range message names the cell and tells the teacher to correct it", () => {
+        const result = validateClassRecord(record({
+            termOverrides: { term1: { row_number: 14, written_oral: assessment([18, 35], [20, 20]) } },
+        }));
+        assert.equal(result.issues[0].message,
+            "Written/Oral 2 score is 35, but the highest possible score is 20. Correct cell G14 in TERM1, then upload again.");
+    });
+
+    it("WB-24 an incomplete term lists each blank score with its cell", () => {
+        const result = validateClassRecord(record({
+            termOverrides: { term2: {
+                row_number: 12,
+                calculation: { ready: false },
+                written_oral: assessment([18, null], [20, 20]),
+                performance_tasks: assessment([null], [50]),
+            } },
+        }));
+        const issue = result.issues.find((i) => i.code === "INCOMPLETE_TERM");
+        assert.equal(issue.message,
+            "Blank scores in TERM2: Written/Oral 2 (G12), Performance Task 1 (N12). Enter the missing scores, then upload again.");
+    });
+
+    it("WB-25 an incomplete term with no highest possible scores says to fill row 10", () => {
+        const result = validateClassRecord(record({
+            termOverrides: { term3: { calculation: { ready: false }, summative: assessment([null], [null]) } },
+        }));
+        const issue = result.issues.find((i) => i.code === "INCOMPLETE_TERM");
+        assert.match(issue.message, /Summative in TERM3 has no highest possible scores \(row 10\)/);
+    });
+
+    it("WB-26 a summary mismatch names the Summary of Grades cell", () => {
+        const [who] = [learner(1, "Cruz, Ana")];
+        const result = validateClassRecord(record({
+            summaries: [{ ...summary(who, [85, 86, 86], 70), row_number: 13 }],
+        }));
+        assert.match(result.issues[0].message, /SUMMARY OF GRADES shows 70 \(cell R13\)\. Change it to 86, then upload again\./);
     });
 });

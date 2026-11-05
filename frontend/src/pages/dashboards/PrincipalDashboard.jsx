@@ -163,7 +163,7 @@ function PrincipalDashboard() {
 
                     <div>
                         <p className="dashboard-eyebrow">
-                            Principal · {getDisplayName(user)}
+                            Principal<span className="eyebrow-name"> · {getDisplayName(user)}</span>
                         </p>
 
                         <h1>Dashboard</h1>
@@ -272,6 +272,7 @@ function PrincipalDashboard() {
                                 <div>
                                     <span>Rejected Records</span>
                                     <strong className="orange-text">{rejectedCount}</strong>
+                                    <small className="overview-card-hint">Returned by the Administrator during approval</small>
                                 </div>
 
                                 <div className="card-icon orange">
@@ -285,6 +286,7 @@ function PrincipalDashboard() {
                                     <strong className="red-text">
                                         {uploadSummary?.needs_attention ?? 0}
                                     </strong>
+                                    <small className="overview-card-hint">e-Class Record files with validation errors</small>
                                 </div>
 
                                 <div className="card-icon red">

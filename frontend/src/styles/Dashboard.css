@@ -72,6 +72,74 @@
     letter-spacing: 0.01em;
 }
 
+/* The signed-in account under the logo: initials, full name, role. */
+.sidebar-account {
+    margin: 0 14px 14px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--ec-border);
+    border-radius: var(--ec-radius);
+    background: var(--ec-surface);
+    color: var(--ec-text);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+}
+
+.sidebar-account:hover {
+    background: var(--ec-hover);
+}
+
+.sidebar-account:focus-visible {
+    outline: 2px solid var(--ec-focus);
+    outline-offset: 1px;
+}
+
+.sidebar-account-avatar {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--ec-action);
+    color: var(--ec-on-action, #fff);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.sidebar-account-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sidebar-account-text strong {
+    font-size: 13px;
+    line-height: 17px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-account-text span {
+    font-size: 11.5px;
+    line-height: 15px;
+    color: var(--ec-text-muted);
+}
+
+/* The sidebar shows the name on wider screens; the dashboard heading only
+   repeats it on phones, where the sidebar is hidden. */
+@media (min-width: 651px) {
+    .eyebrow-name {
+        display: none;
+    }
+}
+
 /* Role is plain text, the same for every role: no color-coded pill. */
 .role-badge {
     margin: 0 26px 16px;
@@ -236,6 +304,13 @@ button.nav-item {
 
     :root[data-sidebar="collapsed"] .role-badge {
         margin: 0 auto 16px;
+    }
+
+    :root[data-sidebar="collapsed"] .sidebar-account {
+        margin: 0 auto 14px;
+        padding: 4px;
+        border-color: transparent;
+        background: transparent;
     }
 
     :root[data-sidebar="collapsed"] .nav-item {
@@ -441,6 +516,15 @@ button.nav-item {
     font: 500 28px/32px var(--ec-font-display);
     color: var(--ec-text) !important;
     font-variant-numeric: tabular-nums;
+}
+
+/* One line under a card's number saying what it counts. */
+.overview-card .overview-card-hint {
+    display: block;
+    margin-top: 4px;
+    color: var(--ec-text-muted);
+    font-size: 12px;
+    line-height: 16px;
 }
 
 .green-text {

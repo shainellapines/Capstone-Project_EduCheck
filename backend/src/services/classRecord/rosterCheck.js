@@ -63,8 +63,8 @@ const checkHeaderSubject = ({ header, subject }) => {
         status: 409,
         code: "HEADER_SUBJECT_MISMATCH",
         message:
-            `This file is the e-Class Record for "${header.subject}", but you selected ${subject.subject_name}. ` +
-            `Upload the ${subject.subject_name} e-Class Record, or correct the subject in the file's header (cell Y7 of the INPUT sheet).`,
+            `This file is for "${header.subject}", but you selected ${subject.subject_name}. ` +
+            `Upload the ${subject.subject_name} file, or fix the subject in INPUT, cell Y7.`,
     };
 };
 
@@ -91,7 +91,7 @@ const compareHeader = ({ header, section, subject, schoolYear }) => {
         if (!headerValue.includes(norm(section.section_name)) || !headerValue.includes(norm(section.grade_level))) {
             warnings.push({
                 code: "HEADER_SECTION_MISMATCH",
-                message: `The file's header says "${header.grade_section}" but you selected Grade ${section.grade_level} - ${section.section_name}.`,
+                message: `The file says "${header.grade_section}" (INPUT, cell J7), but you selected Grade ${section.grade_level} - ${section.section_name}. Check that this is the right file.`,
             });
         }
     }
@@ -99,14 +99,14 @@ const compareHeader = ({ header, section, subject, schoolYear }) => {
     if (header.subject && !headerSubjectMatches(header.subject, subject.subject_name)) {
         warnings.push({
             code: "HEADER_SUBJECT_MISMATCH",
-            message: `The file's header says subject "${header.subject}" but you selected ${subject.subject_name}.`,
+            message: `The file says subject "${header.subject}" (INPUT, cell Y7), but you selected ${subject.subject_name}. Check that this is the right file.`,
         });
     }
 
     if (header.school_year && norm(header.school_year) !== norm(schoolYear.school_year)) {
         warnings.push({
             code: "HEADER_SCHOOL_YEAR_MISMATCH",
-            message: `The file's header says school year "${header.school_year}" but you selected ${schoolYear.school_year}.`,
+            message: `The file says school year "${header.school_year}" (INPUT, cell Y5), but you selected ${schoolYear.school_year}. Check that this is the right file.`,
         });
     }
 
@@ -119,7 +119,7 @@ const checkGradeLevel = ({ subject, section }) => {
     if (String(subject.grade_level) !== String(section.grade_level)) {
         return {
             status: 409,
-            message: `${subject.subject_name} is a Grade ${subject.grade_level} subject but ${section.section_name} is a Grade ${section.grade_level} section.`,
+            message: `${subject.subject_name} is a Grade ${subject.grade_level} subject, but ${section.section_name} is a Grade ${section.grade_level} section. Choose a matching subject and section.`,
         };
     }
 
@@ -164,8 +164,8 @@ const checkRoster = async ({ parsedRecord, sectionId, schoolYearId }) => {
             error: {
                 status: 409,
                 message:
-                    `${elsewhere.rows.length} learner(s) in this file are already enrolled in another section ` +
-                    `this school year (${names.join(", ")}). This looks like the wrong section - upload cancelled.`,
+                    `Upload cancelled: ${elsewhere.rows.length} learner(s) in this file are already in another section ` +
+                    `(${names.join(", ")}). Check that you chose the right section and file.`,
                 conflicting_lrns: elsewhere.rows.map((row) => row.lrn).slice(0, 20),
             },
             warnings,
@@ -180,8 +180,8 @@ const checkRoster = async ({ parsedRecord, sectionId, schoolYearId }) => {
                 error: {
                     status: 409,
                     message:
-                        "None of the learners in this file are on this section's class list. " +
-                        "This looks like the wrong section or file - upload cancelled.",
+                        "Upload cancelled: none of the learners in this file are on this section's class list. " +
+                        "Check that you chose the right section and file.",
                 },
                 warnings,
             };
@@ -192,7 +192,7 @@ const checkRoster = async ({ parsedRecord, sectionId, schoolYearId }) => {
         if (notOnRoster > 0) {
             warnings.push({
                 code: "LEARNERS_NOT_ON_ROSTER",
-                message: `${notOnRoster} learner(s) in this file are not on this section's existing class list and will be added to it.`,
+                message: `${notOnRoster} learner(s) were not on this section's class list and have been added. Check that they belong to this section.`,
             });
         }
     }

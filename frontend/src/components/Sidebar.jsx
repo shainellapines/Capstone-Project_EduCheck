@@ -24,7 +24,7 @@ import {
 import "../styles/Dashboard.css";
 import logo from "../assets/educheck-logo.png";
 import logoOnDark from "../assets/educheck-logo-white.png";
-import { getStoredUser, getToken, clearSession } from "../utils/session";
+import { getStoredUser, getToken, clearSession, getDisplayName } from "../utils/session";
 import { useCanUpload } from "../utils/uploadAccess";
 import { isSidebarCollapsed, setSidebarCollapsed } from "../utils/sidebar";
 import { API_URL } from "../config";
@@ -80,11 +80,21 @@ const NAV_ITEMS_BY_ROLE = {
 };
 
 const ROLE_BADGE_LABEL = {
-    adviser: "Adviser",
+    adviser: "Class Adviser",
     admin: "School Administrator",
     subject: "Subject Teacher",
     principal: "Principal",
 };
+
+// "Ana Santos" -> "AS"; a username alone gives its first letter.
+const initialsOf = (name) =>
+    name
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toUpperCase())
+        .join("") || "?";
 
 // `activeKey` is one of the `key` values above — the page rendering the
 // shell says which nav item represents it, rather than the sidebar trying
@@ -94,6 +104,8 @@ const ROLE_BADGE_LABEL = {
 function Sidebar({ activeKey }) {
     const navigate = useNavigate();
     const user = getStoredUser() || { username: "", role: "adviser" };
+    const displayName = getDisplayName(user);
+    const roleLabel = ROLE_BADGE_LABEL[user.role] || user.role;
 
     const canUpload = useCanUpload();
     const navItems = (NAV_ITEMS_BY_ROLE[user.role] || []).filter(
@@ -173,13 +185,20 @@ function Sidebar({ activeKey }) {
                 </button>
             </div>
 
-            <div
-                className={`role-badge role-badge-${user.role}`}
-                title={tip(ROLE_BADGE_LABEL[user.role] || user.role)}
+            {/* The signed-in account: who is using EduCheck, and as which role. */}
+            <button
+                type="button"
+                className={`sidebar-account role-badge-${user.role}`}
+                onClick={() => navigate("/settings")}
+                title={collapsed ? `${displayName} · ${roleLabel}` : "Account settings"}
+                aria-label={`Signed in as ${displayName}, ${roleLabel}. Open account settings`}
             >
-                <Users size={16} />
-                <span className="nav-label">{ROLE_BADGE_LABEL[user.role] || user.role}</span>
-            </div>
+                <span className="sidebar-account-avatar" aria-hidden="true">{initialsOf(displayName)}</span>
+                <span className="sidebar-account-text nav-label">
+                    <strong>{displayName}</strong>
+                    <span>{roleLabel}</span>
+                </span>
+            </button>
 
             <nav className="sidebar-nav">
 
